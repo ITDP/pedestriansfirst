@@ -333,9 +333,12 @@ def pnservices(shpfile_location, folder_name='',
     
     ft = datetime.datetime.now()
     print("total", str(ft-dt))
+    with open(folder_name+"results.txt","w") as output:
+        for item in results.keys():    
+            output.write(item+": "+str(results[item])+"\n")
     return results
 #return failures, SAVED_TSTOPS
 
 #failures, saved_tstops = pnservices('dc.shp',folder_name='dc\\')
 #CITIES = ["atlanta","nyc","houston","mexico","indianapolis","montreal","guadalajara","leon","monterrey","washington","toronto","ottowa","atlanta"]
-x = pnservices('pvd.shp',folder_name='pvd\\')
+x = pnservices('arax.shp',folder_name='arax\\')
