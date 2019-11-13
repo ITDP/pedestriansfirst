@@ -37,6 +37,7 @@ import pandas as pd
 from pylab import rcParams
 rcParams['figure.figsize'] = 16, 25 # Tamanho da figura pode ser customizado
 
+import pdb
 
 
 # Pacote Python para plotar gráfico
@@ -115,6 +116,7 @@ def make_iso_polys(G, center_nodes, distance=500,
 
             edge_lines = []
             for n_fr, n_to in subgraph.edges():
+                pdb.set_trace()
                 f = nodes_gdf.loc[n_fr].geometry
                 t = nodes_gdf.loc[n_to].geometry
                 edge_lines.append(LineString([f,t]))
