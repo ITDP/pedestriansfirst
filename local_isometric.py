@@ -116,9 +116,8 @@ def make_iso_polys(G, center_nodes, distance=500,
 
             edge_lines = []
             for n_fr, n_to in subgraph.edges():
-                pdb.set_trace()
-                f = nodes_gdf.loc[n_fr].geometry
-                t = nodes_gdf.loc[n_to].geometry
+                f = nodes_gdf.loc[n_fr]#.geometry
+                t = nodes_gdf.loc[n_to]#.geometry
                 edge_lines.append(LineString([f,t]))
 
             n = nodes_gdf.buffer(node_buff).geometry

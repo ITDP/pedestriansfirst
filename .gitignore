@@ -11,6 +11,7 @@ arax.*
 *.exe
 *.o
 *.so
+*.pyc
 
 # Packages #
 ############
