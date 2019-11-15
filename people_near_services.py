@@ -61,14 +61,14 @@ def pnservices(city, folder_name='',
 #           ]
     dt = datetime.datetime.now()
     
-    boundaries = shapely.geometry.shape(city[0]['geometry'])
-    total_pop = city[0]['properties']['P15']
-    name = city[0]['properties']['UC_NM_MN']
-    hdc = city[0]['properties']['ID_HDC_G0']
-    bbox = (city[0]['properties']['BBX_LATMN'],
-               city[0]['properties']['BBX_LONMN'],
-               city[0]['properties']['BBX_LATMX'],
-               city[0]['properties']['BBX_LONMX'],)
+    boundaries = shapely.geometry.shape(city['geometry'])
+    total_pop = city['properties']['P15']
+    name = city['properties']['UC_NM_MN']
+    hdc = city['properties']['ID_HDC_G0']
+    bbox = (city['properties']['BBX_LATMN'],
+               city['properties']['BBX_LONMN'],
+               city['properties']['BBX_LATMX'],
+               city['properties']['BBX_LONMX'],)
     
     SAVED_TSTOPS = []
     
