@@ -31,7 +31,7 @@ def from_id_hdc(hdc):
     subprocess.check_call(command)
     
     
-    #results = people_near_services.pnservices(city, folder_name=str(hdc)+'/')
-    #print(str(results))
+    results = people_near_services.pnservices(city, folder_name=str(hdc)+'/')
+    print(str(results))
     
 from_id_hdc(3263)

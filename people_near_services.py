@@ -6,6 +6,7 @@ import math
 import statistics
 import rasterstats
 import rasterio.mask
+import subprocess
 
 import osmnx as ox
 import geopandas as gpd
@@ -39,6 +40,7 @@ def pnservices(city, folder_name='',
                        'density',
                        'transit',
                        ],
+                overpass = False
                 ):    
     dt = datetime.datetime.now()
 
@@ -62,6 +64,7 @@ def pnservices(city, folder_name='',
     boundaries = shapely.geometry.shape(city[0]['geometry'])
     total_pop = city[0]['properties']['P15']
     name = city[0]['properties']['UC_NM_MN']
+    hdc = city[0]['properties']['ID_HDC_G0']
     bbox = (city[0]['properties']['BBX_LATMN'],
                city[0]['properties']['BBX_LONMN'],
                city[0]['properties']['BBX_LATMX'],
@@ -142,7 +145,21 @@ def pnservices(city, folder_name='',
                            '["service"!~"parking_aisle|driveway"]'
                                    '["foot"!~"no"]["service"!~"private"]{}').format(ox.settings.default_access)
             
-            G = ox.graph_from_polygon(patch, custom_filter=walk_filter, simplify=False)
+            if overpass:
+                G = ox.graph_from_polygon(patch, custom_filter=walk_filter, simplify=False)
+            else:
+                boundingarg = '-b='
+                boundingarg += patch.bounds[0]+','
+                boundingarg += patch.bounds[1]+','
+                boundingarg += patch.bounds[2]+','
+                boundingarg += patch.bounds[3]
+                subprocess.check_call(['osmconvert',
+                                       str(hdc)+'/citywalk.o5m',
+                                       boundingarg,
+                                       '--drop-broken-refs',
+                                       '-o=patch.osm'])
+                G = ox.graph_from_file('patch.osm')
+                os.remove('patch.osm')
             
             simple_G = ox.simplify_graph(G)
             center_nodes = {}
