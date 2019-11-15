@@ -356,4 +356,4 @@ def pnservices(city, folder_name='',
 
 #failures, saved_tstops = pnservices('dc.shp',folder_name='dc\\')
 #CITIES = ["atlanta","nyc","houston","mexico","indianapolis","montreal","guadalajara","leon","monterrey","washington","toronto","ottowa","atlanta"]
-x = pnservices('arax.shp',folder_name='arax/')
+#x = pnservices('arax.shp',folder_name='arax/')
