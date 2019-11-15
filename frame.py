@@ -28,7 +28,7 @@ def from_id_hdc(hdc):
     --drop="area=yes highway=link =motor =proposed 
     =construction =abandoned =platform =raceway 
     service=parking_aisle =driveway =private foot=no" 
-    --keep="highway" >{}/citywalk.o5m
+    --keep="highway" -o={}/citywalk.o5m
     '''.format(str(hdc),str(hdc))
     print(command)
     subprocess.check_call(command.split(' '))
