@@ -24,8 +24,10 @@ def from_id_hdc(hdc):
         out.write(test_city)
     #take extract from planet.pbf
     command = "osmium extract -p {}/boundaries.geojson -d {}/ -s simple -v -o city.pbf".format(str(hdc), str(hdc))
+    print(command)
     subprocess.call(command.split(' '))
     command = "osmconvert {}/city.pbf >{}/city.pbf".format(str(hdc),str(hdc))
+    print(command)
     subprocess.call(command.split(' '))
     command = '''osmfilter {}/city.o5m 
     --drop="area=yes highway=link =motor =proposed 
@@ -33,6 +35,7 @@ def from_id_hdc(hdc):
     service=parking_aisle =driveway =private foot=no" 
     --keep="highway" >{}/city.osm
     '''.format(str(hdc),str(hdc))
+    print(command)
     subprocess.call(command.split(' '))
     
     
