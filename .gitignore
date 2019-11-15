@@ -3,6 +3,11 @@
 *.tif*
 arax.*
 arax/*
+*.osm
+*.pbf
+*.o5m
+*.geojson
+*.shp
 
 # Compiled source #
 ###################
