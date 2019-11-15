@@ -28,7 +28,7 @@ def weighted_pop_density(array):
         total += cell**2
     return total / numpy.sum(array)
 
-def pnservices(shpfile_location, folder_name='', 
+def pnservices(city, folder_name='', 
                network_dist=500, buffer_dist=100, headway_threshold=10,
                to_test = [
                        'healthcare',
@@ -59,15 +59,13 @@ def pnservices(shpfile_location, folder_name='',
 #           ]
     dt = datetime.datetime.now()
     
-    with fiona.open(shpfile_location,'r') as source:
-        boundaries = shapely.geometry.shape(source[0]['geometry'])
-        total_pop = source[0]['properties']['P15']
-        name = source[0]['properties']['UC_NM_MN']
-        bbox = (source[0]['properties']['BBX_LATMN'],
-                   source[0]['properties']['BBX_LONMN'],
-                   source[0]['properties']['BBX_LATMX'],
-                   source[0]['properties']['BBX_LONMX'],)
-        
+    boundaries = shapely.geometry.shape(city[0]['geometry'])
+    total_pop = city[0]['properties']['P15']
+    name = city[0]['properties']['UC_NM_MN']
+    bbox = (city[0]['properties']['BBX_LATMN'],
+               city[0]['properties']['BBX_LONMN'],
+               city[0]['properties']['BBX_LATMX'],
+               city[0]['properties']['BBX_LONMX'],)
     
     SAVED_TSTOPS = []
     
