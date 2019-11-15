@@ -39,7 +39,6 @@ def pnservices(shpfile_location, folder_name='',
                        'density',
                        'transit',
                        ],
-                use_overpass = True #use overpass, rather than .osm files, for street network data
                 ):    
     dt = datetime.datetime.now()
 
