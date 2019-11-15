@@ -149,10 +149,10 @@ def pnservices(city, folder_name='',
                 G = ox.graph_from_polygon(patch, custom_filter=walk_filter, simplify=False)
             else:
                 boundingarg = '-b='
-                boundingarg += patch.bounds[0]+','
-                boundingarg += patch.bounds[1]+','
-                boundingarg += patch.bounds[2]+','
-                boundingarg += patch.bounds[3]
+                boundingarg += str(patch.bounds[0])+','
+                boundingarg += str(patch.bounds[1])+','
+                boundingarg += str(patch.bounds[2])+','
+                boundingarg += str(patch.bounds[3])
                 subprocess.check_call(['osmconvert',
                                        str(hdc)+'/citywalk.o5m',
                                        boundingarg,
