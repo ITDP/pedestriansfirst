@@ -20,10 +20,10 @@ def from_id_hdc(hdc):
     #take extract from planet.pbf
     command = "osmium extract albania-latest.osm.pbf -p {}/boundaries.geojson -s simple -v -o {}/city.pbf".format(str(hdc), str(hdc))
     print(command)
-    subprocess.call(command.split(' '))
-    command = "osmconvert {}/city.pbf >{}/city.o5m".format(str(hdc),str(hdc))
+    subprocess.check_call(command.split(' '))
+    command = "osmconvert {}/city.pbf -o={}/city.o5m".format(str(hdc),str(hdc))
     print(command)
-    subprocess.call(command.split(' '))
+    subprocess.check_call(command.split(' '))
     command = '''osmfilter {}/city.o5m 
     --drop="area=yes highway=link =motor =proposed 
     =construction =abandoned =platform =raceway 
@@ -31,7 +31,7 @@ def from_id_hdc(hdc):
     --keep="highway" >{}/citywalk.o5m
     '''.format(str(hdc),str(hdc))
     print(command)
-    subprocess.call(command.split(' '))
+    subprocess.check_call(command.split(' '))
     
     
     #results = people_near_services.pnservices(city, folder_name=str(hdc)+'/')
