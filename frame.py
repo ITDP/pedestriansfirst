@@ -23,7 +23,7 @@ def from_id_hdc(hdc):
                     driver = 'GeoJSON') as out:
         out.write(test_city)
     #take extract from planet.pbf
-    command = "osmium extract -p {}/boundaries.geojson -d {}/ -s simple -v -o city.pbf".format(str(hdc), str(hdc))
+    command = "osmium extract albania-latest.pbf -p {}/boundaries.geojson -d {}/ -s simple -v -o city.pbf".format(str(hdc), str(hdc))
     print(command)
     subprocess.call(command.split(' '))
     command = "osmconvert {}/city.pbf >{}/city.pbf".format(str(hdc),str(hdc))
@@ -42,4 +42,4 @@ def from_id_hdc(hdc):
     #results = people_near_services.pnservices(city, folder_name=str(hdc)+'/')
     #print(str(results))
     
-from_id_hdc(54)
+from_id_hdc(3263)
