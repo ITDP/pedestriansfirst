@@ -14,7 +14,8 @@ def from_id_hdc(hdc):
         source_crs = ucdb.crs
         source_schema = ucdb.schema
     #save city geometry so that I can take an extract from planet.pbf within it
-    os.mkdir(str(hdc))
+    if not os.path.isdir(str(hdc)):
+        os.mkdir(str(hdc))
     with fiona.open(str(hdc)+'/boundaries.geojson',
                     'w',
                     schema = source_schema,
