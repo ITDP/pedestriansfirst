@@ -3,7 +3,7 @@ import fiona
 import os
 import json
 
-#import people_near_services
+import people_near_services
 
 
 def from_id_hdc(hdc):
