@@ -1,5 +1,6 @@
 import subprocess
 import fiona
+import os
 
 #import people_near_services
 
@@ -13,6 +14,7 @@ def from_id_hdc(hdc):
         source_crs = ucdb.crs
         source_schema = ucdb.schema
     #save city geometry so that I can take an extract from planet.pbf within it
+    os.mkdir(str(hdc))
     with fiona.open(str(hdc)+'/boundaries.geojson',
                     'w',
                     schema = source_schema,
