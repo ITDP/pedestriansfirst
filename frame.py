@@ -18,7 +18,7 @@ def from_id_hdc(hdc):
     with open(str(hdc)+'/boundaries.geojson', 'w') as out:
         out.write(json.dumps(test_city))
     #take extract from planet.pbf
-    command = "osmium extract albania-latest.osm.pbf -p {}/boundaries.geojson -d {}/ -s simple -v -o city.pbf".format(str(hdc), str(hdc))
+    command = "osmium extract albania-latest.osm.pbf -p {}/boundaries.geojson -s simple -v -o {}/city.pbf".format(str(hdc), str(hdc))
     print(command)
     subprocess.call(command.split(' '))
     command = "osmconvert {}/city.pbf >{}/city.pbf".format(str(hdc),str(hdc))
