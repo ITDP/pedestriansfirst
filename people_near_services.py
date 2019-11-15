@@ -158,7 +158,7 @@ def pnservices(city, folder_name='',
                                        boundingarg,
                                        '--drop-broken-refs',
                                        '-o=patch.osm'])
-                G = ox.graph_from_file('patch.osm')
+                G = ox.graph_from_file('patch.osm', simplify=False)
                 #os.remove('patch.osm')
             
             simple_G = ox.simplify_graph(G)
