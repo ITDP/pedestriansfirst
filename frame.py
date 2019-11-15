@@ -1,6 +1,7 @@
 import subprocess
 import fiona
 import os
+import json
 
 #import people_near_services
 
@@ -11,17 +12,11 @@ def from_id_hdc(hdc):
         for city in ucdb:
             if city['properties']['ID_HDC_G0'] == hdc:
                 test_city = city
-        source_crs = ucdb.crs
-        source_schema = ucdb.schema
     #save city geometry so that I can take an extract from planet.pbf within it
     if not os.path.isdir(str(hdc)):
         os.mkdir(str(hdc))
-    with fiona.open(str(hdc)+'/boundaries.geojson',
-                    'w',
-                    schema = source_schema,
-                    crs = source_crs,
-                    driver = 'GeoJSON') as out:
-        out.write(test_city)
+    with open(str(hdc)+'/boundaries.geojson', 'w') as out:
+        out.write(json.dumps(test_city))
     #take extract from planet.pbf
     command = "osmium extract albania-latest.pbf -p {}/boundaries.geojson -d {}/ -s simple -v -o city.pbf".format(str(hdc), str(hdc))
     print(command)
