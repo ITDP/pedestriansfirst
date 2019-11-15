@@ -159,7 +159,7 @@ def pnservices(city, folder_name='',
                                        '--drop-broken-refs',
                                        '-o=patch.osm'])
                 G = ox.graph_from_file('patch.osm')
-                os.remove('patch.osm')
+                #os.remove('patch.osm')
             
             simple_G = ox.simplify_graph(G)
             center_nodes = {}
