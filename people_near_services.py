@@ -316,6 +316,7 @@ def pnservices(city, folder_name='',
         a = gpd.GeoDataFrame(geometry=outblocks)
         a.crs = {'init':'epsg:'+str(epsg)}
         a['area'] = a.geometry.area
+        a.geometry = a.geometry.simplify(15)
         b = a.to_crs(epsg=4326)
         b.to_file(folder_name+'blocks'+'latlon'+'.geojson', driver='GeoJSON')
         b.to_file(folder_name+'blocks'+'latlon'+'.shp')

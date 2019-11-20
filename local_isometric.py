@@ -168,6 +168,7 @@ def export(polygons, epsg, service, folder=""):
     a.columns = ['distance', 'polygon']
     a = gpd.GeoDataFrame(a, geometry='polygon')
     a.crs = {'init':'epsg:'+str(epsg)}
+    a.geometry = a.geometry.simplify(15)
     b = a.to_crs(epsg=4326)
     #a.to_csv(folder+service+'.csv')
     #a.to_file(folder+service+'.shp')
