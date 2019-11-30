@@ -162,8 +162,6 @@ def plot(G, isochrone_polys, center_nodes, distances):
 
 def export(polygons, epsg, service, folder=""):
     #returns the result both latlon, projected, but only saves it latlon in geojson
-    import pdb
-    pdb.set_trace()
     a = pd.DataFrame(polygons).T
     a = pd.melt(a, value_vars=a.columns)
     a.columns = ['distance', 'polygon']

@@ -300,7 +300,14 @@ def pnservices(city, folder_name='',
         print(quilt_ipolys[service])
         print(type(quilt_ipolys[service]))
         if quilt_ipolys[service]:
-            a, b = local_isometric.export(quilt_ipolys[service], epsg, service=service, folder=folder_name)
+            a = gpd.GeoDataFrame(geometry = quilt_ipolys[service])
+            a.crs = {'init':'epsg:'+str(epsg)}
+            a.geometry = a.geometry.simplify(15) #maybe this should be after the population calculation
+            b = a.to_crs(epsg=4326)
+            b.to_file(folder_name+service+'latlon'+'.geojson', driver='GeoJSON')
+            b.to_file(folder_name+service+'latlon'+'.shp') #unnecessary later
+            
+            #a, b = local_isometric.export(quilt_ipolys[service], epsg, service=service, folder=folder_name)
             
             stats = rasterstats.zonal_stats(b, 'pop_dens.tif', stats=['mean'])
             
