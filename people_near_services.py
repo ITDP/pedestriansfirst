@@ -297,7 +297,6 @@ def pnservices(city, folder_name='',
         testing_services.append('carfree')
     
     for service in testing_services:
-        quilt_ipolys[service] = shapely.geometry.MultiPolygon(quilt_ipolys[service])
         print(quilt_ipolys[service])
         print(type(quilt_ipolys[service]))
         if quilt_ipolys[service]:
