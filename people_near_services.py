@@ -78,9 +78,9 @@ def pnservices(city, folder_name='',
     print('Measuring',str(to_test))
     
     print(total_pop)
-    n_hslicers = math.floor(round(total_pop/600000)/2) #change to ????
+    n_hslicers = math.floor(round(total_pop/200000)/2) #change to ????
     hslicers=[]
-    n_vslicers = math.ceil(round(total_pop/600000)/2) #change to ????
+    n_vslicers = math.ceil(round(total_pop/200000)/2) #change to ????
     vslicers=[]
     
     for i in range(1,n_hslicers+1):
@@ -226,6 +226,7 @@ def pnservices(city, folder_name='',
                 failures[service] = 0
         
             if 'carfree' in to_test:
+                testing_services.append('carfree')
                 polygons = []
                 ped_G, park_G = car_free_streets.get_carfree_graph(patch)
                 if ped_G and park_G:
@@ -294,11 +295,11 @@ def pnservices(city, folder_name='',
         os.makedirs(folder_name)
     
     for service in testing_services:
+        
+        print(quilt_ipolys[service])
+        print(type(quilt_ipolys[service]))
         if quilt_ipolys[service]:
             a, b = local_isometric.export(quilt_ipolys[service], epsg, service=service, folder=folder_name)
-            
-        
-            area = a.area.sum()
             
             stats = rasterstats.zonal_stats(b, 'pop_dens.tif', stats=['mean'])
             
