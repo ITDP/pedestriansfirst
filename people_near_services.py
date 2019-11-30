@@ -156,6 +156,7 @@ def pnservices(city, folder_name='',
                 subprocess.check_call(['osmconvert',
                                        str(hdc)+'/citywalk.o5m',
                                        boundingarg,
+                                       #'--complete-ways',
                                        '--drop-broken-refs',
                                        '-o=patch.osm'])
                 G = ox.graph_from_file('patch.osm', simplify=False)
@@ -250,9 +251,12 @@ def pnservices(city, folder_name='',
                 filtered_blocks = []
                 for block in blocks:
                     if 1000 < block.area < 1000000:
-                        if block.length / block.area < 0.15:
-                            if block.centroid.within(unbuffered_patch):
-                                filtered_blocks.append(block)
+                        if block.interiors:
+                            block = shapely.geometry.Polygon(block.exterior)
+                        #if block.length / block.area < 0.15:
+                        #    if block.centroid.within(unbuffered_patch):
+                        #        filtered_blocks.append(block)
+                        filtered_blocks.append(block)
                 outblocks += filtered_blocks
                 
                 
@@ -316,6 +320,8 @@ def pnservices(city, folder_name='',
         a = gpd.GeoDataFrame(geometry=outblocks)
         a.crs = {'init':'epsg:'+str(epsg)}
         a['area'] = a.geometry.area
+        a['perim'] = a.geometry.length
+        a['lemgth'] = (a.geometry.length^2)/a.area
         a.geometry = a.geometry.simplify(15)
         b = a.to_crs(epsg=4326)
         b.to_file(folder_name+'blocks'+'latlon'+'.geojson', driver='GeoJSON')
