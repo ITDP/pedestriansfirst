@@ -300,9 +300,9 @@ def pnservices(city, folder_name='',
         print(quilt_ipolys[service])
         print(type(quilt_ipolys[service]))
         if quilt_ipolys[service]:
-            if type(quilt_ipolys) == shapely.geometry.polygon.Polygon:
+            if type(quilt_ipolys[service]) == shapely.geometry.polygon.Polygon:
                 a = gpd.GeoDataFrame(geometry = [quilt_ipolys[service]])
-            elif type(quilt_ipolys) == shapely.geometry.multipolygon.MultiPolygon:
+            elif type(quilt_ipolys[service]) == shapely.geometry.multipolygon.MultiPolygon:
                 a = gpd.GeoDataFrame(geometry = quilt_ipolys[service])
             else:
                 print('impossible type')
