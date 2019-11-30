@@ -300,12 +300,7 @@ def pnservices(city, folder_name='',
         print(quilt_ipolys[service])
         print(type(quilt_ipolys[service]))
         if quilt_ipolys[service]:
-            if type(quilt_ipolys[service]) == shapely.geometry.polygon.Polygon:
-                a = gpd.GeoDataFrame(geometry = [quilt_ipolys[service]])
-            elif type(quilt_ipolys[service]) == shapely.geometry.multipolygon.MultiPolygon:
-                a = gpd.GeoDataFrame(geometry = quilt_ipolys[service])
-            else:
-                print('impossible type')
+            a = gpd.GeoDataFrame(geometry = [quilt_ipolys[service]])
             a.crs = {'init':'epsg:'+str(epsg)}
             a.geometry = a.geometry.simplify(15) #maybe this should be after the population calculation
             b = a.to_crs(epsg=4326)
