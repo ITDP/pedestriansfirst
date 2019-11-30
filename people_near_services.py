@@ -292,12 +292,12 @@ def pnservices(city, folder_name='',
     
     if not os.path.exists(folder_name):
         os.makedirs(folder_name)
-        
+       
     if 'carfree' in to_test:
         testing_services.append('carfree')
     
     for service in testing_services:
-        
+        quilt_ipolys[service] = shapely.geometry.MultiPolygon(quilt_ipolys[service])
         print(quilt_ipolys[service])
         print(type(quilt_ipolys[service]))
         if quilt_ipolys[service]:
