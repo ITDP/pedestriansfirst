@@ -226,7 +226,6 @@ def pnservices(city, folder_name='',
                 failures[service] = 0
         
             if 'carfree' in to_test:
-                testing_services.append('carfree')
                 polygons = []
                 ped_G, park_G = car_free_streets.get_carfree_graph(patch)
                 if ped_G and park_G:
@@ -293,6 +292,9 @@ def pnservices(city, folder_name='',
     
     if not os.path.exists(folder_name):
         os.makedirs(folder_name)
+        
+    if 'carfree' in to_test:
+        testing_services.append('carfree')
     
     for service in testing_services:
         
