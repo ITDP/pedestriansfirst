@@ -328,9 +328,11 @@ def pnservices(city, folder_name='',
     if 'blocks' in to_test:
         a = gpd.GeoDataFrame(geometry=outblocks)
         a.crs = {'init':'epsg:'+str(epsg)}
-        a['area'] = a.geometry.area
-        a['perim'] = a.geometry.length
-        a['lemgth'] = (a.geometry.length^2)/a.area
+        area = a.geometry.area
+        perim = a.geometry.length
+        a['area'] = area
+        a['perim'] = perim
+        a['lemgth'] = (area*area)/perim
         a.geometry = a.geometry.simplify(15)
         b = a.to_crs(epsg=4326)
         b.to_file(folder_name+'blocks'+'latlon'+'.geojson', driver='GeoJSON')
