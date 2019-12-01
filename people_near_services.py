@@ -246,18 +246,19 @@ def pnservices(city, folder_name='',
                 streets = ox.save_load.graph_to_gdfs(G, nodes = False)
                 streets = shapely.geometry.MultiLineString(list(streets.geometry))
                 merged = shapely.ops.linemerge(streets)
-                borders = shapely.ops.unary_union(merged)
-                blocks = list(shapely.ops.polygonize(borders))
-                filtered_blocks = []
-                for block in blocks:
-                    if 1000 < block.area < 1000000:
-                        if block.interiors:
-                            block = shapely.geometry.Polygon(block.exterior)
-                        #if block.length / block.area < 0.15:
-                        #    if block.centroid.within(unbuffered_patch):
-                        #        filtered_blocks.append(block)
-                        filtered_blocks.append(block)
-                outblocks += filtered_blocks
+                if merged:
+                    borders = shapely.ops.unary_union(merged)
+                    blocks = list(shapely.ops.polygonize(borders))
+                    filtered_blocks = []
+                    for block in blocks:
+                        if 1000 < block.area < 1000000:
+                            if block.interiors:
+                                block = shapely.geometry.Polygon(block.exterior)
+                            #if block.length / block.area < 0.15:
+                            #    if block.centroid.within(unbuffered_patch):
+                            #        filtered_blocks.append(block)
+                            filtered_blocks.append(block)
+                    outblocks += filtered_blocks
                 
                 
                 
