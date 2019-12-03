@@ -247,7 +247,8 @@ def pnservices(city, folder_name='',
                 streets = shapely.geometry.MultiLineString(list(streets.geometry))
                 merged = shapely.ops.linemerge(streets)
                 if merged:
-                    blocks = list(shapely.ops.polygonize(merged))
+                    borders = shapely.ops.unary_union(merged)
+                    blocks = list(shapely.ops.polygonize(borders))
                     filtered_blocks = []
                     for block in blocks:
                         if 1000 < block.area < 1000000:
