@@ -29,8 +29,7 @@ def weighted_pop_density(array):
         total += cell**2
     return total / numpy.sum(array)
 
-def pnservices(city, folder_name='', 
-               network_dist=500, buffer_dist=100, headway_threshold=10,
+def pnservices(city, folder_name='', buffer_dist=100, headway_threshold=10,
                to_test = [
                        'healthcare',
                        'schools',
@@ -40,6 +39,12 @@ def pnservices(city, folder_name='',
                        'density',
                        'transit',
                        ],
+                distances = {
+                        'healthcare': 1000,
+                        'schools': 1000,
+                        'libraries': 1000,
+                        'transit': 500,
+                        }
                 overpass = False
                 ):    
     dt = datetime.datetime.now()
@@ -244,27 +249,28 @@ def pnservices(city, folder_name='',
             
             if 'blocks' in to_test:
                 streets = ox.save_load.graph_to_gdfs(G, nodes = False)
-                streets = shapely.geometry.MultiLineString(list(streets.geometry))
-                merged = shapely.ops.linemerge(streets)
-                if merged:
-                    borders = shapely.ops.unary_union(merged)
-                    blocks = list(shapely.ops.polygonize(borders))
-                    filtered_blocks = []
-                    for block in blocks:
-                        if 1000 < block.area < 1000000:
-                            if block.interiors:
-                                block = shapely.geometry.Polygon(block.exterior)
-                            #if block.length / block.area < 0.15:
-                            if block.centroid.within(unbuffered_patch):
-                                filtered_blocks.append(block)
-                    outblocks += filtered_blocks
-                
+                if not streets.empty:
+                    streets = shapely.geometry.MultiLineString(list(streets.geometry))
+                    merged = shapely.ops.linemerge(streets)
+                    if merged:
+                        borders = shapely.ops.unary_union(merged)
+                        blocks = list(shapely.ops.polygonize(borders))
+                        filtered_blocks = []
+                        for block in blocks:
+                            if 1000 < block.area < 1000000:
+                                if block.interiors:
+                                    block = shapely.geometry.Polygon(block.exterior)
+                                #if block.length / block.area < 0.15:
+                                if block.centroid.within(unbuffered_patch):
+                                    filtered_blocks.append(block)
+                        outblocks += filtered_blocks
+                    
                 
                 
             
             # Get polygons
             for service in testing_services:
-                isochrone_polys[service], fails = local_isometric.make_iso_polys(G, center_nodes[service], distance=network_dist, edge_buff=buffer_dist)
+                isochrone_polys[service], fails = local_isometric.make_iso_polys(G, center_nodes[service], distance=distances[service], edge_buff=buffer_dist)
                 failures[service] += fails
                 
             for service in isochrone_polys.keys():
