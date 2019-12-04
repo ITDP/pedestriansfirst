@@ -94,6 +94,9 @@ def pnservices(city, folder_name='', buffer_dist=100, headway_threshold=10,
     n_vslicers = math.floor(height_km / patch_length)
     n_hslicers = math.floor(width_km / patch_length)
     
+    hslicers = []
+    vslicers = []
+    
     for i in range(1,n_hslicers+1):
         increment = (bbox[2]-bbox[0])/(n_hslicers+1)
         lat = bbox[0]+(i*increment)
