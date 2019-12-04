@@ -82,7 +82,18 @@ def pnservices(city, folder_name='', buffer_dist=100, headway_threshold=10,
     print('Evaluating Pedestrians First indicators in',name)
     print('Measuring',str(to_test))
     
-    print(total_pop)
+    latitude_factor = 0.00898
+    longitude_factor = 1/(math.cos(0.0174533 * boundaries.bounds[1]))
+    
+    height_degrees = abs(boundaries.bounds[3]-boundaries.bounds[1])
+    height_km = height_degrees / latitude_factor
+    width_degrees = abs(boundaries.bounds[2]-boundaries.bounds[0])
+    width_km = width_degrees / longitude_factor
+    
+    patch_length = 2 #kilometers
+    n_vslicers = math.floor(height_km / patch_length)
+    n_vslicers = math.floor(width_km / patch_length)
+    
     n_hslicers = math.floor(round(total_pop/200000)/2) #change to ????
     hslicers=[]
     n_vslicers = math.ceil(round(total_pop/200000)/2) #change to ????
@@ -106,22 +117,7 @@ def pnservices(city, folder_name='', buffer_dist=100, headway_threshold=10,
     
     print ("cut", len(list(patches)),"patches")
     
-    latitude_factor = 0.00898
-    longitude_factor = 1/(math.cos(0.0174533 * boundaries.bounds[1]))
     
-    height_degrees = abs(boundaries.bounds[3]-boundaries.bounds[1])
-    height_km = height_degrees / latitude_factor
-    width_degrees = abs(boundaries.bounds[2]-boundaries.bounds[0])
-    width_km = width_degrees / longitude_factor
-    
-    patch_length = 2 #kilometers
-    n_vslicers = math.floor(height_km / patch_length)
-    n_vslicers = math.floor(width_km / patch_length)
-    
-    n_hslicers = math.floor(round(total_pop/200000)/2) #change to ????
-    hslicers=[]
-    n_vslicers = math.ceil(round(total_pop/200000)/2) #change to ????
-    vslicers=[]
     
     for i in range(1,n_hslicers+1):
         increment = (bbox[2]-bbox[0])/(n_hslicers+1)
@@ -338,8 +334,6 @@ def pnservices(city, folder_name='', buffer_dist=100, headway_threshold=10,
         testing_services.append('carfree')
     
     for service in testing_services:
-        print(quilt_ipolys[service])
-        print(type(quilt_ipolys[service]))
         if quilt_ipolys[service]:
             a = gpd.GeoDataFrame(geometry = [quilt_ipolys[service]])
             a.crs = {'init':'epsg:'+str(epsg)}
