@@ -116,7 +116,7 @@ def pnservices(city, folder_name='', buffer_dist=100, headway_threshold=10,
     
     patch_length = 2 #kilometers
     n_vslicers = math.floor(height_km / patch_length)
-    n_vslicers = math.floor(wdith_km / patch_length)
+    n_vslicers = math.floor(width_km / patch_length)
     
     n_hslicers = math.floor(round(total_pop/200000)/2) #change to ????
     hslicers=[]
