@@ -173,7 +173,16 @@ def pnservices(city, folder_name='', buffer_dist=100, headway_threshold=10,
                 patch_buffer = .02 #in decimal degrees
             
             unbuffered_patch = patch
-            patch = patch.buffer(patch_buffer)
+            
+            max_service_dist_km = max(distances.values())/1000
+            
+            patch = shapely.geometry.box(
+                    patch.bounds[0] - (max_service_dist_km * longitude_factor),
+                    patch.bounds[1] - (max_service_dist_km * latitude_factor),
+                    patch.bounds[2] + (max_service_dist_km * longitude_factor),
+                    patch.bounds[3] + (max_service_dist_km * latitude_factor)
+                    )
+                    
             
             walk_filter = ('["area"!~"yes"]["highway"!~"link|motor|proposed|construction|abandoned|platform|raceway"]'
                            '["service"!~"parking_aisle|driveway"]'
