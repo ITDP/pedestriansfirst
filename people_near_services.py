@@ -106,6 +106,41 @@ def pnservices(city, folder_name='', buffer_dist=100, headway_threshold=10,
     
     print ("cut", len(list(patches)),"patches")
     
+    latitude_factor = 0.00898
+    longitude_factor = 1/(math.cos(0.0174533 * boundaries.bounds[1]))
+    
+    height_degrees = abs(boundaries.bounds[3]-boundaries.bounds[1])
+    height_km = height_degrees / latitude_factor
+    width_degrees = abs(boundaries.bounds[2]-boundaries.bounds[0])
+    width_km = width_degrees / longitude_factor
+    
+    patch_length = 2 #kilometers
+    n_vslicers = math.floor(height_km / patch_length)
+    n_vslicers = math.floor(wdith_km / patch_length)
+    
+    n_hslicers = math.floor(round(total_pop/200000)/2) #change to ????
+    hslicers=[]
+    n_vslicers = math.ceil(round(total_pop/200000)/2) #change to ????
+    vslicers=[]
+    
+    for i in range(1,n_hslicers+1):
+        increment = (bbox[2]-bbox[0])/(n_hslicers+1)
+        lat = bbox[0]+(i*increment)
+        slicer = shapely.geometry.LineString([(bbox[1],lat),(bbox[3],lat)])
+        hslicers.append(slicer)
+        
+    for i in range(1,n_vslicers+1):
+        increment = (bbox[3]-bbox[1])/(n_vslicers+1)
+        lon = bbox[1]+(i*increment)
+        slicer = shapely.geometry.LineString([(lon,bbox[0]),(lon, bbox[2])])
+        hslicers.append(slicer)
+        
+    patches = shapely.geometry.MultiPolygon(polygons=[boundaries])
+    for slicer in hslicers+vslicers:
+        patches = shapely.geometry.MultiPolygon(polygons = shapely.ops.split(patches, slicer))
+    
+    print ("cut", len(list(patches)),"patches")
+    
     quilt_ipolys = {}
     quilt_cnodes = {}
     for service in to_test:
