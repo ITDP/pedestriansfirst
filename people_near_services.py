@@ -255,9 +255,8 @@ def pnservices(city, folder_name='',
                             if block.interiors:
                                 block = shapely.geometry.Polygon(block.exterior)
                             #if block.length / block.area < 0.15:
-                            #    if block.centroid.within(unbuffered_patch):
-                            #        filtered_blocks.append(block)
-                            filtered_blocks.append(block)
+                            if block.centroid.within(unbuffered_patch):
+                                filtered_blocks.append(block)
                     outblocks += filtered_blocks
                 
                 
@@ -269,7 +268,7 @@ def pnservices(city, folder_name='',
                 failures[service] += fails
                 
             for service in isochrone_polys.keys():
-                if service not in quilt_ipolys.keys() or quilt_ipolys[service] == False:
+                if service not in quilt_ipolys.keys() or not quilt_ipolys[service]:
                     quilt_ipolys[service] = isochrone_polys[service]
                 elif isochrone_polys[service]:
                     pdb.set_trace()
