@@ -272,6 +272,7 @@ def pnservices(city, folder_name='',
                 if service not in quilt_ipolys.keys() or quilt_ipolys[service] == False:
                     quilt_ipolys[service] = isochrone_polys[service]
                 elif isochrone_polys[service]:
+                    pdb.set_trace()
                     quilt_ipolys[service] = shapely.ops.cascaded_union([quilt_ipolys[service],isochrone_polys[service]])
             for service in center_nodes.keys():
                 quilt_cnodes[service] = quilt_cnodes[service] + center_nodes[service]
