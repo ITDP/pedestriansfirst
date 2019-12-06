@@ -21,6 +21,8 @@ import gtfs_parser
 
 import pdb
 
+ox.utils.config(log_console = False)
+
 #added a test comment and changed it
 
 def weighted_pop_density(array):
