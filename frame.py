@@ -25,7 +25,11 @@ def from_id_hdc(hdc):
     print(command)
     subprocess.check_call(command.split(' '))
     command = ['osmfilter', '{}/city.o5m'.format(str(hdc)),
-    '--drop="area=yes highway=link =motor =proposed =construction =abandoned =platform =raceway service=parking_aisle =driveway =private foot=no"', '--keep="highway"', '-o={}/citywalk.o5m'.format(str(hdc))]
+    '--drop="area=yes highway=link =motor =proposed =construction =abandoned =platform =raceway service=parking_aisle =driveway =private foot=no"', '-o={}/citywalkhalf.o5m'.format(str(hdc))]
+    print(command)
+    subprocess.check_call(command)
+    command = ['osmfilter', '{}/citywalkhalf.o5m'.format(str(hdc)),
+    '--keep="highway"', '-o={}/citywalk.o5m'.format(str(hdc))]
     print(command)
     subprocess.check_call(command)
     
