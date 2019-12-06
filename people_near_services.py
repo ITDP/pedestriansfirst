@@ -358,8 +358,8 @@ def pnservices(city, folder_name='', buffer_dist=100, headway_threshold=10,
         for patch in patches:
             logger.debug("patch"+str(n))
             n+=1
-            unbuffered_patch = patch
-            unbuffered_patch = gpd.GeoSeries(unbuffered_patch, crs={'init':'epsg:4326'}).to_crs(crs)[0]
+            unbuffered_patch = gpd.GeoSeries(patch, crs={'init':'epsg:4326'})
+            unbuffered_patch = unbuffered_patch.to_crs(crs)[0]
             
             
             buffer_dist = .2
