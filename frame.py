@@ -33,4 +33,4 @@ def from_id_hdc(hdc):
     results = people_near_services.pnservices(test_city, folder_name=str(hdc)+'/')
     print(str(results))
     
-from_id_hdc(518)
+from_id_hdc(1367)
