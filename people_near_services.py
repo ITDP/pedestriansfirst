@@ -35,6 +35,7 @@ def pnservices(city, folder_name='', buffer_dist=100, headway_threshold=10,
                        'schools',
                        'libraries',
                        'carfree',
+                       'transcarioca',
                        'blocks',
                        'density',
                        'transit',
@@ -151,6 +152,13 @@ def pnservices(city, folder_name='', buffer_dist=100, headway_threshold=10,
             testing_services.append(service)
             all_coords[service] = get_point_locations(boundaries, queries[service])
     
+    if 'transcarioca' in to_test:
+        tc = list(fiona.open('tc_stns/tc_stns.shp'))
+        all_coords['transcarioca'] = []
+        for stn in tc:
+            all_coords['transcarioca'].append(stn['geometry']['coordinates'][0:2])
+
+
     if 'transit' in to_test:
         testing_services.append('transit')
         sources = gtfs_parser.get_feed_infos(gtfs_parser.get_relevant_locs(bbox))
