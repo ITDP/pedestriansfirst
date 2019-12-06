@@ -29,7 +29,7 @@ def from_id_hdc(hdc):
     print(command)
     subprocess.check_call(command)
     command = ['osmfilter', '{}/citywalkhalf.o5m'.format(str(hdc)),
-    '--keep="highway"', '-o={}/citywalk.o5m'.format(str(hdc))]
+    '--keep="highway="', '-o={}/citywalk.o5m'.format(str(hdc))]
     print(command)
     subprocess.check_call(command)
     
@@ -38,5 +38,4 @@ def from_id_hdc(hdc):
     print(str(results))
     
 from_id_hdc(1367)
-#comment
 
