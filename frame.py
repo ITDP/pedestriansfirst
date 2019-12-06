@@ -6,7 +6,7 @@ import json
 import people_near_services
 
 
-def from_id_hdc(hdc):
+def from_id_hdc(hdc, to_test = None):
     #select city from ID number
     with fiona.open('GHS_STAT_UCDB2015MT_GLOBE_R2019A_V1_0.shp','r') as ucdb:
         for city in ucdb:
@@ -29,8 +29,13 @@ def from_id_hdc(hdc):
     print(command)
     subprocess.check_call(command)
     
-    
-    results = people_near_services.pnservices(test_city, folder_name=str(hdc)+'/')
+    if to_test:
+        results = people_near_services.pnservices(test_city, to_test = to_test, folder_name=str(hdc)+'/')
+    else:
+        results = people_near_services.pnservices(test_city, folder_name=str(hdc)+'/')
+
     print(str(results))
     
-from_id_hdc(518)
+
+from_id_hdc(1361, to_test=['transcarioca'])
+
