@@ -269,7 +269,6 @@ def pnservices(city, folder_name='', buffer_dist=100, headway_threshold=10,
             
             
             # Project Graph
-            pdb.set_trace()
             if not crs: #this only runs once, crs is invariable over patches
                 G = ox.project_graph(G)
                 crs = G.graph['crs'] 
@@ -359,7 +358,6 @@ def pnservices(city, folder_name='', buffer_dist=100, headway_threshold=10,
         for patch in patches:
             logger.debug("patch"+str(n))
             n+=1
-            pdb.set_trace()
             unbuffered_patch = gpd.GeoSeries(patch, crs={'init':'epsg:4326'})
             unbuffered_patch = unbuffered_patch.to_crs(crs)[0]
             
@@ -400,7 +398,6 @@ def pnservices(city, folder_name='', buffer_dist=100, headway_threshold=10,
                 if merged:
                     borders = shapely.ops.unary_union(merged)
                     blocks = list(shapely.ops.polygonize(borders))
-                    pdb.set_trace()
                     filtered_blocks = []
                     for block in blocks:
                         if 1000 < block.area < 1000000:
