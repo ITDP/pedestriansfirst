@@ -20,6 +20,8 @@ import car_free_streets
 import gtfs_parser
 
 import pdb
+import logging
+
 
 ox.utils.config(log_console = False)
 
@@ -67,6 +69,20 @@ def pnservices(city, folder_name='', buffer_dist=100, headway_threshold=10,
 #           #'transit2',
 #           ]
     dt = datetime.datetime.now()
+    logger = logging.getLogger()
+    logger.setLevel(logging.DEBUG)
+    formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
+
+    fh = logging.FileHandler('log_filename.txt')
+    fh.setLevel(logging.DEBUG)
+    fh.setFormatter(formatter)
+    logger.addHandler(fh)
+    
+    ch = logging.StreamHandler()
+    ch.setLevel(logging.DEBUG)
+    ch.setFormatter(formatter)
+    logger.addHandler(ch)
+    
     
     boundaries = shapely.geometry.shape(city['geometry'])
     total_pop = city['properties']['P15']
@@ -81,8 +97,9 @@ def pnservices(city, folder_name='', buffer_dist=100, headway_threshold=10,
     
     crs = None    
     
-    print('Evaluating Pedestrians First indicators in',name)
-    print('Measuring',str(to_test))
+    logger.debug('Evaluating Pedestrians First indicators in',name)
+    logger.debug('Measuring',str(to_test))
+    
     
     latitude_factor = 0.00898
     longitude_factor = 1/(math.cos(0.0174533 * boundaries.bounds[1]))
@@ -115,7 +132,6 @@ def pnservices(city, folder_name='', buffer_dist=100, headway_threshold=10,
     for slicer in hslicers+vslicers:
         patches = shapely.geometry.MultiPolygon(polygons = shapely.ops.split(patches, slicer))
     
-    print ("cut", len(list(patches)),"patches")
     
     
     
@@ -135,7 +151,7 @@ def pnservices(city, folder_name='', buffer_dist=100, headway_threshold=10,
     for slicer in hslicers+vslicers:
         patches = shapely.geometry.MultiPolygon(polygons = shapely.ops.split(patches, slicer))
     
-    print ("cut", len(list(patches)),"patches")
+    logger.debug("cut"+str(len(list(patches)))+"patches")
     
     quilt_ipolys = {}
     quilt_cnodes = {}
@@ -208,7 +224,7 @@ def pnservices(city, folder_name='', buffer_dist=100, headway_threshold=10,
                             nearest = ox.get_nearest_node(simple_G, coord)
                             if not nearest in center_nodes[service]:
                                 center_nodes[service].append(nearest)
-            
+            logger.debug("getting transit")
             if 'transit' in to_test:
                 center_nodes['transit'] = []
                 transit_centers = {}
@@ -304,6 +320,7 @@ def pnservices(city, folder_name='', buffer_dist=100, headway_threshold=10,
     #Export  
     
     if 'blocks' in to_test:
+        logger.debug("getting blocks")
         outblocks = []
         #most of our patch-cutting variables are still around
         patch_length = .5 #kilometers
@@ -330,8 +347,10 @@ def pnservices(city, folder_name='', buffer_dist=100, headway_threshold=10,
             patches = shapely.geometry.MultiPolygon(polygons = shapely.ops.split(patches, slicer))
         
         print ("cut", len(list(patches)),"patches")
-        
+        n=0
         for patch in patches:
+            logger.debug("patch"+str(n))
+            n+=1
             unbuffered_patch = patch
             
             max_service_dist_km = max(distances.values())/1000
