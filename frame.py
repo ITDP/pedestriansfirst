@@ -6,7 +6,7 @@ import json
 import people_near_services
 
 
-def from_id_hdc(hdc, to_test = None):
+def from_id_hdc(hdc):
     #select city from ID number
     with fiona.open('GHS_STAT_UCDB2015MT_GLOBE_R2019A_V1_0.shp','r') as ucdb:
         for city in ucdb:
@@ -25,15 +25,16 @@ def from_id_hdc(hdc, to_test = None):
     print(command)
     subprocess.check_call(command.split(' '))
     command = ['osmfilter', '{}/city.o5m'.format(str(hdc)),
-    '--drop="area=yes highway=link =motor =proposed =construction =abandoned =platform =raceway service=parking_aisle =driveway =private foot=no"', '--keep="highway"', '-o={}/citywalk.o5m'.format(str(hdc))]
+    '--drop="area=yes highway=link =motor =proposed =construction =abandoned =platform =raceway service=parking_aisle =driveway =private foot=no"', '-o={}/citywalkhalf.o5m'.format(str(hdc))]
+    print(command)
+    subprocess.check_call(command)
+    command = ['osmfilter', '{}/citywalkhalf.o5m'.format(str(hdc)),
+    '--keep="highway"', '-o={}/citywalk.o5m'.format(str(hdc))]
     print(command)
     subprocess.check_call(command)
     
-    if to_test:
-        results = people_near_services.pnservices(test_city, to_test = to_test, folder_name=str(hdc)+'/')
-    else:
-        results = people_near_services.pnservices(test_city, folder_name=str(hdc)+'/')
-
+    
+    results = people_near_services.pnservices(test_city, folder_name=str(hdc)+'/')
     print(str(results))
     
 from_id_hdc(1367)
