@@ -375,7 +375,7 @@ def pnservices(city, folder_name='', buffer_dist=100, headway_threshold=10,
                 subprocess.check_call(['osmconvert',
                                        str(hdc)+'/citywalk.o5m',
                                        boundingarg,
-                                       '--complete-ways',
+                                       #'--complete-ways',
                                        '--drop-broken-refs',
                                        '-o=patch.osm'])
                 G = ox.graph_from_file('patch.osm', simplify=False)
