@@ -157,20 +157,27 @@ def pnservices(city, folder_name='', buffer_dist=100, headway_threshold=10,
         transit_stop_sets = gtfs_parser.count_all_sources(sources, headwaylim = headway_threshold * 2)
         
     if 'blocks' in to_test:
-        outblocks = [] 
+        if 'blocks' in to_test:
+            streets = ox.save_load.graph_to_gdfs(G, nodes = False)
+            if not streets.empty:
+                streets = shapely.geometry.MultiLineString(list(streets.geometry))
+                merged = shapely.ops.linemerge(streets)
+                if merged:
+                    borders = shapely.ops.unary_union(merged)
+                    blocks = list(shapely.ops.polygonize(borders))
+                    filtered_blocks = []
+                    for block in blocks:
+                        if 1000 < block.area < 1000000:
+                            if block.interiors:
+                                block = shapely.geometry.Polygon(block.exterior)
+                            #if block.length / block.area < 0.15:
+                            if block.centroid.within(unbuffered_patch):
+                                filtered_blocks.append(block)
+                    outblocks += filtered_blocks
         
     for p_idx, patch in enumerate(patches):
         try:
             patch_start = datetime.datetime.now()
-            
-            if abs(patch.bounds[1]) < 23:
-                patch_buffer = .0055
-            elif abs(patch.bounds[1]) < 45:
-                patch_buffer = .0067
-            elif abs(patch.bounds[1]) < 67:
-                patch_buffer = .0114
-            else:
-                patch_buffer = .02 #in decimal degrees
             
             unbuffered_patch = patch
             
@@ -285,26 +292,9 @@ def pnservices(city, folder_name='', buffer_dist=100, headway_threshold=10,
                     except AttributeError:
                         isochrone_polys['carfree'] = None
             
-            if 'blocks' in to_test:
-                streets = ox.save_load.graph_to_gdfs(G, nodes = False)
-                if not streets.empty:
-                    streets = shapely.geometry.MultiLineString(list(streets.geometry))
-                    merged = shapely.ops.linemerge(streets)
-                    if merged:
-                        borders = shapely.ops.unary_union(merged)
-                        blocks = list(shapely.ops.polygonize(borders))
-                        filtered_blocks = []
-                        for block in blocks:
-                            if 1000 < block.area < 1000000:
-                                if block.interiors:
-                                    block = shapely.geometry.Polygon(block.exterior)
-                                #if block.length / block.area < 0.15:
-                                if block.centroid.within(unbuffered_patch):
-                                    filtered_blocks.append(block)
-                        outblocks += filtered_blocks
+            
                     
-                
-                
+            
             
             # Get polygons
             for service in testing_services:
@@ -327,7 +317,85 @@ def pnservices(city, folder_name='', buffer_dist=100, headway_threshold=10,
         except ox.EmptyOverpassResponse:
             print("RECEIVED NO NETWORK FOR PATCH", p_idx)
     
-    #Export    
+    #Export  
+    
+    if 'blocks' in to_test:
+        outblocks = []
+        #most of our patch-cutting variables are still around
+        patch_length = .5 #kilometers
+        n_vslicers = math.floor(height_km / patch_length)
+        n_hslicers = math.floor(width_km / patch_length)
+        
+        hslicers = []
+        vslicers = []
+        
+        for i in range(1,n_hslicers+1):
+            increment = (bbox[2]-bbox[0])/(n_hslicers+1)
+            lat = bbox[0]+(i*increment)
+            slicer = shapely.geometry.LineString([(bbox[1],lat),(bbox[3],lat)])
+            hslicers.append(slicer)
+            
+        for i in range(1,n_vslicers+1):
+            increment = (bbox[3]-bbox[1])/(n_vslicers+1)
+            lon = bbox[1]+(i*increment)
+            slicer = shapely.geometry.LineString([(lon,bbox[0]),(lon, bbox[2])])
+            hslicers.append(slicer)
+            
+        patches = shapely.geometry.MultiPolygon(polygons=[boundaries])
+        for slicer in hslicers+vslicers:
+            patches = shapely.geometry.MultiPolygon(polygons = shapely.ops.split(patches, slicer))
+        
+        print ("cut", len(list(patches)),"patches")
+        
+        for patch in patches:
+            unbuffered_patch = patch
+            
+            max_service_dist_km = max(distances.values())/1000
+            
+            patch = shapely.geometry.box(
+                    patch.bounds[0] - (max_service_dist_km * longitude_factor),
+                    patch.bounds[1] - (max_service_dist_km * latitude_factor),
+                    patch.bounds[2] + (max_service_dist_km * longitude_factor),
+                    patch.bounds[3] + (max_service_dist_km * latitude_factor)
+                    )
+            
+            if overpass:
+                G = ox.graph_from_polygon(patch, custom_filter=walk_filter, simplify=False)
+            else:
+                boundingarg = '-b='
+                boundingarg += str(patch.bounds[0])+','
+                boundingarg += str(patch.bounds[1])+','
+                boundingarg += str(patch.bounds[2])+','
+                boundingarg += str(patch.bounds[3])
+                subprocess.check_call(['osmconvert',
+                                       str(hdc)+'/citywalk.o5m',
+                                       boundingarg,
+                                       '--complete-ways',
+                                       '--drop-broken-refs',
+                                       '-o=patch.osm'])
+                G = ox.graph_from_file('patch.osm', simplify=False)
+                    
+            G = ox.project_graph(G, to_crs=crs)
+            G = ox.simplify_graph(G)
+            
+            streets = ox.save_load.graph_to_gdfs(G, nodes = False)
+            
+            if not streets.empty:
+                streets = shapely.geometry.MultiLineString(list(streets.geometry))
+                merged = shapely.ops.linemerge(streets)
+                if merged:
+                    borders = shapely.ops.unary_union(merged)
+                    blocks = list(shapely.ops.polygonize(borders))
+                    filtered_blocks = []
+                    for block in blocks:
+                        if 1000 < block.area < 1000000:
+                            if block.interiors:
+                                block = shapely.geometry.Polygon(block.exterior)
+                            #if block.length / block.area < 0.15:
+                            if block.centroid.within(unbuffered_patch):
+                                filtered_blocks.append(block)
+                    outblocks += filtered_blocks    
+                
     epsg = 32600+int(G.graph['crs'].split(' ')[1].split('=')[1]) #This is wild -- 
     #osmnx seems to just give all data in northern-hemisphere format
     #Sorry about the stupid parsing of the projection definition, I'm lazy 
