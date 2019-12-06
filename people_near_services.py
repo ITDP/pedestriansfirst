@@ -268,9 +268,6 @@ def pnservices(city, folder_name='', buffer_dist=100, headway_threshold=10,
                 G = ox.project_graph(G, to_crs=crs)
             G = ox.simplify_graph(G)
             
-            #we have a crs now, so:
-            unbuffered_patch = gpd.GeoSeries(unbuffered_patch, crs={'init':'epsg:4326'}).to_crs(crs)[0]
-            
             isochrone_polys = {}
             failures = {}
             for service in to_test:
@@ -354,6 +351,8 @@ def pnservices(city, folder_name='', buffer_dist=100, headway_threshold=10,
             logger.debug("patch"+str(n))
             n+=1
             unbuffered_patch = patch
+            unbuffered_patch = gpd.GeoSeries(unbuffered_patch, crs={'init':'epsg:4326'}).to_crs(crs)[0]
+            
             
             buffer_dist = .2
             
