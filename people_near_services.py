@@ -269,6 +269,7 @@ def pnservices(city, folder_name='', buffer_dist=100, headway_threshold=10,
             
             
             # Project Graph
+            pdb.set_trace()
             if not crs: #this only runs once, crs is invariable over patches
                 G = ox.project_graph(G)
                 crs = G.graph['crs'] 
