@@ -222,6 +222,7 @@ def pnservices(city, folder_name='', buffer_dist=100, headway_threshold=10,
             
             simple_G = ox.simplify_graph(G)
             center_nodes = {}
+            logger.debug("getting services")
             for service in all_coords.keys():
                 if service in ['healthcare','schools','libraries']:
                     center_nodes[service] = []
@@ -232,7 +233,7 @@ def pnservices(city, folder_name='', buffer_dist=100, headway_threshold=10,
                             nearest = ox.get_nearest_node(simple_G, coord)
                             if not nearest in center_nodes[service]:
                                 center_nodes[service].append(nearest)
-            logger.debug("getting transit")
+            
             if 'transit' in to_test:
                 center_nodes['transit'] = []
                 transit_centers = {}
@@ -282,7 +283,8 @@ def pnservices(city, folder_name='', buffer_dist=100, headway_threshold=10,
             failures = {}
             for service in to_test:
                 failures[service] = 0
-        
+            
+            logger.debug("getting carfree")
             if 'carfree' in to_test:
                 polygons = []
                 ped_G, park_G = car_free_streets.get_carfree_graph(patch)
@@ -361,13 +363,13 @@ def pnservices(city, folder_name='', buffer_dist=100, headway_threshold=10,
             n+=1
             unbuffered_patch = patch
             
-            max_service_dist_km = max(distances.values())/1000
+            buffer_dist = .2
             
             patch = shapely.geometry.box(
-                    patch.bounds[0] - (max_service_dist_km * longitude_factor),
-                    patch.bounds[1] - (max_service_dist_km * latitude_factor),
-                    patch.bounds[2] + (max_service_dist_km * longitude_factor),
-                    patch.bounds[3] + (max_service_dist_km * latitude_factor)
+                    patch.bounds[0] - (buffer_dist * longitude_factor),
+                    patch.bounds[1] - (buffer_dist * latitude_factor),
+                    patch.bounds[2] + (buffer_dist * longitude_factor),
+                    patch.bounds[3] + (buffer_dist * latitude_factor)
                     )
             
             if overpass:
@@ -397,6 +399,7 @@ def pnservices(city, folder_name='', buffer_dist=100, headway_threshold=10,
                 if merged:
                     borders = shapely.ops.unary_union(merged)
                     blocks = list(shapely.ops.polygonize(borders))
+                    pdb.set_trace()
                     filtered_blocks = []
                     for block in blocks:
                         if 1000 < block.area < 1000000:
