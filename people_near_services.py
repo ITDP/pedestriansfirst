@@ -155,25 +155,7 @@ def pnservices(city, folder_name='', buffer_dist=100, headway_threshold=10,
         testing_services.append('transit')
         sources = gtfs_parser.get_feed_infos(gtfs_parser.get_relevant_locs(bbox))
         transit_stop_sets = gtfs_parser.count_all_sources(sources, headwaylim = headway_threshold * 2)
-        
-    if 'blocks' in to_test:
-        if 'blocks' in to_test:
-            streets = ox.save_load.graph_to_gdfs(G, nodes = False)
-            if not streets.empty:
-                streets = shapely.geometry.MultiLineString(list(streets.geometry))
-                merged = shapely.ops.linemerge(streets)
-                if merged:
-                    borders = shapely.ops.unary_union(merged)
-                    blocks = list(shapely.ops.polygonize(borders))
-                    filtered_blocks = []
-                    for block in blocks:
-                        if 1000 < block.area < 1000000:
-                            if block.interiors:
-                                block = shapely.geometry.Polygon(block.exterior)
-                            #if block.length / block.area < 0.15:
-                            if block.centroid.within(unbuffered_patch):
-                                filtered_blocks.append(block)
-                    outblocks += filtered_blocks
+    
         
     for p_idx, patch in enumerate(patches):
         try:
