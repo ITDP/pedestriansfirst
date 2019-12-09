@@ -98,8 +98,8 @@ def pnservices(city, folder_name='', buffer_dist=100, headway_threshold=10,
     
     crs = None    
     
-    logger.debug('Evaluating Pedestrians First indicators in',name)
-    logger.debug('Measuring',str(to_test))
+    print('Evaluating Pedestrians First indicators in',name)
+    print('Measuring',str(to_test))
     
     
     latitude_factor = 0.00898
@@ -152,7 +152,7 @@ def pnservices(city, folder_name='', buffer_dist=100, headway_threshold=10,
     for slicer in hslicers+vslicers:
         patches = shapely.geometry.MultiPolygon(polygons = shapely.ops.split(patches, slicer))
     
-    logger.debug("cut"+str(len(list(patches)))+"patches")
+    print("cut"+str(len(list(patches)))+"patches")
     
     quilt_ipolys = {}
     quilt_cnodes = {}
@@ -222,7 +222,7 @@ def pnservices(city, folder_name='', buffer_dist=100, headway_threshold=10,
             
             simple_G = ox.simplify_graph(G)
             center_nodes = {}
-            logger.debug("getting services")
+            print("getting services")
             for service in all_coords.keys():
                 if service in ['healthcare','schools','libraries']:
                     center_nodes[service] = []
@@ -281,7 +281,7 @@ def pnservices(city, folder_name='', buffer_dist=100, headway_threshold=10,
             for service in to_test:
                 failures[service] = 0
             
-            logger.debug("getting carfree")
+            print("getting carfree")
             if 'carfree' in to_test:
                 polygons = []
                 ped_G, park_G = car_free_streets.get_carfree_graph(patch)
@@ -327,7 +327,7 @@ def pnservices(city, folder_name='', buffer_dist=100, headway_threshold=10,
     #Export  
     
     if 'blocks' in to_test:
-        logger.debug("getting blocks")
+        print("getting blocks")
         outblocks = []
         #most of our patch-cutting variables are still around
         patch_length = .5 #kilometers
@@ -356,7 +356,7 @@ def pnservices(city, folder_name='', buffer_dist=100, headway_threshold=10,
         print ("cut", len(list(patches)),"patches")
         n=0
         for patch in patches:
-            logger.debug("patch"+str(n))
+            print("patch"+str(n))
             n+=1
             unbuffered_patch = gpd.GeoSeries(patch, crs={'init':'epsg:4326'})
             unbuffered_patch = unbuffered_patch.to_crs(crs)[0]
