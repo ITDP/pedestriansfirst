@@ -63,6 +63,6 @@ hdcs = {'Havana':473}
 
 for city in hdcs.keys():
     try:
-        from_id_hdc(hdcs[city], 'dec2019/'+city+' '+str(hdcs[city])+'/')
+        from_id_hdc(hdcs[city])
     except:
         pass
