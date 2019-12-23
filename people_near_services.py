@@ -37,9 +37,9 @@ def pnservices(city, folder_name='', buffer_dist=100, headway_threshold=10,
                to_test = [
                        'healthcare',
                        'schools',
+                       'h+s',
                        'libraries',
                        'carfree',
-                       'transcarioca',
                        'blocks',
                        'density',
                        'transit',
@@ -170,11 +170,6 @@ def pnservices(city, folder_name='', buffer_dist=100, headway_threshold=10,
             testing_services.append(service)
             all_coords[service] = get_point_locations(boundaries, queries[service])
     
-    if 'transcarioca' in to_test:
-        tc = list(fiona.open('tc_stns/tc_stns.shp'))
-        all_coords['transcarioca'] = []
-        for stn in tc:
-            all_coords['transcarioca'].append(stn['geometry']['coordinates'][0:2])
 
 
     if 'transit' in to_test:
@@ -445,6 +440,29 @@ def pnservices(city, folder_name='', buffer_dist=100, headway_threshold=10,
             print ('NO SERVICE FOR', service)
             results[service] = 0
     
+    if 'h+s' in to_test:
+        if quilt_ipolys['healthcare'] and quilt_ipolys['schools']:
+            service = 'h+s'
+            a = gpd.GeoDataFrame(geometry = shapely.ops.unary_union([quilt_ipolys['healthcare'],quilt_ipolys['schools']]))
+            a.crs = {'init':'epsg:'+str(epsg)}
+            a.geometry = a.geometry.simplify(15) #maybe this should be after the population calculation
+            b = a.to_crs(epsg=4326)
+            b.to_file(folder_name+service+'latlon'+'.geojson', driver='GeoJSON')
+            b.to_file(folder_name+service+'latlon'+'.shp') #unnecessary later
+            
+            #a, b = local_isometric.export(quilt_ipolys[service], epsg, service=service, folder=folder_name)
+            
+            stats = rasterstats.zonal_stats(b, 'pop_dens.tif', stats=['mean'])
+            
+            total_PNS = 0
+            for i in range(0,len(stats)):
+                if stats[i]['mean'] and type(stats[i]['mean']) != numpy.ma.core.MaskedConstant:
+                    total_PNS += (a.area[i]*stats[i]['mean'] / 62500) #62500 = m2 per pixel
+            print("\n")
+            print('Total People Near Service for', service, ":", total_PNS)
+            print(100*total_PNS/total_pop,"% of",total_pop)
+            results[service] = total_PNS / total_pop
+    
     #pdb.set_trace()
     
     if 'blocks' in to_test:
@@ -454,7 +472,7 @@ def pnservices(city, folder_name='', buffer_dist=100, headway_threshold=10,
         perim = a.geometry.length
         a['area'] = area
         a['perim'] = perim
-        a['lemgth'] = (area*area)/perim
+        a['lemgth'] = (perim * perim)/area
         a.geometry = a.geometry.simplify(15)
         b = a.to_crs(epsg=4326)
         b.to_file(folder_name+'blocks'+'latlon'+'.geojson', driver='GeoJSON')
