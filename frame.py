@@ -18,9 +18,10 @@ def from_id_hdc(hdc, folder = None):
     with open(str(hdc)+'/boundaries.geojson', 'w') as out:
         out.write(json.dumps(test_city))
     #take extract from planet.pbf
-    command = "osmium extract planet-latest.osm.pbf -p {}/boundaries.geojson -s complete_ways -v -o {}/city.pbf".format(str(hdc), str(hdc))
-    print(command)
-    subprocess.check_call(command.split(' '))
+    if not os.path.exists('{}/city.pbf'.format(str(hdc))):
+        command = "osmium extract planet-latest.osm.pbf -p {}/boundaries.geojson -s complete_ways -v -o {}/city.pbf".format(str(hdc), str(hdc))
+        print(command)
+        subprocess.check_call(command.split(' '))
     command = "osmconvert {}/city.pbf -o={}/city.o5m".format(str(hdc),str(hdc))
     print(command)
     subprocess.check_call(command.split(' '))
@@ -33,7 +34,7 @@ def from_id_hdc(hdc, folder = None):
     
     if not folder:
         folder = str(hdc)
-    results = people_near_services.pnservices(test_city, folder_name='dec2019/'+str(hdc)+'/')
+    results = people_near_services.pnservices(test_city, folder_name = folder)
     print(str(results))
 
 hdcs = {
@@ -60,9 +61,4 @@ hdcs = {
 
 hdcs = {'Havana':473}
 
-
-for city in hdcs.keys():
-    try:
-        from_id_hdc(hdcs[city])
-    except:
-        pass
+from_id_hdc(hdcs[city])
