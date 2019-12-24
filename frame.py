@@ -45,7 +45,6 @@ hdcs = {
 'Guangzhou': 12080,
 'Mexico City': 154,
 'Pune': 7041,
-'Medan': 4464,
 'Manila': 12829,
 'Chennai': 8675,
 'Bogota': 621,
