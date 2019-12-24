@@ -61,4 +61,5 @@ hdcs = {
 
 hdcs = {'Havana':473}
 
-from_id_hdc(hdcs[city])
+for city in hdcs.keys():
+    from_id_hdc(hdcs[city])
