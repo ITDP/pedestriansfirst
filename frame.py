@@ -62,7 +62,7 @@ hdcs = {
 for city in hdcs.keys():
     try:
         from_id_hdc(hdcs[city])
-    except Exception, e:
+    except Exception as e:
         with open('ERROR'+city+str(hdcs[city])+'.txt', 'w') as errout:
             errout.write(str(e))
             errout.close()
