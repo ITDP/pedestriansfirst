@@ -79,9 +79,9 @@ out skel center qt;
 }
 
 categories = {
-        'healthcare':
-        'schools':
-        'libraries':
+        'healthcare':[],
+        'schools':[],
+        'libraries':[]
         }
 
 wkbfab = osmium.geom.WKBFactory()
