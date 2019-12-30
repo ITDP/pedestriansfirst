@@ -16,7 +16,7 @@ import shapely.geometry
 import shapely.ops
 
 import local_isometric
-from get_service_locations import queries, get_point_locations
+import get_service_locations
 import car_free_streets
 import gtfs_parser
 
