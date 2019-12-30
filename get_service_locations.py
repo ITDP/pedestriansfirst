@@ -105,7 +105,7 @@ class ServiceHandler(osmium.SimpleHandler): #newer
              ('school' in n.tags) ):
             self.locationlist['schools'].append((n.location.lat, n.location.lon))
             
-         if ( ('amenity' in n.tags and 
+        if ( ('amenity' in n.tags and 
                n.tags['amenity'] in ['hospital','doctors','clinic','pharmacy']) or
              ('healthcare' in n.tags and 
                n.tags['healthcare'] in ['alternative','birthing_center','centre','midwife','nurse','hospital','doctor','clinic','pharmacy','yes']) ):
