@@ -33,7 +33,7 @@ def from_id_hdc(hdc, folder = None):
     subprocess.check_call(command, shell=True)
     
     if not folder:
-        folder = str(hdc)
+        folder = str(hdc)+'/'
     results = people_near_services.pnservices(test_city, folder_name = folder)
     print(str(results))
 

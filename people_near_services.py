@@ -7,6 +7,7 @@ import statistics
 import rasterstats
 import rasterio.mask
 import subprocess
+import osmium
 
 import osmnx as ox
 import geopandas as gpd
@@ -168,8 +169,13 @@ def pnservices(city, folder_name='', buffer_dist=100, headway_threshold=10,
     for service in ['healthcare', 'schools', 'libraries']:
         if service in to_test:
             testing_services.append(service)
-            all_coords[service] = get_point_locations(boundaries, queries[service])
+            #all_coords[service] = get_point_locations(boundaries, queries[service])
     
+    if len(testing_services) > 0:
+        handler = get_service_locations.ServiceHandler()
+        handler.apply_file(str(hdc)+'/city.o5m')
+        for service in testing_services:
+            all_coords[service] = handler.locationlist[service]
 
 
     if 'transit' in to_test:
