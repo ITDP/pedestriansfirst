@@ -114,7 +114,7 @@ class ServiceHandler(osmium.SimpleHandler): #newer
     def area(self, a):
         if 'amenity' in a.tags and a.tags['amenity'] in ['library','bookcase']:
             wkb = wkbfab.create_multipolygon(a)
-            poly = shapely.wkblib.loads(wkb, hex=True)
+            poly = shapely.wkb.loads(wkb, hex=True)
             centroid = poly.representative_point()
             self.locationlist['libraries'].append((centroid.y, centroid.x))
             
@@ -122,7 +122,7 @@ class ServiceHandler(osmium.SimpleHandler): #newer
                a.tags['amenity'] in ['school','kindergarten']) or
              ('school' in a.tags) ):
             wkb = wkbfab.create_multipolygon(a)
-            poly = shapely.wkblib.loads(wkb, hex=True)
+            poly = shapely.wkb.loads(wkb, hex=True)
             centroid = poly.representative_point()
             self.locationlist['schools'].append((centroid.y, centroid.x))
             
@@ -131,7 +131,7 @@ class ServiceHandler(osmium.SimpleHandler): #newer
              ('healthcare' in a.tags and 
                a.tags['healthcare'] in ['alternative','birthing_center','centre','midwife','nurse','hospital','doctor','clinic','pharmacy','yes']) ):
             wkb = wkbfab.create_multipolygon(a)
-            poly = shapely.wkblib.loads(wkb, hex=True)
+            poly = shapely.wkb.loads(wkb, hex=True)
             centroid = poly.representative_point()
             self.locationlist['healthcare'].append((centroid.y, centroid.x))
 
