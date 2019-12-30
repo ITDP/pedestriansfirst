@@ -87,7 +87,7 @@ categories = {
 wkbfab = osmium.geom.WKBFactory()
     
 class ServiceHandler(osmium.SimpleHandler): #newer
-    def __init__():
+    def __init__(self):
         super().__init__()
         self.locationslist = {
                 'healthcare':[],
