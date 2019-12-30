@@ -38,6 +38,7 @@ def from_id_hdc(hdc, folder = None):
     print(str(results))
 
 hdcs = {
+'Havana':473,
 'Beijing': 10687,
 'Tianjin': 10922,
 'Delhi': 6955,
@@ -58,7 +59,10 @@ hdcs = {
 'Ahmadabad': 6651
         }
 
-hdcs = {'Havana':473}
-
 for city in hdcs.keys():
-    from_id_hdc(hdcs[city])
+    try:
+        from_id_hdc(hdcs[city])
+    except Exception, e:
+        with open('ERROR'+city+str(hdcs[city])+'.txt', 'w') as errout:
+            errout.write(str(e))
+            errout.close()

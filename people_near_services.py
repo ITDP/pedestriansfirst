@@ -176,7 +176,6 @@ def pnservices(city, folder_name='', buffer_dist=100, headway_threshold=10,
         handler.apply_file(str(hdc)+'/city.o5m')
         for service in testing_services:
             all_coords[service] = handler.locationlist[service]
-            print(service, len(all_coords[service]))
 
 
     if 'transit' in to_test:
