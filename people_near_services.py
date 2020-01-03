@@ -325,89 +325,7 @@ def pnservices(city, folder_name='', buffer_dist=100, headway_threshold=10,
         except ox.EmptyOverpassResponse:
             print("RECEIVED NO NETWORK FOR PATCH", p_idx)
     
-    #Export  
     
-    if 'blocks' in to_test:
-        print("getting blocks")
-        outblocks = []
-        #most of our patch-cutting variables are still around
-        patch_length = .5 #kilometers
-        n_vslicers = math.floor(height_km / patch_length)
-        n_hslicers = math.floor(width_km / patch_length)
-        
-        hslicers = []
-        vslicers = []
-        
-        for i in range(1,n_hslicers+1):
-            increment = (bbox[2]-bbox[0])/(n_hslicers+1)
-            lat = bbox[0]+(i*increment)
-            slicer = shapely.geometry.LineString([(bbox[1],lat),(bbox[3],lat)])
-            hslicers.append(slicer)
-            
-        for i in range(1,n_vslicers+1):
-            increment = (bbox[3]-bbox[1])/(n_vslicers+1)
-            lon = bbox[1]+(i*increment)
-            slicer = shapely.geometry.LineString([(lon,bbox[0]),(lon, bbox[2])])
-            hslicers.append(slicer)
-            
-        patches = shapely.geometry.MultiPolygon(polygons=[boundaries])
-        for slicer in hslicers+vslicers:
-            patches = shapely.geometry.MultiPolygon(polygons = shapely.ops.split(patches, slicer))
-        
-        print ("cut", len(list(patches)),"patches")
-        n=0
-        for patch in patches:
-            print("patch"+str(n))
-            n+=1
-            unbuffered_patch = gpd.GeoSeries(patch, crs={'init':'epsg:4326'})
-            unbuffered_patch = unbuffered_patch.to_crs(crs)[0]
-            
-            
-            buffer_dist = .2
-            
-            patch = shapely.geometry.box(
-                    patch.bounds[0] - (buffer_dist * longitude_factor),
-                    patch.bounds[1] - (buffer_dist * latitude_factor),
-                    patch.bounds[2] + (buffer_dist * longitude_factor),
-                    patch.bounds[3] + (buffer_dist * latitude_factor)
-                    )
-            
-            if overpass:
-                G = ox.graph_from_polygon(patch, custom_filter=walk_filter, simplify=False)
-            else:
-                boundingarg = '-b='
-                boundingarg += str(patch.bounds[0])+','
-                boundingarg += str(patch.bounds[1])+','
-                boundingarg += str(patch.bounds[2])+','
-                boundingarg += str(patch.bounds[3])
-                subprocess.check_call(['osmconvert',
-                                       str(hdc)+'/citywalk.o5m',
-                                       boundingarg,
-                                       #'--complete-ways',
-                                       '--drop-broken-refs',
-                                       '-o=patch.osm'])
-                G = ox.graph_from_file('patch.osm', simplify=False)
-                    
-            G = ox.project_graph(G, to_crs=crs)
-            G = ox.simplify_graph(G)
-            
-            streets = ox.save_load.graph_to_gdfs(G, nodes = False)
-            
-            if not streets.empty:
-                streets = shapely.geometry.MultiLineString(list(streets.geometry))
-                merged = shapely.ops.linemerge(streets)
-                if merged:
-                    borders = shapely.ops.unary_union(merged)
-                    blocks = list(shapely.ops.polygonize(borders))
-                    filtered_blocks = []
-                    for block in blocks:
-                        if 1000 < block.area < 1000000:
-                            if block.interiors:
-                                block = shapely.geometry.Polygon(block.exterior)
-                            #if block.length / block.area < 0.15:
-                            if block.centroid.within(unbuffered_patch):
-                                filtered_blocks.append(block)
-                    outblocks += filtered_blocks    
                 
     epsg = 32600+int(G.graph['crs'].split(' ')[1].split('=')[1]) #This is wild -- 
     #osmnx seems to just give all data in northern-hemisphere format
@@ -469,29 +387,6 @@ def pnservices(city, folder_name='', buffer_dist=100, headway_threshold=10,
             print(100*total_PNS/total_pop,"% of",total_pop)
             results[service] = total_PNS / total_pop
     
-    #pdb.set_trace()
-    
-    if 'blocks' in to_test:
-        a = gpd.GeoDataFrame(geometry=outblocks)
-        a.crs = {'init':'epsg:'+str(epsg)}
-        area = a.geometry.area
-        perim = a.geometry.length
-        a['area'] = area
-        a['perim'] = perim
-        a['lemgth'] = (perim * perim)/area
-        a.geometry = a.geometry.simplify(15)
-        b = a.to_crs(epsg=4326)
-        b.to_file(folder_name+'blocks'+'latlon'+'.geojson', driver='GeoJSON')
-        b.to_file(folder_name+'blocks'+'latlon'+'.shp')
-        blockmedian = statistics.median(a.area)
-        print('median block size')
-        print(blockmedian)
-        results['blockmedian'] = blockmedian
-        blockmean = statistics.mean(a.area)
-        print('mean block size')
-        print(blockmean)
-        results['blockmean'] = blockmean
-        
     if 'density' in to_test:
         density = rasterstats.zonal_stats(boundaries, 
                                 'pop_dens.tif', 
@@ -509,6 +404,124 @@ def pnservices(city, folder_name='', buffer_dist=100, headway_threshold=10,
                  "transform": out_transform})
         with rasterio.open(folder_name+"pop_dens.tif", "w", **out_meta) as dest:
             dest.write(out_image)
+            
+    #garbage collection
+    quilt_ipolys = None
+    isochrone_polys = None
+    out_image = None
+    dest = None
+    dataset = None
+    a = None
+    b = None
+    import gc 
+    gc.collect()
+    
+    if 'blocks' in to_test:
+        print("getting blocks")
+        #most of our patch-cutting variables are still around
+        patch_length = .5 #kilometers
+        n_vslicers = math.floor(height_km / patch_length)
+        n_hslicers = math.floor(width_km / patch_length)
+        
+        hslicers = []
+        vslicers = []
+        
+        for i in range(1,n_hslicers+1):
+            increment = (bbox[2]-bbox[0])/(n_hslicers+1)
+            lat = bbox[0]+(i*increment)
+            slicer = shapely.geometry.LineString([(bbox[1],lat),(bbox[3],lat)])
+            hslicers.append(slicer)
+            
+        for i in range(1,n_vslicers+1):
+            increment = (bbox[3]-bbox[1])/(n_vslicers+1)
+            lon = bbox[1]+(i*increment)
+            slicer = shapely.geometry.LineString([(lon,bbox[0]),(lon, bbox[2])])
+            hslicers.append(slicer)
+            
+        patches = shapely.geometry.MultiPolygon(polygons=[boundaries])
+        for slicer in hslicers+vslicers:
+            patches = shapely.geometry.MultiPolygon(polygons = shapely.ops.split(patches, slicer))
+        
+        print ("cut", len(list(patches)),"patches")
+        n=0
+        outblocks = []
+        for patch in patches:
+            print("patch"+str(n)+" of "+str(len(patches)) )
+            n+=1
+            unbuffered_patch = gpd.GeoSeries(patch, crs={'init':'epsg:4326'})
+            unbuffered_patch = unbuffered_patch.to_crs(crs)[0]
+            
+            
+            buffer_dist = .2
+            
+            patch = shapely.geometry.box(
+                    patch.bounds[0] - (buffer_dist * longitude_factor),
+                    patch.bounds[1] - (buffer_dist * latitude_factor),
+                    patch.bounds[2] + (buffer_dist * longitude_factor),
+                    patch.bounds[3] + (buffer_dist * latitude_factor)
+                    )
+            
+            if overpass:
+                G = ox.graph_from_polygon(patch, custom_filter=walk_filter, simplify=False)
+            else:
+                boundingarg = '-b='
+                boundingarg += str(patch.bounds[0])+','
+                boundingarg += str(patch.bounds[1])+','
+                boundingarg += str(patch.bounds[2])+','
+                boundingarg += str(patch.bounds[3])
+                subprocess.check_call(['osmconvert',
+                                       str(hdc)+'/citywalk.o5m',
+                                       boundingarg,
+                                       #'--complete-ways',
+                                       '--drop-broken-refs',
+                                       '-o=patch.osm'])
+                G = ox.graph_from_file('patch.osm', simplify=False)
+                    
+            G = ox.project_graph(G, to_crs=crs)
+            G = ox.simplify_graph(G)
+            
+            streets = ox.save_load.graph_to_gdfs(G, nodes = False)
+            
+            if not streets.empty:
+                streets = shapely.geometry.MultiLineString(list(streets.geometry))
+                merged = shapely.ops.linemerge(streets)
+                if merged:
+                    borders = shapely.ops.unary_union(merged)
+                    blocks = list(shapely.ops.polygonize(borders))
+                    filtered_blocks = []
+                    for block in blocks:
+                        if 1000 < block.area < 1000000:
+                            if block.interiors:
+                                block = shapely.geometry.Polygon(block.exterior)
+                            #if block.length / block.area < 0.15:
+                            if block.centroid.within(unbuffered_patch):
+                                area = round(block.area, 3)
+                                perim = round(block.length, 3)
+                                lemgth = round((perim * perim) / area, 3)
+                                block = block.simplify(15)
+                                filtered_blocks.append((block, area, perim, lemgth))
+                    outblocks += filtered_blocks  
+        
+        #export            
+        
+        a = gpd.GeoDataFrame(geometry=[block[0] for block in outblocks])
+        a.crs = {'init':'epsg:'+str(epsg)}
+        a['area'] = [block[1] for block in outblocks]
+        a['perim'] = [block[2] for block in outblocks]
+        a['lemgth'] = [block[3] for block in outblocks]
+        b = a.to_crs(epsg=4326)
+        b.to_file(folder_name+'blocks'+'latlon'+'.geojson', driver='GeoJSON')
+        b.to_file(folder_name+'blocks'+'latlon'+'.shp')
+        blockmedian = statistics.median(a.area)
+        print('median block size')
+        print(blockmedian)
+        results['blockmedian'] = blockmedian
+        blockmean = statistics.mean(a.area)
+        print('mean block size')
+        print(blockmean)
+        results['blockmean'] = blockmean
+        
+    
     
     ft = datetime.datetime.now()
     print("total", str(ft-dt))

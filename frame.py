@@ -59,6 +59,9 @@ hdcs = {
 'Ahmadabad': 6651
         }
 
+hdcs = {
+'marsa_matruh': 3601}
+
 for city in hdcs.keys():
     try:
         from_id_hdc(hdcs[city])
