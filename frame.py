@@ -59,8 +59,8 @@ hdcs = { #test
 'Ahmadabad': 6651
         }
 
-hdcs = {
-'marsa_matruh': 3601}
+#hdcs = {
+#'marsa_matruh': 3601}
 
 for city in hdcs.keys():
     try:
