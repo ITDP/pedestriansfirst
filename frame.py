@@ -37,7 +37,7 @@ def from_id_hdc(hdc, folder = None):
     results = people_near_services.pnservices(test_city, folder_name = folder)
     print(str(results))
 
-hdcs = {
+hdcs = { #test
 #'Havana':473,
 #'Beijing': 10687,
 #'Tianjin': 10922,
