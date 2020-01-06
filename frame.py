@@ -38,12 +38,12 @@ def from_id_hdc(hdc, folder = None):
     print(str(results))
 
 hdcs = {
-'Havana':473,
-'Beijing': 10687,
-'Tianjin': 10922,
-'Delhi': 6955,
-'Karachi': 6169,
-'Guangzhou': 12080,
+#'Havana':473,
+#'Beijing': 10687,
+#'Tianjin': 10922,
+#'Delhi': 6955,
+#'Karachi': 6169,
+#'Guangzhou': 12080,
 'Mexico City': 154,
 'Pune': 7041,
 'Manila': 12829,
