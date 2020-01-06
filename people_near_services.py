@@ -103,8 +103,9 @@ def pnservices(city, folder_name='', buffer_dist=100, headway_threshold=10,
     print('Measuring',str(to_test))
     
     
-    latitude_factor = 0.00898
-    longitude_factor = 1/(math.cos(0.0174533 * boundaries.bounds[1]))
+    longitude_factor = 0.00898 # degrees per km
+    longitude_factor_m = 0.00898 / 1000 # degrees per m
+    latitude_factor = 1/(math.cos(0.0174533 * boundaries.bounds[1])) 
     
     height_degrees = abs(boundaries.bounds[3]-boundaries.bounds[1])
     height_km = height_degrees / latitude_factor
@@ -223,18 +224,25 @@ def pnservices(city, folder_name='', buffer_dist=100, headway_threshold=10,
             
             simple_G = ox.simplify_graph(G)
             center_nodes = {}
-            print("getting services")
+            print("getting service center_node")
             for service in all_coords.keys():
                 if service in ['healthcare','schools','libraries']:
+                    already_covered = None
                     center_nodes[service] = []
                     for coord in all_coords[service]:
                         lat = coord[0]
                         lon = coord[1]
                         if patch.bounds[0] < lon < patch.bounds[2] and patch.bounds[1] < lat < patch.bounds[3]:
-                            nearest = ox.get_nearest_node(simple_G, coord)
-                            if not nearest in center_nodes[service]:
-                                center_nodes[service].append(nearest)
+                            point = shapely.geometry.Point(lon,lat)
+                            if not already_covered:
+                                already_covered = point.buffer(50*longitude_factor_m)
+                            elif not already_covered.contains(point):
+                                nearest = ox.get_nearest_node(simple_G, coord)
+                                if not nearest in center_nodes[service]:    
+                                    center_nodes[service].append(nearest)
+                                    already_covered = already_covered.union(point.buffer(50*longitude_factor_m))
             
+            print('getting transit center_nodes')
             if 'transit' in to_test:
                 center_nodes['transit'] = []
                 transit_centers = {}
