@@ -44,8 +44,11 @@ hdcs = { #test
 #'Delhi': 6955,
 #'Karachi': 6169,
 #'Guangzhou': 12080,
-'Mexico City': 154,
+#'Mexico City': 154,
+'Abu Dhabi': 5909,
+'Udaipur': 6712,
 'Pune': 7041,
+'Brasilia': 1210,
 'Manila': 12829,
 'Chennai': 8675,
 'Bogota': 621,
@@ -59,8 +62,8 @@ hdcs = { #test
 'Ahmadabad': 6651
         }
 
-#hdcs = {
-#'marsa_matruh': 3601}
+hdcs = {
+'Havana':473}
 
 for city in hdcs.keys():
     try:
