@@ -14,6 +14,7 @@ import geopandas as gpd
 import networkx as nx
 import shapely.geometry
 import shapely.ops
+import pyproj
 
 import local_isometric
 import get_service_locations
@@ -174,9 +175,10 @@ def pnservices(city, folder_name='', buffer_dist=100, headway_threshold=10,
     
     if len(testing_services) > 0:
         handler = get_service_locations.ServiceHandler()
-        handler.apply_file(str(hdc)+'/city.o5m')
+        handler.apply_file(str(hdc)+'/city.o5m', locations=True)
         for service in testing_services:
             all_coords[service] = handler.locationlist[service]
+            citywide_carfree = handler.carfreelist
 
 
     if 'transit' in to_test:
@@ -296,21 +298,21 @@ def pnservices(city, folder_name='', buffer_dist=100, headway_threshold=10,
             
             print("getting carfree")
             if 'carfree' in to_test:
-                polygons = []
-                ped_G, park_G = car_free_streets.get_carfree_graph(patch)
-                if ped_G and park_G:
-                    carfree_G = ox.project_graph(nx.compose(ped_G, park_G), to_crs = crs)
-                if ped_G:
-                    carfree_G = ox.project_graph(ped_G, to_crs = crs)
-                if park_G:
-                    carfree_G = ox.project_graph(park_G, to_crs = crs)
-                else:
-                    carfree_G = None
-                if carfree_G:
-                    try:
-                        isochrone_polys['carfree'] = local_isometric.network_buffer(carfree_G, distance=buffer_dist)
-                    except AttributeError:
-                        isochrone_polys['carfree'] = None
+                carfree = []
+                for poly in citywide_carfree:
+                    rep = poly.representative_point() 
+                    if patch.bounds[0] < rep.x < patch.bounds[2] and patch.bounds[1] < rep.y < patch.bounds[3]:
+                        carfree.append(poly)
+                carfree = shapely.ops.cascaded_union(carfree)
+                if carfree:
+                    print(crs)
+                    projection = pyproj.Transformer.from_proj(
+                            pyproj.Proj(init='epsg:4326')),
+                            pyproj.Proj(init=crs)
+                            )
+                    carfree = shapely.ops.transform(project.transform, carfree)
+                    isochrone_polys['carfree'] = local_isometric.network_buffer(carfree, distance=buffer_dist)
+                
             
             
                     
