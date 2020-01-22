@@ -11,9 +11,9 @@ api_key = "0b073186-cfc0-47e2-959a-a2be054025ff"
 overpass_url = "https://api.transitfeeds.com/v1/" 
 
 def get_all_locations():
-    query = overpass_url+"getLocations?key="+api_key
+    query = overpass_url+"getLocations"
     pdb.set_trace()
-    resp = requests.get(query)
+    resp = requests.get(query, params={'key':api_key}, headers={'Accept-Encoding':'identity'})
     data = resp.json()
     
     return data['results']['locations']
@@ -29,8 +29,12 @@ def get_relevant_locs(bbox):
 def get_feed_infos(locations):
     feeds = []
     for loc in locations:
-        query = overpass_url+"getFeeds?key="+api_key+"&location="+str(loc['id'])+'&type=gtfs'
-        results = requests.get(query).json()['results']
+        query = overpass_url+"getFeeds"
+        params = {'key': api_key,
+                  'location':str(loc['id']),
+                  'type': 'gtfs'}
+        resp = requests.get(query, params=params, headers={'Accept-Encoding':'identity'})
+        results = resp.json()['results']
         if 'feeds' in results.keys():
             feeds = feeds + results['feeds']
     return feeds
@@ -38,12 +42,14 @@ def get_feed_infos(locations):
 def feed_from_id(feed_id):
     if os.path.exists('temp_gtfs.zip'):
         os.remove('temp_gtfs.zip')
-    query = overpass_url+"getLatestFeedVersion?key="+api_key+"&feed="+feed_id
+    query = overpass_url+"getLatestFeedVersion
+    params = {'key': api_key,
+              'feed': feed_id}
     #pdb.set_trace()
     try:
-        r = requests.get(query)
+        resp = requests.get(query, params=params, headers={'Accept-Encoding':'identity'})
         with open('temp_gtfs.zip','wb') as temp:
-            temp.write(r.content)
+            temp.write(resp.content)
         feed = gk.read_gtfs('temp_gtfs.zip', dist_units = 'km')
     except:
         feed = None
