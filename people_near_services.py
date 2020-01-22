@@ -306,7 +306,7 @@ def pnservices(city, folder_name='', buffer_dist=100, headway_threshold=10,
                 carfree = shapely.ops.cascaded_union(carfree)
                 if carfree:
                     print(crs)
-                    projection = pyproj.Transformer.from_proj(pyproj.Proj(init='epsg:4326'), pyproj.Proj(init=crs))
+                    projection = pyproj.Transformer.from_crs(4326, crs)
                     carfree = shapely.ops.transform(project.transform, carfree)
                     isochrone_polys['carfree'] = local_isometric.network_buffer(carfree, distance=buffer_dist)
                 
