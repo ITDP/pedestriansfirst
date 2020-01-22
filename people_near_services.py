@@ -317,6 +317,7 @@ def pnservices(city, folder_name='', buffer_dist=100, headway_threshold=10,
             
             # Get polygons
             for service in testing_services:
+                print(service)
                 isochrone_polys[service], fails = local_isometric.make_iso_polys(G, center_nodes[service], distance=distances[service], edge_buff=buffer_dist)
                 failures[service] += fails
                 
