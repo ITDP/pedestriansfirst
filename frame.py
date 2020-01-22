@@ -63,7 +63,7 @@ hdcs = { #test
         }
 
 hdcs = {
-'Havana':473}
+'Portland':101}
 
 
 for city in hdcs.keys():
