@@ -37,12 +37,12 @@ def weighted_pop_density(array):
 
 def pnservices(city, folder_name='', buffer_dist=100, headway_threshold=10,
                to_test = [
-                       #'healthcare',
-                       #'schools',
+                       'healthcare',
+                       'schools',
                        'h+s',
                        #'libraries',
                        #'carfree',
-                       #'blocks',
+                       'blocks',
                        'density',
                        #'transit',
                        ],
@@ -510,8 +510,9 @@ def pnservices(city, folder_name='', buffer_dist=100, headway_threshold=10,
                                 area = round(block.area, 3)
                                 perim = round(block.length, 3)
                                 lemgth = round((perim * perim) / area, 3)
-                                block = block.simplify(15)
-                                filtered_blocks.append((block, area, perim, lemgth))
+                                if lemgth < 50:
+                                    block = block.simplify(15)
+                                    filtered_blocks.append((block, area, perim, lemgth))
                     outblocks += filtered_blocks  
         
         #export            
