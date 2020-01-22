@@ -65,6 +65,10 @@ hdcs = { #test
 hdcs = {
 'Havana':473}
 
+
+for city in hdcs.keys():
+    from_id_hdc(hdcs[city])
+
 for city in hdcs.keys():
     try:
         from_id_hdc(hdcs[city])
