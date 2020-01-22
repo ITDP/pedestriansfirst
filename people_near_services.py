@@ -44,7 +44,7 @@ def pnservices(city, folder_name='', buffer_dist=100, headway_threshold=10,
                        'carfree',
                        'blocks',
                        'density',
-                       #'transit',
+                       'transit',
                        ],
                 distances = {
                         'healthcare': 1000,
