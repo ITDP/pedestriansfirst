@@ -42,7 +42,7 @@ def get_feed_infos(locations):
 def feed_from_id(feed_id):
     if os.path.exists('temp_gtfs.zip'):
         os.remove('temp_gtfs.zip')
-    query = overpass_url+"getLatestFeedVersion
+    query = overpass_url+"getLatestFeedVersion"
     params = {'key': api_key,
               'feed': feed_id}
     #pdb.set_trace()
