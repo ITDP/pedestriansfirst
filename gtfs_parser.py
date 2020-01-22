@@ -46,6 +46,7 @@ def feed_from_id(feed_id):
               'feed': feed_id}
     #pdb.set_trace()
     try:
+        pdb.set_trace()
         resp = requests.get(query, params=params, headers={'Accept-Encoding':'identity'})
         with open('temp_gtfs.zip','wb') as temp:
             temp.write(resp.content)
