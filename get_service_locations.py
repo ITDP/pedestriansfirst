@@ -167,7 +167,7 @@ class ServiceHandler(osmium.SimpleHandler): #newer
                             if not('access' in a.tags and a.tags['access'] == 'private'):
                                 carfree = True
         if carfree:
-            wkb = wkbfab.create_multipolygon(a)
+            wkb = wkbfab.create_linestring(a)
             poly = shapely.wkb.loads(wkb, hex=True)
             self.carfreelist.append(poly)
         
