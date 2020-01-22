@@ -11,8 +11,8 @@ api_key = "0b073186-cfc0-47e2-959a-a2be054025ff"
 overpass_url = "https://api.transitfeeds.com/v1/" 
 
 def get_all_locations():
-    #returns ?????
     query = overpass_url+"getLocations?key="+api_key
+    pdb.set_trace()
     resp = requests.get(query)
     data = resp.json()
     
