@@ -351,10 +351,9 @@ def pnservices(city, folder_name='', buffer_dist=100, headway_threshold=10,
     if 'carfree' in to_test:
         testing_services.append('carfree')
     
-    pdb.set_trace()
     for service in testing_services:
         if quilt_ipolys[service]:
-            a = gpd.GeoDataFrame(geometry = [shapely.geometry.MultiPolygon(quilt_ipolys[service])])
+            a = gpd.GeoDataFrame(geometry = [quilt_ipolys[service]])
             a.crs = {'init':'epsg:'+str(epsg)}
             a.geometry = a.geometry.simplify(15) #maybe this should be after the population calculation
             b = a.to_crs(epsg=4326)
@@ -380,7 +379,7 @@ def pnservices(city, folder_name='', buffer_dist=100, headway_threshold=10,
     if 'h+s' in to_test:
         if quilt_ipolys['healthcare'] and quilt_ipolys['schools']:
             service = 'h+s'
-            a = gpd.GeoDataFrame(geometry = [shapely.geometry.MultiPolygon(quilt_ipolys['healthcare'].intersection(quilt_ipolys['schools']))])
+            a = gpd.GeoDataFrame(geometry = [quilt_ipolys['healthcare'].intersection(quilt_ipolys['schools'])])
             a.crs = {'init':'epsg:'+str(epsg)}
             a.geometry = a.geometry.simplify(15) #maybe this should be after the population calculation
             b = a.to_crs(epsg=4326)
