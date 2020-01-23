@@ -48,8 +48,10 @@ def feed_from_id(feed_id):
     try:
         pdb.set_trace()
         resp = requests.get(query, params=params, headers={'Accept-Encoding':'identity'})
+        pdb.set_trace()
         with open('temp_gtfs.zip','wb') as temp:
             temp.write(resp.content)
+        pdb.set_trace()
         feed = gk.read_gtfs('temp_gtfs.zip', dist_units = 'km')
     except:
         feed = None
