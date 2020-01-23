@@ -48,7 +48,7 @@ hdcs = { #test
 
 #'Abu Dhabi': 5909,
 #'Udaipur': 6712,
-'Portland':101,
+'manchester':1780,
 'Pune': 7041,
 'Brasilia': 1210,
 'Dar es Salaam': 5222,

@@ -379,7 +379,11 @@ def pnservices(city, folder_name='', buffer_dist=100, headway_threshold=10,
     if 'h+s' in to_test:
         if quilt_ipolys['healthcare'] and quilt_ipolys['schools']:
             service = 'h+s'
-            a = gpd.GeoDataFrame(geometry = [quilt_ipolys['healthcare'].intersection(quilt_ipolys['schools'])])
+            intersect = quilt_ipolys['healthcare'].intersection(quilt_ipolys['schools'])
+            if type(intersect) == shapely.geometry.collection.GeometryCollection:
+                intersect = [obj for obj in intersect if type(obj) == shapely.geometry.polygon.Polygon]
+                intersect = shapely.geometry.MultiPolygon(intersect)
+            a = gpd.GeoDataFrame(geometry = [intersect])
             a.crs = {'init':'epsg:'+str(epsg)}
             a.geometry = a.geometry.simplify(15) #maybe this should be after the population calculation
             b = a.to_crs(epsg=4326)
