@@ -351,6 +351,7 @@ def pnservices(city, folder_name='', buffer_dist=100, headway_threshold=10,
     if 'carfree' in to_test:
         testing_services.append('carfree')
     
+    pdb.set_trace()
     for service in testing_services:
         if quilt_ipolys[service]:
             a = gpd.GeoDataFrame(geometry = [quilt_ipolys[service]])
