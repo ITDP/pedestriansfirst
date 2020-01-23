@@ -354,7 +354,7 @@ def pnservices(city, folder_name='', buffer_dist=100, headway_threshold=10,
     pdb.set_trace()
     for service in testing_services:
         if quilt_ipolys[service]:
-            a = gpd.GeoDataFrame(geometry = [quilt_ipolys[service]])
+            a = gpd.GeoDataFrame(geometry = [shapely.geometry.MultiPolygon(quilt_ipolys[service])])
             a.crs = {'init':'epsg:'+str(epsg)}
             a.geometry = a.geometry.simplify(15) #maybe this should be after the population calculation
             b = a.to_crs(epsg=4326)
