@@ -40,11 +40,11 @@ def pnservices(city, folder_name='', buffer_dist=100, headway_threshold=10,
                        'healthcare',
                        'schools',
                        'h+s',
-                       #'libraries',
-                       #'carfree',
-                       #'blocks',
-                       #'density',
-                       #'transit',
+                       'libraries',
+                       'carfree',
+                       'blocks',
+                       'density',
+                       'transit',
                        ],
                 distances = {
                         'healthcare': 1000,
@@ -384,8 +384,11 @@ def pnservices(city, folder_name='', buffer_dist=100, headway_threshold=10,
             a.geometry = a.geometry.simplify(15) #maybe this should be after the population calculation
             b = a.to_crs(epsg=4326)
             b.to_file(folder_name+service+'latlon'+'.geojson', driver='GeoJSON')
-            b.to_file(folder_name+service+'latlon'+'.shp') #unnecessary later
-            
+            try:
+                b.to_file(folder_name+service+'latlon'+'.shp') #unnecessary later
+            except:
+                pdb.set_trace()
+                
             #a, b = local_isometric.export(quilt_ipolys[service], epsg, service=service, folder=folder_name)
             
             stats = rasterstats.zonal_stats(b, 'pop_dens.tif', stats=['mean'])
