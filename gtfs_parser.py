@@ -3,6 +3,7 @@ import csv
 import os
 
 import gtfs_kit as gk
+import zipfile
 
 import pdb
 
@@ -51,9 +52,11 @@ def feed_from_id(feed_id):
     with open('temp_gtfs.zip','wb') as temp:
         temp.write(resp.content)
         temp.close()
+    with zipfile.ZipFile('temp_gtfs.zip','r') as zip_ref:
+        zip_ref.extractall('temp_gtfs_dir')
     import gtfs_kit as gk #If I don't reimport the module I get a segfault.
     #black magic I guess.
-    feed = gk.read_gtfs('temp_gtfs.zip', dist_units = 'km')
+    feed = gk.read_gtfs('temp_gtfs_dir', dist_units = 'km')
     pdb.set_trace()
     #except:
     #    feed = None
