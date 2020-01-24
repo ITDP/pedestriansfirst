@@ -48,7 +48,7 @@ def feed_from_id(feed_id):
     wget.download(query, 'temp_gtfs.zip')
     
     #params = {'key': api_key,
-              'feed': feed_id}
+    #          'feed': feed_id}
     #pdb.set_trace()
     #try:
     #resp = requests.get(query, params=params, stream=True)
