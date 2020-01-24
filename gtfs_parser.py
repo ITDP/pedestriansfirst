@@ -46,6 +46,7 @@ def feed_from_id(feed_id):
     if os.path.exists('temp_gtfs.zip'):
         os.remove('temp_gtfs.zip')
     query = overpass_url+"getLatestFeedVersion?key="+api_key+"&feed="+feed_id
+    print('QUERY',query)
     pdb.set_trace()
     #try:
     wget.download(query, 'temp_gtfs.zip')
@@ -62,7 +63,7 @@ def feed_from_id(feed_id):
     #    zip_ref.extractall('temp_gtfs_dir')
     print('lalalala')
     pdb.set_trace()
-    shutil.copyfile('temp_gtfs.zip','temp_gtfs2.zip')
+    shutil.copyfileobj('temp_gtfs.zip','temp_gtfs2.zip')
     try:
         feed = gk.read_gtfs('temp_gtfs2.zip')
     except:
