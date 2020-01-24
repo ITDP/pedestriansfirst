@@ -4,6 +4,7 @@ import os
 
 import gtfs_kit as gk
 import zipfile
+import wget
 
 import pdb
 
@@ -42,15 +43,18 @@ def get_feed_infos(locations):
 def feed_from_id(feed_id):
     if os.path.exists('temp_gtfs.zip'):
         os.remove('temp_gtfs.zip')
-    query = overpass_url+"getLatestFeedVersion"
-    params = {'key': api_key,
+    query = overpass_url+"getLatestFeedVersion?key="+api_key+"&feed="+feed_id
+    #try:
+    wget.download(query, 'temp_gtfs.zip')
+    
+    #params = {'key': api_key,
               'feed': feed_id}
     #pdb.set_trace()
     #try:
-    resp = requests.get(query, params=params, stream=True)
-    pdb.set_trace()
-    with open('temp_gtfs.zip','wb') as temp:
-        temp.write(resp.content)
+    #resp = requests.get(query, params=params, stream=True)
+    #pdb.set_trace()
+    #with open('temp_gtfs.zip','wb') as temp:
+    #    temp.write(resp.content)
     #with zipfile.ZipFile('temp_gtfs.zip','r') as zip_ref:
     #    zip_ref.extractall('temp_gtfs_dir')
     feed = gk.read_gtfs('temp_gtfs.zip', dist_units = 'km')
