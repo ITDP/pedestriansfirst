@@ -50,15 +50,13 @@ def feed_from_id(feed_id):
         os.remove('temp_gtfs.zip')
     query = overpass_url+"getLatestFeedVersion?key="+api_key+"&feed="+feed_id
     print('QUERY',query)
-    pdb.set_trace()
-    #try:
-    wget.download(query, 'temp_gtfs.zip')
-    pdb.set_trace()
-    
-    command = 'unzip temp_gtfs.zip -d temp_gtfs_dir/'
-    print(command)
-    subprocess.check_call(command, shell=True)
-    pdb.set_trace()
+    try:
+        wget.download(query, 'temp_gtfs.zip')
+        command = 'unzip temp_gtfs.zip -d temp_gtfs_dir/'
+        print(command)
+        subprocess.check_call(command, shell=True)
+    except:
+        return False
     #params = {'key': api_key,
     #          'feed': feed_id}
     #pdb.set_trace()
@@ -75,16 +73,13 @@ def feed_from_id(feed_id):
     #pdb.set_trace()
     #with zipfile.ZipFile('temp_gtfs.zip','r') as zip_ref:
     #    zip_ref.extractall('temp_gtfs_dir/')
-    pdb.set_trace()
     feed = gk.read_gtfs('temp_gtfs_dir/', dist_units = 'km')
-    pdb.set_trace()
     #except:
     #    feed = None
     if os.path.exists('temp_gtfs.zip'):
         os.remove('temp_gtfs.zip')
     if os.path.exists('temp_gtfs_dir'):
         shutil.rmtree('temp_gtfs_dir')
-    pdb.set_trace()
     return feed
 
 def get_freq_stops(feed, headwaylim = 20):
