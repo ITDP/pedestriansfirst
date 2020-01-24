@@ -82,6 +82,8 @@ def feed_from_id(feed_id):
     #    feed = None
     if os.path.exists('temp_gtfs.zip'):
         os.remove('temp_gtfs.zip')
+    if os.path.exists('temp_gtfs_dir'):
+        shutil.rmtree('temp_gtfs_dir')
     pdb.set_trace()
     return feed
 
