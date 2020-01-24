@@ -62,18 +62,10 @@ def feed_from_id(feed_id):
     #with zipfile.ZipFile('temp_gtfs.zip','r') as zip_ref:
     #    zip_ref.extractall('temp_gtfs_dir')
     print('lalalala')
-    pdb.set_trace()
-    shutil.copyfileobj('temp_gtfs.zip','temp_gtfs2.zip')
-    try:
-        feed = gk.read_gtfs('temp_gtfs2.zip')
-    except:
-        pass
-    feed = gk.read_gtfs('temp_gtfs2.zip', dist_units = 'km')
+    feed = gk.read_gtfs('temp_gtfs.zip', dist_units = 'km')
     pdb.set_trace()
     #except:
     #    feed = None
-    if os.path.exists('temp_gtfs2.zip'):
-        os.remove('temp_gtfs2.zip')
     if os.path.exists('temp_gtfs.zip'):
         os.remove('temp_gtfs.zip')
     pdb.set_trace()
