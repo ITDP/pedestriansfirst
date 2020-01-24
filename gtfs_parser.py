@@ -45,17 +45,17 @@ def feed_from_id(feed_id):
     params = {'key': api_key,
               'feed': feed_id}
     #pdb.set_trace()
-    try:
-        resp = requests.get(query, params=params, headers={'Accept-Encoding':'identity'})
-        pdb.set_trace()
-        with open('temp_gtfs.zip','wb') as temp:
-            temp.write(resp.content)
-        import gtfs_kit as gk #If I don't reimport the module I get a segfault.
-        #black magic I guess.
-        feed = gk.read_gtfs('temp_gtfs.zip', dist_units = 'km')
-        pdb.set_trace()
-    except:
-        feed = None
+    #try:
+    resp = requests.get(query, params=params, headers={'Accept-Encoding':'identity'})
+    pdb.set_trace()
+    with open('temp_gtfs.zip','wb') as temp:
+        temp.write(resp.content)
+    import gtfs_kit as gk #If I don't reimport the module I get a segfault.
+    #black magic I guess.
+    feed = gk.read_gtfs('temp_gtfs.zip', dist_units = 'km')
+    pdb.set_trace()
+    #except:
+    #    feed = None
     if os.path.exists('temp_gtfs.zip'):
         os.remove('temp_gtfs.zip')
     pdb.set_trace()
