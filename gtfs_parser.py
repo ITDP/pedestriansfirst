@@ -5,6 +5,7 @@ import os
 import gtfs_kit as gk
 import zipfile
 import wget
+import io
 
 import shutil
 
@@ -43,31 +44,35 @@ def get_feed_infos(locations):
     return feeds
 
 def feed_from_id(feed_id):
-    if feed_id == 'washington-park-shuttle/758':
-        return False
     if os.path.exists('temp_gtfs.zip'):
         os.remove('temp_gtfs.zip')
     query = overpass_url+"getLatestFeedVersion?key="+api_key+"&feed="+feed_id
     print('QUERY',query)
     pdb.set_trace()
     #try:
-    wget.download(query, 'temp_gtfs.zip')
+    #wget.download(query, 'temp_gtfs.zip')
     
     #params = {'key': api_key,
     #          'feed': feed_id}
     #pdb.set_trace()
     #try:
-    #resp = requests.get(query, params=params, stream=True)
-    #pdb.set_trace()
+    resp = requests.get(query)#, params=params, stream=True)
+    pdb.set_trace()
+    content = io.BytesIO(resp.content)
+    pdb.set_trace()
+    z = zipfile.ZipFile(content)
+    pdb.set_trace()
+    z.extractall('temp_gtfs_dir/')
+    pdb.set_trace()
     #with open('temp_gtfs.zip','wb') as temp:
     #    temp.write(resp.content)
     #with zipfile.ZipFile('temp_gtfs.zip','r') as zip_ref:
     #    zip_ref.extractall('temp_gtfs_dir')
-    print('lalalala')
-    pdb.set_trace()
-    with zipfile.ZipFile('temp_gtfs.zip','r') as zip_ref:
-        zip_ref.extractall('temp_gtfs_dir/')
-    pdb.set_trace()
+    #print('lalalala')
+    #pdb.set_trace()
+    #with zipfile.ZipFile('temp_gtfs.zip','r') as zip_ref:
+    #    zip_ref.extractall('temp_gtfs_dir/')
+    #pdb.set_trace()
     feed = gk.read_gtfs('temp_gtfs_dir/', dist_units = 'km')
     pdb.set_trace()
     #except:
