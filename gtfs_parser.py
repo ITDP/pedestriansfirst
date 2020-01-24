@@ -50,6 +50,7 @@ def feed_from_id(feed_id):
     pdb.set_trace()
     with open('temp_gtfs.zip','wb') as temp:
         temp.write(resp.content)
+        temp.close()
     import gtfs_kit as gk #If I don't reimport the module I get a segfault.
     #black magic I guess.
     feed = gk.read_gtfs('temp_gtfs.zip', dist_units = 'km')
