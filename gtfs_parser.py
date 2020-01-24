@@ -52,6 +52,7 @@ def feed_from_id(feed_id):
         with open('temp_gtfs.zip','wb') as temp:
             temp.write(resp.content)
         pdb.set_trace()
+        import gtfs_kit as gk
         feed = gk.read_gtfs('temp_gtfs.zip', dist_units = 'km')
     except:
         feed = None
