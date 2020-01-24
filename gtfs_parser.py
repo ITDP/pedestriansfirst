@@ -51,7 +51,6 @@ def feed_from_id(feed_id):
     pdb.set_trace()
     with open('temp_gtfs.zip','wb') as temp:
         temp.write(resp.content)
-        temp.close()
     #with zipfile.ZipFile('temp_gtfs.zip','r') as zip_ref:
     #    zip_ref.extractall('temp_gtfs_dir')
     feed = gk.read_gtfs('temp_gtfs.zip', dist_units = 'km')
