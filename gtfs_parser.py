@@ -62,7 +62,11 @@ def feed_from_id(feed_id):
     #with zipfile.ZipFile('temp_gtfs.zip','r') as zip_ref:
     #    zip_ref.extractall('temp_gtfs_dir')
     print('lalalala')
-    feed = gk.read_gtfs('temp_gtfs.zip', dist_units = 'km')
+    pdb.set_trace()
+    with zipfile.ZipFile('temp_gtfs.zip','r') as zip_ref:
+        zip_ref.extractall('temp_gtfs_dir/')
+    pdb.set_trace()
+    feed = gk.read_gtfs('temp_gtfs_dir/', dist_units = 'km')
     pdb.set_trace()
     #except:
     #    feed = None
