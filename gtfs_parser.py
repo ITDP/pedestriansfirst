@@ -46,18 +46,19 @@ def feed_from_id(feed_id):
               'feed': feed_id}
     #pdb.set_trace()
     try:
-        pdb.set_trace()
         resp = requests.get(query, params=params, headers={'Accept-Encoding':'identity'})
         pdb.set_trace()
         with open('temp_gtfs.zip','wb') as temp:
             temp.write(resp.content)
-        pdb.set_trace()
-        import gtfs_kit as gk
+        import gtfs_kit as gk #If I don't reimport the module I get a segfault.
+        #black magic I guess.
         feed = gk.read_gtfs('temp_gtfs.zip', dist_units = 'km')
+        pdb.set_trace()
     except:
         feed = None
     if os.path.exists('temp_gtfs.zip'):
         os.remove('temp_gtfs.zip')
+    pdb.set_trace()
     return feed
 
 def get_freq_stops(feed, headwaylim = 20):
