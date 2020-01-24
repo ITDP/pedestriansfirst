@@ -43,6 +43,8 @@ def get_feed_infos(locations):
     return feeds
 
 def feed_from_id(feed_id):
+    if feed_id == 'washington-park-shuttle/758':
+        return False
     if os.path.exists('temp_gtfs.zip'):
         os.remove('temp_gtfs.zip')
     query = overpass_url+"getLatestFeedVersion?key="+api_key+"&feed="+feed_id
