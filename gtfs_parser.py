@@ -6,6 +6,8 @@ import gtfs_kit as gk
 import zipfile
 import wget
 
+import shutil
+
 import pdb
 
 
@@ -57,10 +59,18 @@ def feed_from_id(feed_id):
     #    temp.write(resp.content)
     #with zipfile.ZipFile('temp_gtfs.zip','r') as zip_ref:
     #    zip_ref.extractall('temp_gtfs_dir')
-    feed = gk.read_gtfs('temp_gtfs.zip', dist_units = 'km')
+    print('lalalala')
+    shutil.copyfile('temp_gtfs.zip','temp_gtfs2.zip')
+    try:
+        feed = gk.read_gtfs('temp_gtfs2.zip')
+    except:
+        pass
+    feed = gk.read_gtfs('temp_gtfs.zip2', dist_units = 'km')
     pdb.set_trace()
     #except:
     #    feed = None
+    if os.path.exists('temp_gtfs2.zip'):
+        os.remove('temp_gtfs2.zip')
     if os.path.exists('temp_gtfs.zip'):
         os.remove('temp_gtfs.zip')
     pdb.set_trace()
