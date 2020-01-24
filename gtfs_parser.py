@@ -67,7 +67,7 @@ def feed_from_id(feed_id):
         feed = gk.read_gtfs('temp_gtfs2.zip')
     except:
         pass
-    feed = gk.read_gtfs('temp_gtfs.zip2', dist_units = 'km')
+    feed = gk.read_gtfs('temp_gtfs2.zip', dist_units = 'km')
     pdb.set_trace()
     #except:
     #    feed = None
