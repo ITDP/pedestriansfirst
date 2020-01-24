@@ -7,6 +7,8 @@ import zipfile
 import wget
 import io
 
+import subprocess
+
 import shutil
 
 import pdb
@@ -50,20 +52,21 @@ def feed_from_id(feed_id):
     print('QUERY',query)
     pdb.set_trace()
     #try:
-    #wget.download(query, 'temp_gtfs.zip')
+    wget.download(query, 'temp_gtfs.zip')
+    pdb.set_trace()
     
+    command = 'unzip temp_gtfs.zip -d temp_gtfs_dir/'
+    print(command)
+    subprocess.check_call(command, shell=True)
+    pdb.set_trace()
     #params = {'key': api_key,
     #          'feed': feed_id}
     #pdb.set_trace()
     #try:
-    resp = requests.get(query)#, params=params, stream=True)
-    pdb.set_trace()
-    content = io.BytesIO(resp.content)
-    pdb.set_trace()
-    z = zipfile.ZipFile(content)
-    pdb.set_trace()
-    z.extractall('temp_gtfs_dir/')
-    pdb.set_trace()
+    #resp = requests.get(query)#, params=params, stream=True)
+    #content = io.BytesIO(resp.content)
+    #z = zipfile.ZipFile(content)
+    #z.extractall('temp_gtfs_dir/')
     #with open('temp_gtfs.zip','wb') as temp:
     #    temp.write(resp.content)
     #with zipfile.ZipFile('temp_gtfs.zip','r') as zip_ref:
@@ -72,7 +75,7 @@ def feed_from_id(feed_id):
     #pdb.set_trace()
     #with zipfile.ZipFile('temp_gtfs.zip','r') as zip_ref:
     #    zip_ref.extractall('temp_gtfs_dir/')
-    #pdb.set_trace()
+    pdb.set_trace()
     feed = gk.read_gtfs('temp_gtfs_dir/', dist_units = 'km')
     pdb.set_trace()
     #except:
