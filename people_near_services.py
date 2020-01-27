@@ -106,7 +106,8 @@ def pnservices(city, folder_name='', buffer_dist=100, headway_threshold=10,
     
     longitude_factor = 0.00898 # degrees per km
     longitude_factor_m = 0.00898 / 1000 # degrees per m
-    latitude_factor = 1/(math.cos(boundaries.bounds[1]/0.0174533)) 
+    latitude_factor = (math.cos(abs(boundaries.bounds[1])*0.0174533))/111.319
+    latitude_factor_m = latitude_factor / 1000
     
     height_degrees = abs(boundaries.bounds[3]-boundaries.bounds[1])
     height_km = height_degrees / latitude_factor
