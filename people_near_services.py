@@ -296,7 +296,10 @@ def pnservices(city, folder_name='', buffer_dist=100, headway_threshold=10,
                         else:
                             if not numpy.isnan(carfree.length):
                                 places.append(carfree.buffer(buffer_dist))
-                        quilt_ipolys['carfree'] = shapely.ops.cascaded_union(quilt_ipolys['carfree'],places)
+                        if quilt_ipolys['carfree']:
+                            quilt_ipolys['carfree'] = shapely.ops.cascaded_union([quilt_ipolys['carfree']]+places)
+                        else:
+                           quilt_ipolys['carfree'] = shapely.ops.cascaded_union(places)
                     except:
                         pdb.set_trace()
                     
