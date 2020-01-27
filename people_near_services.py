@@ -138,7 +138,6 @@ def pnservices(city, folder_name='', buffer_dist=100, headway_threshold=10,
         patches = shapely.geometry.MultiPolygon(polygons = shapely.ops.split(patches, slicer))
     
     print("cut"+str(len(list(patches)))+"patches")
-    pdb.set_trace()
     
     quilt_ipolys = {}
     quilt_cnodes = {}
@@ -217,7 +216,7 @@ def pnservices(city, folder_name='', buffer_dist=100, headway_threshold=10,
                     for coord in all_coords[service]:
                         lat = coord[0]
                         lon = coord[1]
-                        if patch.bounds[0] < lon < patch.bounds[2] and patch.bounds[1] < lat < patch.bounds[3]:
+                        if unbuffered_patch.bounds[0] < lon < unbuffered_patch.bounds[2] and unbuffered_patch.bounds[1] < lat < unbuffered_patch.bounds[3]:
                             point = shapely.geometry.Point(lon,lat)
                             if not already_covered:
                                 already_covered = point.buffer(50*longitude_factor_m)
@@ -236,7 +235,7 @@ def pnservices(city, folder_name='', buffer_dist=100, headway_threshold=10,
                         lat = float(service[stop_id][1])
                         lon = float(service[stop_id][2])
                         headway = float(service[stop_id][0])
-                        if patch.bounds[0] < lon < patch.bounds[2] and patch.bounds[1] < lat < patch.bounds[3]:
+                        if unbuffered_patch.bounds[0] < lon < unbuffered_patch.bounds[2] and unbuffered_patch.bounds[1] < lat < unbuffered_patch.bounds[3]:
                             center_node = ox.get_nearest_node(simple_G, (lat, lon))
                             if center_node not in transit_centers:
                                 transit_centers[center_node] = {service_idx : headway} #store the headway value
@@ -284,7 +283,6 @@ def pnservices(city, folder_name='', buffer_dist=100, headway_threshold=10,
                         carfree.append(poly)
                 carfree = shapely.ops.cascaded_union(carfree)
                 if carfree:
-                    pdb.set_trace()
                     print(crs)
                     projection = pyproj.Transformer.from_crs(4326, crs)
                     carfree = shapely.ops.transform(projection.transform, carfree)
