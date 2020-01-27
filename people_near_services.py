@@ -292,10 +292,11 @@ def pnservices(city, folder_name='', buffer_dist=100, headway_threshold=10,
                             for item in carfree:
                                 if not numpy.isnan(item.length):
                                     places.append(item.buffer(buffer_dist))
-                            isochrone_polys['carfree'] = shapely.ops.cascaded_union(places)
+                            carfree_out = shapely.ops.cascaded_union(places)
                         else:
                             if not numpy.isnan(carfree.length):
-                                isochrone_polys['carfree'] = carfree.buffer(buffer_dist)
+                                places.append(carfree.buffer(buffer_dist))
+                        quilt_ipolys['carfree'] = shapely.ops.cascaded_union(quilt_ipolys['carfree'],places)
                     except:
                         pdb.set_trace()
                     
@@ -483,33 +484,37 @@ def pnservices(city, folder_name='', buffer_dist=100, headway_threshold=10,
                                        #'--complete-ways',
                                        '--drop-broken-refs',
                                        '-o=patch.osm'])
-                G = ox.graph_from_file('patch.osm', simplify=False)
-                    
-            G = ox.project_graph(G, to_crs=crs)
-            G = ox.simplify_graph(G)
+                try:
+                    G = ox.graph_from_file('patch.osm', simplify=False)
+                except ox.core.EmptyOverpassResponse:
+                    G = False
             
-            streets = ox.save_load.graph_to_gdfs(G, nodes = False)
-            
-            if not streets.empty:
-                streets = shapely.geometry.MultiLineString(list(streets.geometry))
-                merged = shapely.ops.linemerge(streets)
-                if merged:
-                    borders = shapely.ops.unary_union(merged)
-                    blocks = list(shapely.ops.polygonize(borders))
-                    filtered_blocks = []
-                    for block in blocks:
-                        if 1000 < block.area < 1000000:
-                            if block.interiors:
-                                block = shapely.geometry.Polygon(block.exterior)
-                            #if block.length / block.area < 0.15:
-                            if block.centroid.within(unbuffered_patch):
-                                area = round(block.area, 3)
-                                perim = round(block.length, 3)
-                                lemgth = round((perim * perim) / area, 3)
-                                if lemgth < 50:
-                                    block = block.simplify(15)
-                                    filtered_blocks.append((block, area, perim, lemgth))
-                    outblocks += filtered_blocks  
+            if G:
+                G = ox.project_graph(G, to_crs=crs)
+                G = ox.simplify_graph(G)
+                
+                streets = ox.save_load.graph_to_gdfs(G, nodes = False)
+                
+                if not streets.empty:
+                    streets = shapely.geometry.MultiLineString(list(streets.geometry))
+                    merged = shapely.ops.linemerge(streets)
+                    if merged:
+                        borders = shapely.ops.unary_union(merged)
+                        blocks = list(shapely.ops.polygonize(borders))
+                        filtered_blocks = []
+                        for block in blocks:
+                            if 1000 < block.area < 1000000:
+                                if block.interiors:
+                                    block = shapely.geometry.Polygon(block.exterior)
+                                #if block.length / block.area < 0.15:
+                                if block.centroid.within(unbuffered_patch):
+                                    area = round(block.area, 3)
+                                    perim = round(block.length, 3)
+                                    lemgth = round((perim * perim) / area, 3)
+                                    if lemgth < 50:
+                                        block = block.simplify(15)
+                                        filtered_blocks.append((block, area, perim, lemgth))
+                        outblocks += filtered_blocks  
         
         #export            
         
