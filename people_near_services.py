@@ -287,9 +287,12 @@ def pnservices(city, folder_name='', buffer_dist=100, headway_threshold=10,
                     projection = pyproj.Transformer.from_crs(4326, crs)
                     carfree = shapely.ops.transform(projection.transform, carfree)
                     places = []
-                    for item in carfree:
-                        places.append(item.buffer(buffer_dist))
-                    isochrone_polys['carfree'] = shapely.ops.cascaded_union(places)
+                    if type(carfree) == shapely.geometry.GeometryCollection:
+                        for item in carfree:
+                            places.append(item.buffer(buffer_dist))
+                        isochrone_polys['carfree'] = shapely.ops.cascaded_union(places)
+                    else:
+                        isochrone_polys['carfree'] = carfree.buffer(buffer_dist)
                 
             
             
