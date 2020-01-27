@@ -106,7 +106,7 @@ def pnservices(city, folder_name='', buffer_dist=100, headway_threshold=10,
     
     longitude_factor = 0.00898 # degrees per km
     longitude_factor_m = 0.00898 / 1000 # degrees per m
-    latitude_factor = 1/(math.cos(0.0174533 * boundaries.bounds[1])) 
+    latitude_factor = 1/(math.cos(boundaries.bounds[1]/0.0174533)) 
     
     height_degrees = abs(boundaries.bounds[3]-boundaries.bounds[1])
     height_km = height_degrees / latitude_factor
@@ -140,14 +140,14 @@ def pnservices(city, folder_name='', buffer_dist=100, headway_threshold=10,
     
     
     for i in range(1,n_hslicers+1):
-        increment = (bbox[2]-bbox[0])/(n_hslicers+1)
-        lat = bbox[0]+(i*increment)
+        h_increment = (bbox[2]-bbox[0])/(n_hslicers+1)
+        lat = bbox[0]+(i*h_increment)
         slicer = shapely.geometry.LineString([(bbox[1],lat),(bbox[3],lat)])
         hslicers.append(slicer)
         
     for i in range(1,n_vslicers+1):
-        increment = (bbox[3]-bbox[1])/(n_vslicers+1)
-        lon = bbox[1]+(i*increment)
+        v_increment = (bbox[3]-bbox[1])/(n_vslicers+1)
+        lon = bbox[1]+(i*v_increment)
         slicer = shapely.geometry.LineString([(lon,bbox[0]),(lon, bbox[2])])
         hslicers.append(slicer)
         
@@ -237,16 +237,12 @@ def pnservices(city, folder_name='', buffer_dist=100, headway_threshold=10,
                         if patch.bounds[0] < lon < patch.bounds[2] and patch.bounds[1] < lat < patch.bounds[3]:
                             point = shapely.geometry.Point(lon,lat)
                             if not already_covered:
-                                print ('not already covered')
                                 already_covered = point.buffer(50*longitude_factor_m)
                             elif not already_covered.contains(point):
-                                print ('not contains point')
                                 nearest = ox.get_nearest_node(simple_G, coord)
                                 if not nearest in center_nodes[service]:    
                                     center_nodes[service].append(nearest)
                                     already_covered = already_covered.union(point.buffer(50*longitude_factor_m))
-                            else:
-                                print ('skipping point')
             
             print('getting transit center_nodes')
             if 'transit' in to_test:
