@@ -290,7 +290,8 @@ def pnservices(city, folder_name='', buffer_dist=100, headway_threshold=10,
                     try:
                         if type(carfree) == shapely.geometry.GeometryCollection:
                             for item in carfree:
-                                places.append(item.buffer(buffer_dist))
+                                if not numpy.isnan(item.length):
+                                    places.append(item.buffer(buffer_dist))
                             isochrone_polys['carfree'] = shapely.ops.cascaded_union(places)
                         else:
                             isochrone_polys['carfree'] = carfree.buffer(buffer_dist)
