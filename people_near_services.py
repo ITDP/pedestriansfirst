@@ -294,7 +294,8 @@ def pnservices(city, folder_name='', buffer_dist=100, headway_threshold=10,
                                     places.append(item.buffer(buffer_dist))
                             isochrone_polys['carfree'] = shapely.ops.cascaded_union(places)
                         else:
-                            isochrone_polys['carfree'] = carfree.buffer(buffer_dist)
+                            if not numpy.isnan(carfree.length):
+                                isochrone_polys['carfree'] = carfree.buffer(buffer_dist)
                     except:
                         pdb.set_trace()
                     
