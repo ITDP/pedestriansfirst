@@ -44,7 +44,7 @@ def pnservices(city, folder_name='', buffer_dist=100, headway_threshold=10,
                        'carfree',
                        'blocks',
                        'density',
-                       'transit',
+                       #'transit',
                        ],
                 distances = {
                         'healthcare': 1000,
@@ -282,6 +282,7 @@ def pnservices(city, folder_name='', buffer_dist=100, headway_threshold=10,
                     if patch.bounds[0] < rep.x < patch.bounds[2] and patch.bounds[1] < rep.y < patch.bounds[3]:
                         carfree.append(poly)
                 carfree = shapely.ops.cascaded_union(carfree)
+                pdb.set_trace()
                 if carfree:
                     print(crs)
                     projection = pyproj.Transformer.from_crs(4326, crs)
