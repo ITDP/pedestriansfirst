@@ -121,25 +121,6 @@ def pnservices(city, folder_name='', buffer_dist=100, headway_threshold=10,
     vslicers = []
     
     for i in range(1,n_hslicers+1):
-        increment = (bbox[2]-bbox[0])/(n_hslicers+1)
-        lat = bbox[0]+(i*increment)
-        slicer = shapely.geometry.LineString([(bbox[1],lat),(bbox[3],lat)])
-        hslicers.append(slicer)
-        
-    for i in range(1,n_vslicers+1):
-        increment = (bbox[3]-bbox[1])/(n_vslicers+1)
-        lon = bbox[1]+(i*increment)
-        slicer = shapely.geometry.LineString([(lon,bbox[0]),(lon, bbox[2])])
-        hslicers.append(slicer)
-        
-    patches = shapely.geometry.MultiPolygon(polygons=[boundaries])
-    for slicer in hslicers+vslicers:
-        patches = shapely.geometry.MultiPolygon(polygons = shapely.ops.split(patches, slicer))
-    
-    
-    
-    
-    for i in range(1,n_hslicers+1):
         h_increment = (bbox[2]-bbox[0])/(n_hslicers+1)
         lat = bbox[0]+(i*h_increment)
         slicer = shapely.geometry.LineString([(bbox[1],lat),(bbox[3],lat)])
@@ -156,6 +137,7 @@ def pnservices(city, folder_name='', buffer_dist=100, headway_threshold=10,
         patches = shapely.geometry.MultiPolygon(polygons = shapely.ops.split(patches, slicer))
     
     print("cut"+str(len(list(patches)))+"patches")
+    pdb.set_trace()
     
     quilt_ipolys = {}
     quilt_cnodes = {}
