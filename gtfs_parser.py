@@ -86,11 +86,11 @@ def get_freq_stops(feed, headwaylim = 20):
     #days = feed.get_first_week()[0:5]
     counts = {}
     days = [
-            '20191014',
-            '20191015',
-            '20191016',
-            '20191017',
-            '20191018']
+            '20200309',
+            '20200310',
+            '20200311',
+            '20200312',
+            '20200313']
     try:
         stopstats = gk.stops.compute_stop_stats(feed, days, 
                                           headway_start_time= '05:00:00', 

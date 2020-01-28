@@ -37,14 +37,14 @@ def weighted_pop_density(array):
 
 def pnservices(city, folder_name='', buffer_dist=100, headway_threshold=10,
                to_test = [
-                       'healthcare',
-                       'schools',
-                       'h+s',
-                       'libraries',
+                       #'healthcare',
+                       #'schools',
+                       #'h+s',
+                       #'libraries',
                        'carfree',
                        'blocks',
-                       'density',
-                       'transit',
+                       #'density',
+                       #'transit',
                        ],
                 distances = {
                         'healthcare': 1000,
@@ -208,7 +208,6 @@ def pnservices(city, folder_name='', buffer_dist=100, headway_threshold=10,
             
             simple_G = ox.simplify_graph(G)
             center_nodes = {}
-            print("getting service center_node")
             for service in all_coords.keys():
                 if service in ['healthcare','schools','libraries']:
                     already_covered = None
@@ -226,7 +225,6 @@ def pnservices(city, folder_name='', buffer_dist=100, headway_threshold=10,
                                     center_nodes[service].append(nearest)
                                     already_covered = already_covered.union(point.buffer(50*longitude_factor_m))
             
-            print('getting transit center_nodes')
             if 'transit' in to_test:
                 center_nodes['transit'] = []
                 transit_centers = {}
@@ -282,7 +280,6 @@ def pnservices(city, folder_name='', buffer_dist=100, headway_threshold=10,
             
             # Get polygons
             for service in testing_services:
-                print(service)
                 isochrone_polys[service], fails = local_isometric.make_iso_polys(G, center_nodes[service], distance=distances[service], edge_buff=buffer_dist)
                 failures[service] += fails
                 
@@ -519,7 +516,7 @@ def pnservices(city, folder_name='', buffer_dist=100, headway_threshold=10,
                     if merged:
                         borders = shapely.ops.unary_union(merged)
                         blocks = list(shapely.ops.polygonize(borders))
-                        filtered_blocks = []
+                        all_blocks = []
                         for block in blocks:
                             if 1000 < block.area < 1000000:
                                 if block.interiors:
@@ -529,10 +526,9 @@ def pnservices(city, folder_name='', buffer_dist=100, headway_threshold=10,
                                     area = round(block.area, 3)
                                     perim = round(block.length, 3)
                                     lemgth = round((perim * perim) / area, 3)
-                                    if lemgth < 50:
-                                        block = block.simplify(15)
-                                        filtered_blocks.append((block, area, perim, lemgth))
-                        outblocks += filtered_blocks  
+                                    block = block.simplify(15)
+                                    all_blocks.append((block, area, perim, lemgth))
+                        outblocks += all_blocks  
         
         #export            
         
@@ -544,11 +540,20 @@ def pnservices(city, folder_name='', buffer_dist=100, headway_threshold=10,
         b = a.to_crs(epsg=4326)
         b.to_file(folder_name+'blocks'+'latlon'+'.geojson', driver='GeoJSON')
         b.to_file(folder_name+'blocks'+'latlon'+'.shp')
-        blockmedian = statistics.median(a.area)
+        filtered_blocks = []
+        for block in outblocks:
+            if block[3] > 50:
+                filtered_blocks.append(block)
+        c = gpd.GeoDataFrame(geometry=[block[0] for block in outblocks])
+        c.crs = {'init':'epsg:'+str(epsg)}
+        c['area'] = [block[1] for block in outblocks]
+        c['perim'] = [block[2] for block in outblocks]
+        c['lemgth'] = [block[3] for block in outblocks]
+        blockmedian = statistics.median(c.area)
         print('median block size')
         print(blockmedian)
         results['blockmedian'] = blockmedian
-        blockmean = statistics.mean(a.area)
+        blockmean = statistics.mean(c.area)
         print('mean block size')
         print(blockmean)
         results['blockmean'] = blockmean
