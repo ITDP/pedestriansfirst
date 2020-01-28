@@ -113,48 +113,48 @@ class ServiceHandler(osmium.SimpleHandler): #newer
             self.locationlist['healthcare'].append((n.location.lat, n.location.lon))
 
     def area(self, a):
-        if 'amenity' in a.tags and a.tags['amenity'] in ['library','bookcase']:
-            try:
+        try:
+            if 'amenity' in a.tags and a.tags['amenity'] in ['library','bookcase']:
+                    wkb = wkbfab.create_multipolygon(a)
+                    poly = shapely.wkb.loads(wkb, hex=True)
+                    centroid = poly.representative_point()
+                    self.locationlist['libraries'].append((centroid.y, centroid.x))
+                
+            if ( ('amenity' in a.tags and 
+                   a.tags['amenity'] in ['school','kindergarten']) or
+                 ('school' in a.tags) ):
                 wkb = wkbfab.create_multipolygon(a)
                 poly = shapely.wkb.loads(wkb, hex=True)
                 centroid = poly.representative_point()
-                self.locationlist['libraries'].append((centroid.y, centroid.x))
-            except:
-                import pdb
-                pdb.set_trace()
-            
-        if ( ('amenity' in a.tags and 
-               a.tags['amenity'] in ['school','kindergarten']) or
-             ('school' in a.tags) ):
-            wkb = wkbfab.create_multipolygon(a)
-            poly = shapely.wkb.loads(wkb, hex=True)
-            centroid = poly.representative_point()
-            self.locationlist['schools'].append((centroid.y, centroid.x))
-            
-        if ( ('amenity' in a.tags and 
-               a.tags['amenity'] in ['hospital','doctors','clinic','pharmacy']) or
-             ('healthcare' in a.tags and 
-               a.tags['healthcare'] in ['alternative','birthing_center','centre','midwife','nurse','hospital','doctor','clinic','pharmacy','yes']) ):
-            wkb = wkbfab.create_multipolygon(a)
-            poly = shapely.wkb.loads(wkb, hex=True)
-            centroid = poly.representative_point()
-            self.locationlist['healthcare'].append((centroid.y, centroid.x))
-            
-        carfree = False
-        if 'leisure' in a.tags and a.tags['leisure'] in ['park', 'playground']:
-            if not('foot' in a.tags and a.tags['foot'] == 'no'):
-                if not('service' in a.tags and a.tags['service'] == 'private'):
-                        if not('access' in a.tags and a.tags['access'] == 'private'):
-                            carfree = True
-        if 'highway' in a.tags and a.tags['highway'] == 'pedestrian':
-            if not('foot' in a.tags and a.tags['foot'] == 'no'):
-                if not('service' in a.tags and a.tags['service'] == 'private'):
-                        if not('access' in a.tags and a.tags['access'] == 'private'):
-                            carfree = True
-        if carfree:
-            wkb = wkbfab.create_multipolygon(a)
-            poly = shapely.wkb.loads(wkb, hex=True)
-            self.carfreelist.append(poly)
+                self.locationlist['schools'].append((centroid.y, centroid.x))
+                
+            if ( ('amenity' in a.tags and 
+                   a.tags['amenity'] in ['hospital','doctors','clinic','pharmacy']) or
+                 ('healthcare' in a.tags and 
+                   a.tags['healthcare'] in ['alternative','birthing_center','centre','midwife','nurse','hospital','doctor','clinic','pharmacy','yes']) ):
+                wkb = wkbfab.create_multipolygon(a)
+                poly = shapely.wkb.loads(wkb, hex=True)
+                centroid = poly.representative_point()
+                self.locationlist['healthcare'].append((centroid.y, centroid.x))
+                
+            carfree = False
+            if 'leisure' in a.tags and a.tags['leisure'] in ['park', 'playground']:
+                if not('foot' in a.tags and a.tags['foot'] == 'no'):
+                    if not('service' in a.tags and a.tags['service'] == 'private'):
+                            if not('access' in a.tags and a.tags['access'] == 'private'):
+                                carfree = True
+            if 'highway' in a.tags and a.tags['highway'] == 'pedestrian':
+                if not('foot' in a.tags and a.tags['foot'] == 'no'):
+                    if not('service' in a.tags and a.tags['service'] == 'private'):
+                            if not('access' in a.tags and a.tags['access'] == 'private'):
+                                carfree = True
+            if carfree:
+                wkb = wkbfab.create_multipolygon(a)
+                poly = shapely.wkb.loads(wkb, hex=True)
+                self.carfreelist.append(poly)
+                
+        except RuntimeError:
+            print('RUNTIME ERROR while finding service area')
             
     def way(self, a):
         carfree = False
