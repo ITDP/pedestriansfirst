@@ -359,6 +359,21 @@ def pnservices(city, folder_name='', buffer_dist=100, headway_threshold=10,
             a.crs = {'init':'epsg:'+str(epsg)}
             b = a.to_crs(epsg=4326)
             
+            pdb.set_trace()
+#            Traceback (most recent call last):
+#  File "frame.py", line 78, in <module>
+#    from_id_hdc(hdcs[city])
+#  File "frame.py", line 37, in from_id_hdc
+#    results = people_near_services.pnservices(test_city, folder_name = folder)
+#  File "/home/taylor/pedestriansfirst/people_near_services.py", line 362, in pnservices
+#    stats = rasterstats.zonal_stats(b, 'pop_dens.tif', stats=['mean'])
+#  File "/home/taylor/anaconda3/lib/python3.7/site-packages/rasterstats/main.py", line 31, in zonal_stats
+#    return list(gen_zonal_stats(*args, **kwargs))
+#  File "/home/taylor/anaconda3/lib/python3.7/site-packages/rasterstats/main.py", line 148, in gen_zonal_stats
+#    geom = shape(feat['geometry'])
+##    geom_type = ob.get("type").lower()
+#AttributeError: 'NoneType' object has no attribute 'get'
+
             stats = rasterstats.zonal_stats(b, 'pop_dens.tif', stats=['mean'])
             
             total_PNS = 0
