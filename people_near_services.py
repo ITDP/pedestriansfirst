@@ -274,35 +274,7 @@ def pnservices(city, folder_name='', buffer_dist=100, headway_threshold=10,
             for service in to_test:
                 failures[service] = 0
             
-            print("getting carfree")
-            if 'carfree' in to_test:
-                carfree = []
-                for poly in citywide_carfree:
-                    rep = poly.representative_point() 
-                    if patch.bounds[0] < rep.x < patch.bounds[2] and patch.bounds[1] < rep.y < patch.bounds[3]:
-                        carfree.append(poly)
-                carfree = shapely.ops.cascaded_union(carfree)
-                if carfree:
-                    print(crs)
-                    projection = pyproj.Transformer.from_crs(4326, crs)
-                    carfree = shapely.ops.transform(projection.transform, carfree)
-                    places = []
-                    try:
-                        if type(carfree) == shapely.geometry.GeometryCollection:
-                            for item in carfree:
-                                if not numpy.isnan(item.length):
-                                    places.append(item.buffer(buffer_dist))
-                            carfree_out = shapely.ops.cascaded_union(places)
-                        else:
-                            if not numpy.isnan(carfree.length):
-                                places.append(carfree.buffer(buffer_dist))
-                        if quilt_ipolys['carfree']:
-                            quilt_ipolys['carfree'] = shapely.ops.cascaded_union([quilt_ipolys['carfree']]+places)
-                        else:
-                           quilt_ipolys['carfree'] = shapely.ops.cascaded_union(places)
-                    except:
-                        pdb.set_trace()
-                    
+           
             
             
                     
@@ -341,8 +313,6 @@ def pnservices(city, folder_name='', buffer_dist=100, headway_threshold=10,
     if not os.path.exists(folder_name):
         os.makedirs(folder_name)
        
-    if 'carfree' in to_test:
-        testing_services.append('carfree')
     
     for service in testing_services:
         if quilt_ipolys[service]:
@@ -368,6 +338,51 @@ def pnservices(city, folder_name='', buffer_dist=100, headway_threshold=10,
         else:
             print ('NO SERVICE FOR', service)
             results[service] = 0
+    
+    if 'carfree' in to_test:
+        print("getting carfree")
+        carfree = shapely.ops.cascaded_union(citywide_carfree)
+        if carfree:
+            print(crs)
+            projection = pyproj.Transformer.from_crs(4326, crs)
+            carfree = shapely.ops.transform(projection.transform, carfree)
+            places = []
+            try:
+                if type(carfree) == shapely.geometry.GeometryCollection:
+                    for item in carfree:
+                        if not numpy.isnan(item.length):
+                            places.append(item.buffer(buffer_dist))
+                else:
+                    if not numpy.isnan(carfree.length):
+                        places.append(carfree.buffer(buffer_dist))
+                carfree = shapely.ops.cascaded_union(places)
+            except:
+                pdb.set_trace()
+            a = gpd.GeoDataFrame(geometry = [carfree])
+            a.crs = {'init':'epsg:'+str(epsg)}
+            b = a.to_crs(epsg=4326)
+            
+            stats = rasterstats.zonal_stats(b, 'pop_dens.tif', stats=['mean'])
+            
+            total_PNS = 0
+            for i in range(0,len(stats)):
+                if stats[i]['mean'] and type(stats[i]['mean']) != numpy.ma.core.MaskedConstant:
+                    total_PNS += (a.area[i]*stats[i]['mean'] / 62500) #62500 = m2 per pixel
+            print("\n")
+            print('Total People Near Service for carfree', ":", total_PNS)
+            print(100*total_PNS/total_pop,"% of",total_pop)
+            results['carfree'] = total_PNS / total_pop
+            
+            b.geometry = b.geometry.simplify(10)
+            b.to_file(folder_name+'carfreelatlon'+'.geojson', driver='GeoJSON')
+            try:
+                b.to_file(folder_name+'carfreelatlon'+'.shp') #unnecessary later
+            except:
+                pdb.set_trace()
+                
+            #a, b = local_isometric.export(quilt_ipolys[service], epsg, service=service, folder=folder_name)
+            
+            
     
     if 'h+s' in to_test:
         if quilt_ipolys['healthcare'] and quilt_ipolys['schools']:
