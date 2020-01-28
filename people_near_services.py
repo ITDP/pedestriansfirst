@@ -114,7 +114,7 @@ def pnservices(city, folder_name='', buffer_dist=100, headway_threshold=10,
     width_degrees = abs(boundaries.bounds[2]-boundaries.bounds[0])
     width_km = width_degrees / longitude_factor
     
-    patch_length = 2 #kilometers
+    patch_length = 5 #kilometers
     n_vslicers = math.floor(height_km / patch_length)
     n_hslicers = math.floor(width_km / patch_length)
     
@@ -431,7 +431,7 @@ def pnservices(city, folder_name='', buffer_dist=100, headway_threshold=10,
     if 'blocks' in to_test:
         print("getting blocks")
         #most of our patch-cutting variables are still around
-        patch_length = .5 #kilometers
+        patch_length = 2 #kilometers
         n_vslicers = math.floor(height_km / patch_length)
         n_hslicers = math.floor(width_km / patch_length)
         
