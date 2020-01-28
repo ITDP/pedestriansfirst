@@ -114,10 +114,14 @@ class ServiceHandler(osmium.SimpleHandler): #newer
 
     def area(self, a):
         if 'amenity' in a.tags and a.tags['amenity'] in ['library','bookcase']:
-            wkb = wkbfab.create_multipolygon(a)
-            poly = shapely.wkb.loads(wkb, hex=True)
-            centroid = poly.representative_point()
-            self.locationlist['libraries'].append((centroid.y, centroid.x))
+            try:
+                wkb = wkbfab.create_multipolygon(a)
+                poly = shapely.wkb.loads(wkb, hex=True)
+                centroid = poly.representative_point()
+                self.locationlist['libraries'].append((centroid.y, centroid.x))
+            except:
+                import pdb
+                pdb.set_trace()
             
         if ( ('amenity' in a.tags and 
                a.tags['amenity'] in ['school','kindergarten']) or
