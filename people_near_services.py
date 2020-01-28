@@ -37,14 +37,14 @@ def weighted_pop_density(array):
 
 def pnservices(city, folder_name='', buffer_dist=100, headway_threshold=10,
                to_test = [
-                       'healthcare',
-                       'schools',
-                       'h+s',
-                       'libraries',
+                       #'healthcare',
+                       #'schools',
+                       #'h+s',
+                       #'libraries',
                        'carfree',
-                       'blocks',
-                       'density',
-                       'transit',
+                       #'blocks',
+                       #'density',
+                       #'transit',
                        ],
                 distances = {
                         'healthcare': 1000,
