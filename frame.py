@@ -52,6 +52,7 @@ hdcs = { #test
 #'manchester':1780,
 
 #'portland':101,
+'Aqaba':4388
 'newcastle':1830,
 'berlin':311,
 'Abu Dhabi': 5909,
@@ -70,9 +71,6 @@ hdcs = { #test
 'Buenos Aires': 1105,
 'Ahmadabad': 6651
         }
-
-#hdcs = {
-#'Aqaba':4388}
 
 
 
