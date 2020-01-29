@@ -340,7 +340,7 @@ def pnservices(city, folder_name='', buffer_dist=100, headway_threshold=10,
         print("getting carfree")
         if citywide_carfree:
             dataframe_latlon = gpd.GeoDataFrame(geometry = citywide_carfree)
-            dataframe_latlon.crs = {'epsg:4326'}
+            dataframe_latlon.crs = {'init':'epsg:4326'}
             dataframe_utm = dataframe_latlon.to_crs(crs)
             dataframe_utm.geometry = dataframe_utm.geometry.buffer(100)
             dataframe_latlon = dataframe_utm.to_crs('epsg:4326')
