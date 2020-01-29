@@ -52,6 +52,7 @@ hdcs = { #test
 #'manchester':1780,
 
 #'portland':101,
+'laurel':874,
 'Aqaba':4388,
 'newcastle':1830,
 'berlin':311,
