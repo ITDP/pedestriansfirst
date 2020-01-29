@@ -75,8 +75,6 @@ hdcs = { #test
 
 
 
-for city in hdcs.keys():
-    from_id_hdc(hdcs[city])
 
 for city in hdcs.keys():
     try:

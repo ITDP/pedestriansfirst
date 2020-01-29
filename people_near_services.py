@@ -8,6 +8,7 @@ import rasterstats
 import rasterio.mask
 import subprocess
 import osmium
+import json
 
 import osmnx as ox
 import geopandas as gpd
@@ -513,6 +514,8 @@ def pnservices(city, folder_name='', buffer_dist=100, headway_threshold=10,
                                     block = block.simplify(15)
                                     all_blocks.append((block, area, perim, lemgth))
                         outblocks += all_blocks  
+                    else:
+                        print('not merged!')
         
         #export            
         
@@ -547,9 +550,8 @@ def pnservices(city, folder_name='', buffer_dist=100, headway_threshold=10,
     
     ft = datetime.datetime.now()
     print("total", str(ft-dt))
-    with open(folder_name+"results.txt","w") as output:
-        for item in results.keys():    
-            output.write(item+": "+str(results[item])+"\n")
+    with open(folder_name+"results.json","w") as output:
+        output.write(json.dumps(results))
     return results
 #return failures, SAVED_TSTOPS
 
