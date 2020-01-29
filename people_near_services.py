@@ -503,7 +503,7 @@ def pnservices(city, folder_name='', buffer_dist=100, headway_threshold=10,
                         blocks = list(shapely.ops.polygonize(borders))
                         all_blocks = []
                         for block in blocks:
-                            if 500 < block.area < 10000000:
+                            if 500 < block.area < 100000000:
                                 if block.interiors:
                                     block = shapely.geometry.Polygon(block.exterior)
                                 #if block.length / block.area < 0.15:
