@@ -503,7 +503,7 @@ def pnservices(city, folder_name='', buffer_dist=100, headway_threshold=10,
                         blocks = list(shapely.ops.polygonize(borders))
                         all_blocks = []
                         for block in blocks:
-                            if 1000 < block.area < 1000000:
+                            if 500 < block.area < 10000000:
                                 if block.interiors:
                                     block = shapely.geometry.Polygon(block.exterior)
                                 #if block.length / block.area < 0.15:
@@ -528,7 +528,8 @@ def pnservices(city, folder_name='', buffer_dist=100, headway_threshold=10,
         filtered_blocks = []
         for block in outblocks:
             if block[3] > 50:
-                filtered_blocks.append(block)
+                if 1000 < block[1] < 1000000:
+                    filtered_blocks.append(block)
         c = gpd.GeoDataFrame(geometry=[block[0] for block in outblocks])
         c.crs = {'init':'epsg:'+str(epsg)}
         c['area'] = [block[1] for block in outblocks]
