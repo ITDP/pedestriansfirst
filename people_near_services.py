@@ -340,8 +340,7 @@ def pnservices(city, folder_name='', buffer_dist=100, headway_threshold=10,
         print("getting carfree")
         if citywide_carfree:
             carfree_collection = shapely.ops.cascaded_union(citywide_carfree)
-            print(crs)
-            projection = pyproj.Transformer.from_crs(4326, crs)
+            projection = pyproj.Transformer.from_crs(crs, 4326)
             carfree_projected = shapely.ops.transform(projection.transform, carfree_collection)
             places = []
             try:
