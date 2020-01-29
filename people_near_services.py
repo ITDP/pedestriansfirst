@@ -359,7 +359,7 @@ def pnservices(city, folder_name='', buffer_dist=100, headway_threshold=10,
                 dataframe_latlon = dataframe_utm.to_crs('epsg:4326')
                 dataframe_latlon.to_file(folder_name+'carfreelatlon'+'.geojson', driver='GeoJSON')
                 dataframe_latlon.to_file(folder_name+'carfreelatlon'+'.shp')
-            except error as error:
+            except error as e:
                 pdb.set_trace()
                 
             #a, b = local_isometric.export(quilt_ipolys[service], epsg, service=service, folder=folder_name)
