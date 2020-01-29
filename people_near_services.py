@@ -339,26 +339,26 @@ def pnservices(city, folder_name='', buffer_dist=100, headway_threshold=10,
     if 'carfree' in to_test:
         print("getting carfree")
         if citywide_carfree:
-            dataframe_latlon = gpd.GeoDataFrame(geometry = citywide_carfree)
-            pdb.set_trace()
-            dataframe_latlon.crs = {'init':'epsg:4326'}
-            dataframe_utm = dataframe_latlon.to_crs(crs)
-            dataframe_utm.geometry = dataframe_utm.geometry.buffer(100)
-            dataframe_latlon = dataframe_utm.to_crs('epsg:4326')
+            df_latlon = gpd.GeoDataFrame(geometry = citywide_carfree)
+            df_latlon.crs = {'init':'epsg:4326'}
+            df_utm = df_latlon.to_crs(crs)
+            df_utm.geometry = df_utm.geometry.buffer(100)
+            df_utm = gpd.GeoDataFrame(crsstr = crs, geometry = [shapely.ops.cascaded_union(df_utm.geometry)])
+            df_latlon = df_utm.to_crs('epsg:4326')
             
-            stats = rasterstats.zonal_stats(dataframe_latlon, 'pop_dens.tif', stats=['mean'])
+            stats = rasterstats.zonal_stats(df_latlon, 'pop_dens.tif', stats=['mean'])
             for i in range(0,len(stats)):
                 if stats[i]['mean'] and type(stats[i]['mean']) != numpy.ma.core.MaskedConstant:
-                    total_PNS += (dataframe_latlon.area[i]*stats[i]['mean'] / 62500) #62500 = m2 per pixel
+                    total_PNS += (df_latlon.area[i]*stats[i]['mean'] / 62500) #62500 = m2 per pixel
             print("\n")
             print('Total People Near Service for carfree', ":", total_PNS)
             print(100*total_PNS/total_pop,"% of",total_pop)
             results['carfree'] = total_PNS / total_pop
             
-            dataframe_utm.geometry = dataframe_utm.geometry.simplify(10)
-            dataframe_latlon = dataframe_utm.to_crs('epsg:4326')
-            dataframe_latlon.to_file(folder_name+'carfreelatlon'+'.geojson', driver='GeoJSON')
-            dataframe_latlon.to_file(folder_name+'carfreelatlon'+'.shp')
+            df_utm.geometry = df_utm.geometry.simplify(10)
+            df_latlon = df_utm.to_crs('epsg:4326')
+            df_latlon.to_file(folder_name+'carfreelatlon'+'.geojson', driver='GeoJSON')
+            df_latlon.to_file(folder_name+'carfreelatlon'+'.shp')
         
                 
             #a, b = local_isometric.export(quilt_ipolys[service], epsg, service=service, folder=folder_name)
