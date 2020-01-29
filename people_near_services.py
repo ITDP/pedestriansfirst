@@ -429,7 +429,7 @@ def pnservices(city, folder_name='', buffer_dist=100, headway_threshold=10,
     if 'blocks' in to_test:
         print("getting blocks")
         #most of our patch-cutting variables are still around
-        patch_length = 2 #kilometers
+        patch_length = 5 #kilometers
         n_vslicers = math.floor(height_km / patch_length)
         n_hslicers = math.floor(width_km / patch_length)
         
@@ -462,7 +462,7 @@ def pnservices(city, folder_name='', buffer_dist=100, headway_threshold=10,
             unbuffered_patch = unbuffered_patch.to_crs(crs)[0]
             
             
-            buffer_dist = .2
+            buffer_dist = 1
             
             patch = shapely.geometry.box(
                     patch.bounds[0] - (buffer_dist * longitude_factor),
