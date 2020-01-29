@@ -53,12 +53,12 @@ hdcs = { #test
 
 #'portland':101,
 'laurel':874,
+'Pune': 7041,
 'Aqaba':4388,
 'newcastle':1830,
 'berlin':311,
 'Abu Dhabi': 5909,
 'Udaipur': 6712,
-'Pune': 7041,
 'Brasilia': 1210,
 'Dar es Salaam': 5222,
 'Manila': 12829,
