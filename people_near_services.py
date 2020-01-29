@@ -451,7 +451,7 @@ def pnservices(city, folder_name='', buffer_dist=100, headway_threshold=10,
         for slicer in hslicers+vslicers:
             patches = shapely.geometry.MultiPolygon(polygons = shapely.ops.split(patches, slicer))
         
-        print ("cut", len(list(patches)),"patches")
+        print ("cut", len(list(patches)),"patches for",name)
         n=0
         outblocks = []
         for patch in patches:
@@ -503,7 +503,7 @@ def pnservices(city, folder_name='', buffer_dist=100, headway_threshold=10,
                         blocks = list(shapely.ops.polygonize(borders))
                         all_blocks = []
                         for block in blocks:
-                            if 500 < block.area < 20000000:
+                            if 500 < block.area < 200000000:
                                 if block.interiors:
                                     block = shapely.geometry.Polygon(block.exterior)
                                 if block.centroid.within(unbuffered_patch):
