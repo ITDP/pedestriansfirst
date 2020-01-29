@@ -354,9 +354,8 @@ def pnservices(city, folder_name='', buffer_dist=100, headway_threshold=10,
                 carfree_multipol = shapely.ops.cascaded_union(places)
             except:
                 pdb.set_trace()
-            a = gpd.GeoDataFrame(geometry = [carfree_multipol])
-            a.crs = {'init':'epsg:'+str(epsg)}
-            b = a.to_crs(epsg=4326)
+            b = gpd.GeoDataFrame(geometry = [carfree_multipol])
+            
             
             pdb.set_trace()
 #            Traceback (most recent call last):
@@ -384,7 +383,6 @@ def pnservices(city, folder_name='', buffer_dist=100, headway_threshold=10,
             print(100*total_PNS/total_pop,"% of",total_pop)
             results['carfree'] = total_PNS / total_pop
             
-            b.geometry = b.geometry.simplify(10)
             b.to_file(folder_name+'carfreelatlon'+'.geojson', driver='GeoJSON')
             try:
                 b.to_file(folder_name+'carfreelatlon'+'.shp') #unnecessary later
