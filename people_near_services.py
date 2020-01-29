@@ -503,15 +503,15 @@ def pnservices(city, folder_name='', buffer_dist=100, headway_threshold=10,
                         blocks = list(shapely.ops.polygonize(borders))
                         all_blocks = []
                         for block in blocks:
-                            #if 500 < block.area < 100000000:
-                            if block.interiors:
-                                block = shapely.geometry.Polygon(block.exterior)
-                            if block.centroid.within(unbuffered_patch):
-                                area = round(block.area, 3)
-                                perim = round(block.length, 3)
-                                lemgth = round((perim * perim) / area, 3)
-                                block = block.simplify(15)
-                                all_blocks.append((block, area, perim, lemgth))
+                            if 500 < block.area < 20000000:
+                                if block.interiors:
+                                    block = shapely.geometry.Polygon(block.exterior)
+                                if block.centroid.within(unbuffered_patch):
+                                    area = round(block.area, 3)
+                                    perim = round(block.length, 3)
+                                    lemgth = round((perim * perim) / area, 3)
+                                    block = block.simplify(15)
+                                    all_blocks.append((block, area, perim, lemgth))
                         outblocks += all_blocks  
         
         #export            
