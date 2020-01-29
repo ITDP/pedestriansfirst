@@ -339,53 +339,26 @@ def pnservices(city, folder_name='', buffer_dist=100, headway_threshold=10,
     if 'carfree' in to_test:
         print("getting carfree")
         if citywide_carfree:
-            carfree_collection = shapely.ops.cascaded_union(citywide_carfree)
-            projection = pyproj.Transformer.from_crs(crs, 4326)
-            carfree_projected = shapely.ops.transform(projection.transform, carfree_collection)
-            places = []
             try:
-                if type(carfree_projected) == shapely.geometry.GeometryCollection:
-                    for item in carfree_projected:
-                        if not numpy.isnan(item.length):
-                            places.append(item.buffer(buffer_dist))
-                else: #if 'carfree' only represents a single item
-                    if not numpy.isnan(carfree_projected.length):
-                        places.append(carfree_projected.buffer(buffer_dist))
-                carfree_multipol = shapely.ops.cascaded_union(places)
-            except:
-                pdb.set_trace()
-            b = gpd.GeoDataFrame(geometry = [carfree_multipol])
-            
-            
-            pdb.set_trace()
-#            Traceback (most recent call last):
-#  File "frame.py", line 78, in <module>
-#    from_id_hdc(hdcs[city])
-#  File "frame.py", line 37, in from_id_hdc
-#    results = people_near_services.pnservices(test_city, folder_name = folder)
-#  File "/home/taylor/pedestriansfirst/people_near_services.py", line 362, in pnservices
-#    stats = rasterstats.zonal_stats(b, 'pop_dens.tif', stats=['mean'])
-#  File "/home/taylor/anaconda3/lib/python3.7/site-packages/rasterstats/main.py", line 31, in zonal_stats
-#    return list(gen_zonal_stats(*args, **kwargs))
-#  File "/home/taylor/anaconda3/lib/python3.7/site-packages/rasterstats/main.py", line 148, in gen_zonal_stats
-#    geom = shape(feat['geometry'])
-##    geom_type = ob.get("type").lower()
-#AttributeError: 'NoneType' object has no attribute 'get'
-
-            stats = rasterstats.zonal_stats(b, 'pop_dens.tif', stats=['mean'])
-            
-            total_PNS = 0
-            for i in range(0,len(stats)):
-                if stats[i]['mean'] and type(stats[i]['mean']) != numpy.ma.core.MaskedConstant:
-                    total_PNS += (a.area[i]*stats[i]['mean'] / 62500) #62500 = m2 per pixel
-            print("\n")
-            print('Total People Near Service for carfree', ":", total_PNS)
-            print(100*total_PNS/total_pop,"% of",total_pop)
-            results['carfree'] = total_PNS / total_pop
-            
-            b.to_file(folder_name+'carfreelatlon'+'.geojson', driver='GeoJSON')
-            try:
-                b.to_file(folder_name+'carfreelatlon'+'.shp') #unnecessary later
+                dataframe_latlon = gpd.GeoDataFrame(geometry = citywide_carfree)
+                dataframe_latlon.crs = {'epsg:4326'}
+                dataframe_utm = dataframe_latlon.to_crs(crs)
+                dataframe_utm.geometry = dataframe_utm.geometry.buffer(100)
+                dataframe_latlon = dataframe_utm.to_crs('epsg:4326')
+                
+                stats = rasterstats.zonal_stats(dataframe_latlon, 'pop_dens.tif', stats=['mean'])
+                for i in range(0,len(stats)):
+                    if stats[i]['mean'] and type(stats[i]['mean']) != numpy.ma.core.MaskedConstant:
+                        total_PNS += (dataframe_latlon.area[i]*stats[i]['mean'] / 62500) #62500 = m2 per pixel
+                print("\n")
+                print('Total People Near Service for carfree', ":", total_PNS)
+                print(100*total_PNS/total_pop,"% of",total_pop)
+                results['carfree'] = total_PNS / total_pop
+                
+                dataframe_utm.geometry = dataframe_utm.geometry.simplify(10)
+                dataframe_latlon = dataframe_utm.to_crs('epsg:4326')
+                dataframe_latlon.to_file(folder_name+'carfreelatlon'+'.geojson', driver='GeoJSON')
+                dataframe_latlon.to_file(folder_name+'carfreelatlon'+'.shp')
             except:
                 pdb.set_trace()
                 
