@@ -338,24 +338,24 @@ def pnservices(city, folder_name='', buffer_dist=100, headway_threshold=10,
     
     if 'carfree' in to_test:
         print("getting carfree")
-        carfree = shapely.ops.cascaded_union(citywide_carfree)
-        if carfree:
+        if citywide_carfree:
+            carfree_collection = shapely.ops.cascaded_union(citywide_carfree)
             print(crs)
             projection = pyproj.Transformer.from_crs(4326, crs)
-            carfree = shapely.ops.transform(projection.transform, carfree)
+            carfree_projected = shapely.ops.transform(projection.transform, carfree_collection)
             places = []
             try:
-                if type(carfree) == shapely.geometry.GeometryCollection:
-                    for item in carfree:
+                if type(carfree_projected) == shapely.geometry.GeometryCollection:
+                    for item in carfree_projected:
                         if not numpy.isnan(item.length):
                             places.append(item.buffer(buffer_dist))
-                else:
-                    if not numpy.isnan(carfree.length):
-                        places.append(carfree.buffer(buffer_dist))
-                carfree = shapely.ops.cascaded_union(places)
+                else: #if 'carfree' only represents a single item
+                    if not numpy.isnan(carfree_projected.length):
+                        places.append(carfree_projected.buffer(buffer_dist))
+                carfree_multipol = shapely.ops.cascaded_union(places)
             except:
                 pdb.set_trace()
-            a = gpd.GeoDataFrame(geometry = [carfree])
+            a = gpd.GeoDataFrame(geometry = [carfree_multipol])
             a.crs = {'init':'epsg:'+str(epsg)}
             b = a.to_crs(epsg=4326)
             
