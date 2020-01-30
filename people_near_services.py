@@ -550,6 +550,7 @@ def pnservices(city, folder_name='', buffer_dist=100, headway_threshold=10,
     
     ft = datetime.datetime.now()
     print("total", str(ft-dt))
+    results['calctime':ft-dt]
     with open(folder_name+"results.json","w") as output:
         output.write(json.dumps(results))
     return results
