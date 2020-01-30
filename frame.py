@@ -2,11 +2,12 @@ import subprocess
 import fiona
 import os
 import json
+import shutils
 
 import people_near_services
 
 
-def from_id_hdc(hdc, folder = None):
+def from_id_hdc(hdc, folder = None, kwargs = {}):
     #select city from ID number
     with fiona.open('GHS_STAT_UCDB2015MT_GLOBE_R2019A_V1_0.shp','r') as ucdb:
         for city in ucdb:
@@ -34,8 +35,10 @@ def from_id_hdc(hdc, folder = None):
     
     if not folder:
         folder = str(hdc)+'/'
-    results = people_near_services.pnservices(test_city, folder_name = folder)
+    results = people_near_services.pnservices(test_city, folder_name = folder, **kwargs)
     print(str(results))
+
+
 
 hdcs = { #test
 'London':1912,
@@ -50,7 +53,7 @@ hdcs = { #test
 'Atlanta':559,
 'Miami':556,
 'Houston':315,
-'LA':14,
+#'LA':14,
 'SF':10,
 'Tel Aviv':3409,
 'Istanbul':3562,
@@ -82,6 +85,10 @@ hdcs = { #test
 'Buenos Aires': 1105,
 'Ahmadabad': 6651
         }
+
+from_id_hdc(14)
+shutils.copytree('14/','14tenmin/')
+from_id_hdc(14,kwargs = {'headway_threshold': 20, 'to_test': ['transit']})
 
 
 for city in hdcs.keys():
