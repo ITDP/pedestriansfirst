@@ -86,9 +86,9 @@ hdcs = { #test
 'Ahmadabad': 6651
         }
 
-from_id_hdc(14)
-shutil.copytree('14/','14tenmin/')
-from_id_hdc(14,kwargs = {'headway_threshold': 20, 'to_test': ['transit']})
+from_id_hdc(14,kwargs = {'headway_threshold': 20})
+shutil.copytree('14/','14twentymin/')
+from_id_hdc(14, kwargs = {'to_test': ['transit']})
 
 
 for city in hdcs.keys():
