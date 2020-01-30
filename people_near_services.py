@@ -306,7 +306,7 @@ def pnservices(city, folder_name='', buffer_dist=100, headway_threshold=10,
     #osmnx seems to just give all data in northern-hemisphere format
     #Sorry about the stupid parsing of the projection definition, I'm lazy 
     
-    results = {}
+    results = {'name':name,'hdc':hdc}
     
     if not os.path.exists(folder_name):
         os.makedirs(folder_name)
