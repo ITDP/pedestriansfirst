@@ -2,7 +2,7 @@ import subprocess
 import fiona
 import os
 import json
-import shutils
+import shutil
 
 import people_near_services
 
@@ -87,7 +87,7 @@ hdcs = { #test
         }
 
 from_id_hdc(14)
-shutils.copytree('14/','14tenmin/')
+shutil.copytree('14/','14tenmin/')
 from_id_hdc(14,kwargs = {'headway_threshold': 20, 'to_test': ['transit']})
 
 
