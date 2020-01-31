@@ -41,7 +41,8 @@ def from_id_hdc(hdc, folder = None, kwargs = {}):
 
 
 hdcs = { #test
-'London':1912,
+#'London':1912,
+'Udaipur': 6712,
 'Paris':2046,
 'Amsterdam':2167,
 'Rome':2897,
@@ -71,7 +72,6 @@ hdcs = { #test
 'Pune': 7041,
 'Aqaba':4388,
 'Abu Dhabi': 5909,
-'Udaipur': 6712,
 'Brasilia': 1210,
 'Dar es Salaam': 5222,
 'Manila': 12829,
