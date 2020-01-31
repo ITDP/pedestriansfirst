@@ -56,23 +56,6 @@ def pnservices(city, folder_name='', buffer_dist=100, headway_threshold=10,
                 overpass = False
                 ):    
     dt = datetime.datetime.now()
-
-#shpfile_location = 'rva.shp'
-#folder_name = 'rva\\'
-#network_dist = 500
-#buffer_dist = 100
-#headway_threshold = 20
-#to_test = [#'healthcare',
-#           #'schools',
-#           #'libraries',
-#           #'carfree',
-#           #'parks'
-#           'blocks',
-#           #'density',
-#           #'transit',
-#           #'transit2',
-#           ]
-    dt = datetime.datetime.now()
     logger = logging.getLogger()
     logger.setLevel(logging.DEBUG)
     formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
@@ -169,136 +152,136 @@ def pnservices(city, folder_name='', buffer_dist=100, headway_threshold=10,
         sources = gtfs_parser.get_feed_infos(gtfs_parser.get_relevant_locs(bbox))
         transit_stop_sets = gtfs_parser.count_all_sources(sources, headwaylim = headway_threshold * 2)
     
+    if len(to_test) > 0 and to_test != ["blocks"]:
+        for p_idx, patch in enumerate(patches):
+            try:
+                patch_start = datetime.datetime.now()
+                
+                unbuffered_patch = patch
+                
+                max_service_dist_km = max(distances.values())/1000
+                
+                patch = shapely.geometry.box(
+                        patch.bounds[0] - (max_service_dist_km * longitude_factor),
+                        patch.bounds[1] - (max_service_dist_km * latitude_factor),
+                        patch.bounds[2] + (max_service_dist_km * longitude_factor),
+                        patch.bounds[3] + (max_service_dist_km * latitude_factor)
+                        )
+                        
+                
+                walk_filter = ('["area"!~"yes"]["highway"!~"link|motor|proposed|construction|abandoned|platform|raceway"]'
+                               '["service"!~"parking_aisle|driveway"]'
+                                       '["foot"!~"no"]["service"!~"private"]{}').format(ox.settings.default_access)
+                
+                if overpass:
+                    G = ox.graph_from_polygon(patch, custom_filter=walk_filter, simplify=False)
+                else:
+                    boundingarg = '-b='
+                    boundingarg += str(patch.bounds[0])+','
+                    boundingarg += str(patch.bounds[1])+','
+                    boundingarg += str(patch.bounds[2])+','
+                    boundingarg += str(patch.bounds[3])
+                    subprocess.check_call(['osmconvert',
+                                           str(hdc)+'/citywalk.o5m',
+                                           boundingarg,
+                                           #'--complete-ways',
+                                           '--drop-broken-refs',
+                                           '-o=patch.osm'])
+                    G = ox.graph_from_file('patch.osm', simplify=False)
+                    #os.remove('patch.osm')
+                
+                simple_G = ox.simplify_graph(G)
+                center_nodes = {}
+                for service in all_coords.keys():
+                    if service in ['healthcare','schools','libraries']:
+                        already_covered = None
+                        center_nodes[service] = []
+                        for coord in all_coords[service]:
+                            lat = coord[0]
+                            lon = coord[1]
+                            if unbuffered_patch.bounds[0] < lon < unbuffered_patch.bounds[2] and unbuffered_patch.bounds[1] < lat < unbuffered_patch.bounds[3]:
+                                point = shapely.geometry.Point(lon,lat)
+                                if not already_covered:
+                                    already_covered = point.buffer(50*longitude_factor_m)
+                                elif not already_covered.contains(point):
+                                    nearest = ox.get_nearest_node(simple_G, coord)
+                                    if not nearest in center_nodes[service]:    
+                                        center_nodes[service].append(nearest)
+                                        already_covered = already_covered.union(point.buffer(50*longitude_factor_m))
+                
+                if 'transit' in to_test:
+                    center_nodes['transit'] = []
+                    transit_centers = {}
+                    for service_idx, service in enumerate(transit_stop_sets):
+                        for stop_id in service.keys():
+                            lat = float(service[stop_id][1])
+                            lon = float(service[stop_id][2])
+                            headway = float(service[stop_id][0])
+                            if unbuffered_patch.bounds[0] < lon < unbuffered_patch.bounds[2] and unbuffered_patch.bounds[1] < lat < unbuffered_patch.bounds[3]:
+                                center_node = ox.get_nearest_node(simple_G, (lat, lon))
+                                if center_node not in transit_centers:
+                                    transit_centers[center_node] = {service_idx : headway} #store the headway value
+                                elif service_idx not in transit_centers[center_node].keys():
+                                    transit_centers[center_node][service_idx] = headway
+                                elif headway < transit_centers[center_node][service_idx]:
+                                    transit_centers[center_node][service_idx] = headway
+                    for center_node in transit_centers.keys():
+                        if len(transit_centers[center_node]) > 0:
+                            inv_headway = 0
+                            min_hw = 100
+                            for service_idx in transit_centers[center_node].keys():
+                                inv_headway += 1 / transit_centers[center_node][service_idx]
+                                if transit_centers[center_node][service_idx] < min_hw:
+                                    min_hw = transit_centers[center_node][service_idx]
+                            headway = 1 / inv_headway
+                            if headway <= headway_threshold:
+                                center_nodes['transit'].append(center_node)
+                                if min_hw > headway:
+                                    SAVED_TSTOPS.append((min_hw, headway))
+                                
+                
+                
+                
+                
+                # Project Graph
+                if not crs: #this only runs once, crs is invariable over patches
+                    G = ox.project_graph(G)
+                    crs = G.graph['crs'] 
+                else:
+                    G = ox.project_graph(G, to_crs=crs)
+                G = ox.simplify_graph(G)
+                
+                isochrone_polys = {}
+                failures = {}
+                for service in to_test:
+                    failures[service] = 0
+                
+               
+                
+                
+                        
+                
+                
+                # Get polygons
+                for service in testing_services:
+                    isochrone_polys[service], fails = local_isometric.make_iso_polys(G, center_nodes[service], distance=distances[service], edge_buff=buffer_dist)
+                    failures[service] += fails
+                    
+                for service in isochrone_polys.keys():
+                    if service not in quilt_ipolys.keys() or not quilt_ipolys[service]:
+                        quilt_ipolys[service] = isochrone_polys[service]
+                    elif isochrone_polys[service]:
+                        quilt_ipolys[service] = shapely.ops.cascaded_union([quilt_ipolys[service],isochrone_polys[service]])
+                for service in center_nodes.keys():
+                    quilt_cnodes[service] = quilt_cnodes[service] + center_nodes[service]
+                
+                patch_time = datetime.datetime.now() - patch_start
+                    
+                print("finished patch #",p_idx,'out of', len(patches),"in",str(patch_time))
+                patch_times.append(patch_time)
         
-    for p_idx, patch in enumerate(patches):
-        try:
-            patch_start = datetime.datetime.now()
-            
-            unbuffered_patch = patch
-            
-            max_service_dist_km = max(distances.values())/1000
-            
-            patch = shapely.geometry.box(
-                    patch.bounds[0] - (max_service_dist_km * longitude_factor),
-                    patch.bounds[1] - (max_service_dist_km * latitude_factor),
-                    patch.bounds[2] + (max_service_dist_km * longitude_factor),
-                    patch.bounds[3] + (max_service_dist_km * latitude_factor)
-                    )
-                    
-            
-            walk_filter = ('["area"!~"yes"]["highway"!~"link|motor|proposed|construction|abandoned|platform|raceway"]'
-                           '["service"!~"parking_aisle|driveway"]'
-                                   '["foot"!~"no"]["service"!~"private"]{}').format(ox.settings.default_access)
-            
-            if overpass:
-                G = ox.graph_from_polygon(patch, custom_filter=walk_filter, simplify=False)
-            else:
-                boundingarg = '-b='
-                boundingarg += str(patch.bounds[0])+','
-                boundingarg += str(patch.bounds[1])+','
-                boundingarg += str(patch.bounds[2])+','
-                boundingarg += str(patch.bounds[3])
-                subprocess.check_call(['osmconvert',
-                                       str(hdc)+'/citywalk.o5m',
-                                       boundingarg,
-                                       #'--complete-ways',
-                                       '--drop-broken-refs',
-                                       '-o=patch.osm'])
-                G = ox.graph_from_file('patch.osm', simplify=False)
-                #os.remove('patch.osm')
-            
-            simple_G = ox.simplify_graph(G)
-            center_nodes = {}
-            for service in all_coords.keys():
-                if service in ['healthcare','schools','libraries']:
-                    already_covered = None
-                    center_nodes[service] = []
-                    for coord in all_coords[service]:
-                        lat = coord[0]
-                        lon = coord[1]
-                        if unbuffered_patch.bounds[0] < lon < unbuffered_patch.bounds[2] and unbuffered_patch.bounds[1] < lat < unbuffered_patch.bounds[3]:
-                            point = shapely.geometry.Point(lon,lat)
-                            if not already_covered:
-                                already_covered = point.buffer(50*longitude_factor_m)
-                            elif not already_covered.contains(point):
-                                nearest = ox.get_nearest_node(simple_G, coord)
-                                if not nearest in center_nodes[service]:    
-                                    center_nodes[service].append(nearest)
-                                    already_covered = already_covered.union(point.buffer(50*longitude_factor_m))
-            
-            if 'transit' in to_test:
-                center_nodes['transit'] = []
-                transit_centers = {}
-                for service_idx, service in enumerate(transit_stop_sets):
-                    for stop_id in service.keys():
-                        lat = float(service[stop_id][1])
-                        lon = float(service[stop_id][2])
-                        headway = float(service[stop_id][0])
-                        if unbuffered_patch.bounds[0] < lon < unbuffered_patch.bounds[2] and unbuffered_patch.bounds[1] < lat < unbuffered_patch.bounds[3]:
-                            center_node = ox.get_nearest_node(simple_G, (lat, lon))
-                            if center_node not in transit_centers:
-                                transit_centers[center_node] = {service_idx : headway} #store the headway value
-                            elif service_idx not in transit_centers[center_node].keys():
-                                transit_centers[center_node][service_idx] = headway
-                            elif headway < transit_centers[center_node][service_idx]:
-                                transit_centers[center_node][service_idx] = headway
-                for center_node in transit_centers.keys():
-                    if len(transit_centers[center_node]) > 0:
-                        inv_headway = 0
-                        min_hw = 100
-                        for service_idx in transit_centers[center_node].keys():
-                            inv_headway += 1 / transit_centers[center_node][service_idx]
-                            if transit_centers[center_node][service_idx] < min_hw:
-                                min_hw = transit_centers[center_node][service_idx]
-                        headway = 1 / inv_headway
-                        if headway <= headway_threshold:
-                            center_nodes['transit'].append(center_node)
-                            if min_hw > headway:
-                                SAVED_TSTOPS.append((min_hw, headway))
-                            
-            
-            
-            
-            
-            # Project Graph
-            if not crs: #this only runs once, crs is invariable over patches
-                G = ox.project_graph(G)
-                crs = G.graph['crs'] 
-            else:
-                G = ox.project_graph(G, to_crs=crs)
-            G = ox.simplify_graph(G)
-            
-            isochrone_polys = {}
-            failures = {}
-            for service in to_test:
-                failures[service] = 0
-            
-           
-            
-            
-                    
-            
-            
-            # Get polygons
-            for service in testing_services:
-                isochrone_polys[service], fails = local_isometric.make_iso_polys(G, center_nodes[service], distance=distances[service], edge_buff=buffer_dist)
-                failures[service] += fails
-                
-            for service in isochrone_polys.keys():
-                if service not in quilt_ipolys.keys() or not quilt_ipolys[service]:
-                    quilt_ipolys[service] = isochrone_polys[service]
-                elif isochrone_polys[service]:
-                    quilt_ipolys[service] = shapely.ops.cascaded_union([quilt_ipolys[service],isochrone_polys[service]])
-            for service in center_nodes.keys():
-                quilt_cnodes[service] = quilt_cnodes[service] + center_nodes[service]
-            
-            patch_time = datetime.datetime.now() - patch_start
-                
-            print("finished patch #",p_idx,'out of', len(patches),"in",str(patch_time))
-            patch_times.append(patch_time)
-    
-        except ox.EmptyOverpassResponse:
-            print("RECEIVED NO NETWORK FOR PATCH", p_idx)
+            except ox.EmptyOverpassResponse:
+                print("RECEIVED NO NETWORK FOR PATCH", p_idx)
     
     
                 
@@ -546,8 +529,6 @@ def pnservices(city, folder_name='', buffer_dist=100, headway_threshold=10,
         print(blockmean)
         results['blockmean'] = blockmean
         
-    
-    
     ft = datetime.datetime.now()
     print("total", str(ft-dt))
     results['calctime':str(ft-dt)]
