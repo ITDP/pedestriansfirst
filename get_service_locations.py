@@ -157,23 +157,27 @@ class ServiceHandler(osmium.SimpleHandler): #newer
             print('RUNTIME ERROR while finding service area')
             
     def way(self, a):
-        carfree = False
-        if 'leisure' in a.tags and a.tags['leisure'] in ['park', 'playground']:
-            if not('foot' in a.tags and a.tags['foot'] == 'no'):
-                if not('service' in a.tags and a.tags['service'] == 'private'):
-                        if not('access' in a.tags and a.tags['access'] == 'private'):
-                            carfree = True
-        if 'highway' in a.tags and a.tags['highway'] in ['pedestrian', 'path','steps','footway']:
-            if not('foot' in a.tags and a.tags['foot'] == 'no'):
-                if 'crossing' not in a.tags and 'sidewalk' not in a.tags:
-                    if not('footway' in a.tags and a.tags['footway'] in ['sidewalk','crossing']):
-                        if not('service' in a.tags and a.tags['service'] == 'private'):
+        try:
+            carfree = False
+            if 'leisure' in a.tags and a.tags['leisure'] in ['park', 'playground']:
+                if not('foot' in a.tags and a.tags['foot'] == 'no'):
+                    if not('service' in a.tags and a.tags['service'] == 'private'):
                             if not('access' in a.tags and a.tags['access'] == 'private'):
                                 carfree = True
-        if carfree:
-            wkb = wkbfab.create_linestring(a)
-            poly = shapely.wkb.loads(wkb, hex=True)
-            self.carfreelist.append(poly)
+            if 'highway' in a.tags and a.tags['highway'] in ['pedestrian', 'path','steps','footway']:
+                if not('foot' in a.tags and a.tags['foot'] == 'no'):
+                    if 'crossing' not in a.tags and 'sidewalk' not in a.tags:
+                        if not('footway' in a.tags and a.tags['footway'] in ['sidewalk','crossing']):
+                            if not('service' in a.tags and a.tags['service'] == 'private'):
+                                if not('access' in a.tags and a.tags['access'] == 'private'):
+                                    carfree = True
+            if carfree:
+                wkb = wkbfab.create_linestring(a)
+                poly = shapely.wkb.loads(wkb, hex=True)
+                self.carfreelist.append(poly)
+            
+        except RuntimeError:
+            print('RUNTIME ERROR while finding service way')
         
 
 def get_point_locations(poly, query):
