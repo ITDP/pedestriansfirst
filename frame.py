@@ -54,7 +54,7 @@ hdcs = { #test
 'Atlanta':559,
 'Miami':556,
 'Houston':315,
-#'LA':14,
+'LA':14,
 'SF':10,
 'Tel Aviv':3409,
 'Istanbul':3562,
