@@ -57,7 +57,7 @@ hdcs = { #test
 'Brasilia': 1210,
 'Rio de Janeiro': 1361,
 'Buenos Aires': 1105,
-'Ahmadabad': 6651
+'Ahmadabad': 6651,
 'London':1912,
 'Paris':2046,
 'Amsterdam':2167,
@@ -83,22 +83,6 @@ hdcs = { #test
 'Karachi': 6169,
 'Guangzhou': 12080,
 'Mexico City': 154,
-'Abu Dhabi': 5909,
-'Pune': 7041,
-'Aqaba':4388,
-'Abu Dhabi': 5909,
-'Brasilia': 1210,
-'Dar es Salaam': 5222,
-'Manila': 12829,
-'Chennai': 8675,
-'Bogota': 621,
-'Medan': 10692,
-'Nairobi': 4808,
-'Jakarta': 11862,
-'Brasilia': 1210,
-'Rio de Janeiro': 1361,
-'Buenos Aires': 1105,
-'Ahmadabad': 6651
         }
 
 
