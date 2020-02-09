@@ -538,11 +538,11 @@ def pnservices(city, folder_name='', buffer_dist=100, headway_threshold=10,
         c['area'] = [block[1] for block in outblocks]
         c['perim'] = [block[2] for block in outblocks]
         c['lemgth'] = [block[3] for block in outblocks]
-        blockmedian = statistics.median(c.area)
+        blockmedian = statistics.median([block[1] for block in filtered_blocks])
         print('median block size')
         print(blockmedian)
         results['blockmedian'] = blockmedian
-        blockmean = statistics.mean(c.area)
+        blockmean = statistics.mean([block[1] for block in filtered_blocks])
         print('mean block size')
         print(blockmean)
         results['blockmean'] = blockmean
