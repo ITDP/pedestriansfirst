@@ -511,6 +511,7 @@ def pnservices(city, folder_name='', buffer_dist=100, headway_threshold=10,
         patch_densities['count'] = block_counts
         patch_densities.crs = {'init':'epsg:4326'}
         patch_densities_utm = patch_densities.to_crs(epsg=epsg)
+        pdb.set_trace()
         patch_densities_utm['density'] = patch_densities_utm.count / patch_densities_utm.geometry.area 
         patch_densities_latlon = patch_densities_utm.to_crs(epsg=4326)
         patch_densities_latlon.to_file(folder_name+'patch_densities'+'latlon'+'.geojson', driver='GeoJSON')
