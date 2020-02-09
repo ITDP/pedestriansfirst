@@ -501,9 +501,12 @@ def pnservices(city, folder_name='', buffer_dist=100, headway_threshold=10,
                                     if (lemgth < 50) and (1000 < area < 1000000):
                                         selected_areas.append(area)
                         outblocks += all_blocks
-                        mean = sum(selected_areas) / len(selected_areas)
-                        density = 1000000 / mean
-                        block_densities.append(density)
+                        if selected_areas:
+                            mean = sum(selected_areas) / len(selected_areas)
+                            density = 1000000 / mean
+                            block_densities.append(density)
+                        else:
+                            block_densities.append(numpy.nan)
                     else:
                         print('not merged!')
         
