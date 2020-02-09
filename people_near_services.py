@@ -434,7 +434,7 @@ def pnservices(city, folder_name='', buffer_dist=100, headway_threshold=10,
         patches = shapely.geometry.MultiPolygon(polygons=[boundaries])
         for slicer in hslicers+vslicers:
             patches = shapely.geometry.MultiPolygon(polygons = shapely.ops.split(patches, slicer))
-        
+        pdb.set_trace()
         print ("cut", len(list(patches)),"patches for",name)
         n=0
         outblocks = []
