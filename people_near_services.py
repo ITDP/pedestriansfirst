@@ -438,6 +438,7 @@ def pnservices(city, folder_name='', buffer_dist=100, headway_threshold=10,
         print ("cut", len(list(patches)),"patches for",name)
         n=0
         outblocks = []
+        block_densities = []
         for patch in patches:
             print("patch"+str(n)+" of "+str(len(patches)) )
             n+=1
@@ -486,6 +487,7 @@ def pnservices(city, folder_name='', buffer_dist=100, headway_threshold=10,
                         borders = shapely.ops.unary_union(merged)
                         blocks = list(shapely.ops.polygonize(borders))
                         all_blocks = []
+                        selected_areas = []
                         for block in blocks:
                             if 500 < block.area: #< 200000000:
                                 if block.interiors:
@@ -496,23 +498,36 @@ def pnservices(city, folder_name='', buffer_dist=100, headway_threshold=10,
                                     lemgth = round((perim * perim) / area, 3)
                                     block = block.simplify(15)
                                     all_blocks.append((block, area, perim, lemgth))
-                        outblocks += all_blocks  
+                                    if (lemgth < 50) and (1000 < area < 1000000):
+                                        selected_areas.append(area)
+                        outblocks += all_blocks
+                        mean = sum(selected_areas) / len(selected_areas)
+                        density = 1000000 / mean
+                        block_densities.append(density)
                     else:
                         print('not merged!')
         
         #export            
+        
+        patch_densities = gpd.GeoDataFrame(geometry = patches)
+        patch_densities['density'] = block_densities
+        patch_densities.crs = {'init':'epsg:'+str(epsg)}
+        patch_densities_latlon = patch_densities.to_crs
+        patch_densities_latlon.to_file(folder_name+'patch_densities'+'latlon'+'.geojson', driver='GeoJSON')
+        patch_densities_latlon.to_file(folder_name+'patch_densities'+'latlon'+'.shp')
         
         a = gpd.GeoDataFrame(geometry=[block[0] for block in outblocks])
         a.crs = {'init':'epsg:'+str(epsg)}
         a['area'] = [block[1] for block in outblocks]
         a['perim'] = [block[2] for block in outblocks]
         a['lemgth'] = [block[3] for block in outblocks]
+        a['density'] = [1000000/block[1] for block in outblocks]
         b = a.to_crs(epsg=4326)
         b.to_file(folder_name+'blocks'+'latlon'+'.geojson', driver='GeoJSON')
         b.to_file(folder_name+'blocks'+'latlon'+'.shp')
         filtered_blocks = []
         for block in outblocks:
-            if block[3] > 50:
+            if block[3] < 50:
                 if 1000 < block[1] < 1000000:
                     filtered_blocks.append(block)
         c = gpd.GeoDataFrame(geometry=[block[0] for block in outblocks])
