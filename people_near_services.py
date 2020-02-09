@@ -332,13 +332,14 @@ def pnservices(city, folder_name='', buffer_dist=100, headway_threshold=10,
             df_latlon = df_utm.to_crs('epsg:4326')
             
             stats = rasterstats.zonal_stats(df_latlon, 'pop_dens.tif', stats=['mean'])
+            total_carfree = 0
             for i in range(0,len(stats)):
                 if stats[i]['mean'] and type(stats[i]['mean']) != numpy.ma.core.MaskedConstant:
-                    total_PNS += (df_latlon.area[i]*stats[i]['mean'] / 62500) #62500 = m2 per pixel
+                    total_carfree += (df_utm.area[i]*stats[i]['mean'] / 62500) #62500 = m2 per pixel
             print("\n")
-            print('Total People Near Service for carfree', ":", total_PNS)
-            print(100*total_PNS/total_pop,"% of",total_pop)
-            results['carfree'] = total_PNS / total_pop
+            print('Total People Near Service for carfree', ":", total_carfree)
+            print(100*total_carfree/total_pop,"% of",total_pop)
+            results['carfree'] = total_carfree / total_pop
             
             df_utm.geometry = df_utm.geometry.simplify(10)
             df_latlon = df_utm.to_crs('epsg:4326')
