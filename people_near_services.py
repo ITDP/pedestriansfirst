@@ -438,7 +438,7 @@ def pnservices(city, folder_name='', buffer_dist=100, headway_threshold=10,
         print ("cut", len(list(patches)),"patches for",name)
         n=0
         outblocks = []
-        block_densities = []
+        block_counts = []
         for patch in patches:
             print("patch"+str(n)+" of "+str(len(patches)) )
             n+=1
@@ -501,21 +501,20 @@ def pnservices(city, folder_name='', buffer_dist=100, headway_threshold=10,
                                     if (lemgth < 50) and (1000 < area < 1000000):
                                         selected_areas.append(area)
                         outblocks += all_blocks
-                        if selected_areas:
-                            mean = sum(selected_areas) / len(selected_areas)
-                            density = 1000000 / mean
-                            block_densities.append(density)
-                        else:
-                            block_densities.append(numpy.nan)
+                        block_counts = len(all_blocks)
                     else:
                         print('not merged!')
         
         #export            
         
         patch_densities = gpd.GeoDataFrame(geometry = patches)
-        patch_densities['density'] = block_densities
-        patch_densities.to_file(folder_name+'patch_densities'+'latlon'+'.geojson', driver='GeoJSON')
-        patch_densities.to_file(folder_name+'patch_densities'+'latlon'+'.shp')
+        patch_densities['count'] = block_counts
+        patch_densities.crs = {'init':'epsg:4326}
+        patch_densities_utm = patch_densities.to_crs(epsg=epsg)
+        patch_densities_utm['density'] = patch_densities_utm.count / patch_densities_utm.area 
+        patch_densities_latlon = patch_densities_utm.to_crs(epsg=4326)
+        patch_densities_latlon.to_file(folder_name+'patch_densities'+'latlon'+'.geojson', driver='GeoJSON')
+        patch_densities_latlon.to_file(folder_name+'patch_densities'+'latlon'+'.shp')
         
         a = gpd.GeoDataFrame(geometry=[block[0] for block in outblocks])
         a.crs = {'init':'epsg:'+str(epsg)}
