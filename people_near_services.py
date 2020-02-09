@@ -509,7 +509,7 @@ def pnservices(city, folder_name='', buffer_dist=100, headway_threshold=10,
         
         patch_densities = gpd.GeoDataFrame(geometry = patches)
         patch_densities['count'] = block_counts
-        patch_densities.crs = {'init':'epsg:4326}
+        patch_densities.crs = {'init':'epsg:4326'}
         patch_densities_utm = patch_densities.to_crs(epsg=epsg)
         patch_densities_utm['density'] = patch_densities_utm.count / patch_densities_utm.area 
         patch_densities_latlon = patch_densities_utm.to_crs(epsg=4326)
