@@ -514,10 +514,8 @@ def pnservices(city, folder_name='', buffer_dist=100, headway_threshold=10,
         
         patch_densities = gpd.GeoDataFrame(geometry = patches)
         patch_densities['density'] = block_densities
-        patch_densities.crs = {'init':'epsg:'+str(epsg)}
-        patch_densities_latlon = patch_densities.to_crs(epsg=4326)
-        patch_densities_latlon.to_file(folder_name+'patch_densities'+'latlon'+'.geojson', driver='GeoJSON')
-        patch_densities_latlon.to_file(folder_name+'patch_densities'+'latlon'+'.shp')
+        patch_densities.to_file(folder_name+'patch_densities'+'latlon'+'.geojson', driver='GeoJSON')
+        patch_densities.to_file(folder_name+'patch_densities'+'latlon'+'.shp')
         
         a = gpd.GeoDataFrame(geometry=[block[0] for block in outblocks])
         a.crs = {'init':'epsg:'+str(epsg)}
