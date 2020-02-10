@@ -537,13 +537,13 @@ def pnservices(city, folder_name='', buffer_dist=100, headway_threshold=10,
         c['perim'] = [block[2] for block in outblocks]
         c['lemgth'] = [block[3] for block in outblocks]
         blockmedian = statistics.median([block[1] for block in filtered_blocks])
-        print('median block size')
+        print('median block density')
         print(blockmedian)
-        results['blockmedian'] = blockmedian
+        results['blockmedian_density'] = 1000000 / blockmedian
         blockmean = statistics.mean([block[1] for block in filtered_blocks])
-        print('mean block size')
+        print('mean block density')
         print(blockmean)
-        results['blockmean'] = blockmean
+        results['blockmean_density'] = 1000000 / blockmean
         
     ft = datetime.datetime.now()
     print("total", str(ft-dt))

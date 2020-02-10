@@ -56,26 +56,12 @@ def feed_from_id(feed_id):
         print(command)
         subprocess.check_call(command, shell=True)
     except:
+        if os.path.exists('temp_gtfs.zip'):
+            os.remove('temp_gtfs.zip')
+        if os.path.exists('temp_gtfs_dir'):
+            shutil.rmtree('temp_gtfs_dir')
         return False
-    #params = {'key': api_key,
-    #          'feed': feed_id}
-    #pdb.set_trace()
-    #try:
-    #resp = requests.get(query)#, params=params, stream=True)
-    #content = io.BytesIO(resp.content)
-    #z = zipfile.ZipFile(content)
-    #z.extractall('temp_gtfs_dir/')
-    #with open('temp_gtfs.zip','wb') as temp:
-    #    temp.write(resp.content)
-    #with zipfile.ZipFile('temp_gtfs.zip','r') as zip_ref:
-    #    zip_ref.extractall('temp_gtfs_dir')
-    #print('lalalala')
-    #pdb.set_trace()
-    #with zipfile.ZipFile('temp_gtfs.zip','r') as zip_ref:
-    #    zip_ref.extractall('temp_gtfs_dir/')
     feed = gk.read_gtfs('temp_gtfs_dir/', dist_units = 'km')
-    #except:
-    #    feed = None
     if os.path.exists('temp_gtfs.zip'):
         os.remove('temp_gtfs.zip')
     if os.path.exists('temp_gtfs_dir'):
