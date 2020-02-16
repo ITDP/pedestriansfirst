@@ -553,6 +553,7 @@ def pnservices(city, folder_name='', buffer_dist=100, headway_threshold=10,
     ft = datetime.datetime.now()
     print("total", str(ft-dt))
     results['calctime'] = str(ft-dt)
+    results['total_pop'] = total_pop
     with open(folder_name+"results.json","w") as output:
         output.write(json.dumps(results))
     for file in ['city.o5m','cityhighways.o5m','citywalk.o5m']:
