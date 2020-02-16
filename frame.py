@@ -88,7 +88,7 @@ hdcs = { #test
 
 
 for city in hdcs.keys():
-    if not os.path.exists(hdcs[city]+'/results.json'):
+    if not os.path.exists(str(hdcs[city])+'/results.json'):
         from_id_hdc(hdcs[city])
     else:
         for file in ['city.o5m','cityhighways.o5m','citywalk.o5m']:
