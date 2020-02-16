@@ -302,7 +302,7 @@ def pnservices(city, folder_name='', buffer_dist=100, headway_threshold=10,
             a.geometry = a.geometry.simplify(15) #maybe this should be after the population calculation
             b = a.to_crs(epsg=4326)
             b.to_file(folder_name+service+'latlon'+'.geojson', driver='GeoJSON')
-            b.to_file(folder_name+service+'latlon'+'.shp') #unnecessary later
+            #b.to_file(folder_name+service+'latlon'+'.shp') #unnecessary later
             
             #a, b = local_isometric.export(quilt_ipolys[service], epsg, service=service, folder=folder_name)
             
@@ -344,7 +344,7 @@ def pnservices(city, folder_name='', buffer_dist=100, headway_threshold=10,
             df_utm.geometry = df_utm.geometry.simplify(10)
             df_latlon = df_utm.to_crs('epsg:4326')
             df_latlon.to_file(folder_name+'carfreelatlon'+'.geojson', driver='GeoJSON')
-            df_latlon.to_file(folder_name+'carfreelatlon'+'.shp')
+            #df_latlon.to_file(folder_name+'carfreelatlon'+'.shp')
         
                 
             #a, b = local_isometric.export(quilt_ipolys[service], epsg, service=service, folder=folder_name)
@@ -363,10 +363,10 @@ def pnservices(city, folder_name='', buffer_dist=100, headway_threshold=10,
             a.geometry = a.geometry.simplify(15) #maybe this should be after the population calculation
             b = a.to_crs(epsg=4326)
             b.to_file(folder_name+service+'latlon'+'.geojson', driver='GeoJSON')
-            try:
-                b.to_file(folder_name+service+'latlon'+'.shp') #unnecessary later
-            except:
-                pdb.set_trace()
+            #try:
+                #b.to_file(folder_name+service+'latlon'+'.shp') #unnecessary later
+            #except:
+                #pdb.set_trace()
                 
             #a, b = local_isometric.export(quilt_ipolys[service], epsg, service=service, folder=folder_name)
             
@@ -520,7 +520,7 @@ def pnservices(city, folder_name='', buffer_dist=100, headway_threshold=10,
         patch_densities_utm['density'] = patch_densities_utm.block_count / (patch_densities_utm.area /1000000)
         patch_densities_latlon = patch_densities_utm.to_crs(epsg=4326)
         patch_densities_latlon.to_file(folder_name+'patch_densities'+'latlon'+'.geojson', driver='GeoJSON')
-        patch_densities_latlon.to_file(folder_name+'patch_densities'+'latlon'+'.shp')
+        #patch_densities_latlon.to_file(folder_name+'patch_densities'+'latlon'+'.shp')
         
         a = gpd.GeoDataFrame(geometry=[block[0] for block in outblocks])
         a.crs = {'init':'epsg:'+str(epsg)}
@@ -530,7 +530,7 @@ def pnservices(city, folder_name='', buffer_dist=100, headway_threshold=10,
         a['density'] = [1000000/block[1] for block in outblocks]
         b = a.to_crs(epsg=4326)
         b.to_file(folder_name+'blocks'+'latlon'+'.geojson', driver='GeoJSON')
-        b.to_file(folder_name+'blocks'+'latlon'+'.shp')
+        #b.to_file(folder_name+'blocks'+'latlon'+'.shp')
         filtered_blocks = []
         for block in outblocks:
             if block[3] < 50:

@@ -1,6 +1,7 @@
 import subprocess
 import fiona
 import os
+import os.path
 import json
 import shutil
 
@@ -41,35 +42,35 @@ def from_id_hdc(hdc, folder = None, kwargs = {}):
 
 
 hdcs = { #test
-'Delhi':6955,
-'Udaipur': 6712,
-'Abu Dhabi': 5909,
-'Pune': 7041,
-'Aqaba':4388,
-'Amman':4408,
-'Cairo':3902,
-'Brasilia': 1210,
-'Dar es Salaam': 5222,
-'Manila': 12829,
-'Chennai': 8675,
-'Bogota': 621,
-'Medan': 10692,
-'Nairobi': 4808,
-'Jakarta': 11862,
-'Rio de Janeiro': 1361,
-'Buenos Aires': 1105,
-'Ahmadabad': 6651,
-'London':1912,
-'Paris':2046,
-'Amsterdam':2167,
-'Rome':2897,
-'Moscow':3675,
-'New York':945,
-'Toronto':875,
-'DC':855,
-'Boston':1022,
-'Atlanta':559,
-'Miami':556,
+#'Delhi':6955,
+#'Udaipur': 6712,
+#'Abu Dhabi': 5909,
+#'Pune': 7041,
+#'Aqaba':4388,
+#'Amman':4408,
+#'Cairo':3902,
+#'Brasilia': 1210,
+#'Dar es Salaam': 5222,
+#'Manila': 12829,
+#'Chennai': 8675,
+#'Bogota': 621,
+#'Medan': 10692,
+#'Nairobi': 4808,
+#'Jakarta': 11862,
+#'Rio de Janeiro': 1361,
+#'Buenos Aires': 1105,
+#'Ahmadabad': 6651,
+#'London':1912,
+#'Paris':2046,
+#'Amsterdam':2167,
+#'Rome':2897,
+#'Moscow':3675,
+#'New York':945,
+#'Toronto':875,
+#'DC':855,
+#'Boston':1022,
+#'Atlanta':559,
+#'Miami':556,
 'Houston':315,
 'LA':14,
 'SF':10,
@@ -87,7 +88,12 @@ hdcs = { #test
 
 
 for city in hdcs.keys():
-    from_id_hdc(hdcs[city])
+    if not os.path.exists(hdcs[city]+'/results.json'):
+        from_id_hdc(hdcs[city])
+    else:
+        for file in ['city.o5m','cityhighways.o5m','citywalk.o5m']:
+            if os.path.exists(hdcs[city]+'/'+file):
+                os.remove(hdcs[city]+'/'+file)
 
 #for city in hdcs.keys():
 #    try:
