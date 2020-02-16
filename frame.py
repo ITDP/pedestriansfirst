@@ -40,16 +40,17 @@ def from_city(city):
     
     folder = str(hdc)+'/'
     
-    return people_near_services.pnservices(test_city, folder_name = folder, **kwargs)
+    return people_near_services.pnservices(city, folder_name = folder, **kwargs)
 
 def get_pop(city):
     return city['properties']['P15']
 
 #all cities in descending order
+    #todo: read from all_results to skip cities i've already done
 def all_cities():
     with fiona.open('GHS_STAT_UCDB2015MT_GLOBE_R2019A_V1_0.shp','r') as ucdb:
         cities = list(ucdb)
-    cities.sort(key=population, reverse = True)
+    cities.sort(key=get_pop, reverse = True)
     for city in cities:
         results = from_city(city)
         if os.path.exists('all_results.json'):
