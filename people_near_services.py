@@ -504,7 +504,12 @@ def pnservices(city, folder_name='', buffer_dist=100, headway_threshold=10,
                         outblocks += all_blocks
                         block_counts.append(len(all_blocks))
                     else:
+                        block_counts.append(0)
                         print('not merged!')
+                else:
+                    block_counts.append(0)
+            else:
+                block_counts.append(0)
         
         #export            
         
