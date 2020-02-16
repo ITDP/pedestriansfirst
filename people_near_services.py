@@ -556,8 +556,8 @@ def pnservices(city, folder_name='', buffer_dist=100, headway_threshold=10,
     with open(folder_name+"results.json","w") as output:
         output.write(json.dumps(results))
     for file in ['city.o5m','cityhighways.o5m','citywalk.o5m']:
-        if os.path.exists(hdc+'/'+file):
-            os.remove(hdc+'/'+file)
+        if os.path.exists(str(hdc)+'/'+file):
+            os.remove(str(hdc)+'/'+file)
     return results
 #return failures, SAVED_TSTOPS
 

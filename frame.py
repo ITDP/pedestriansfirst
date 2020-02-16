@@ -92,8 +92,8 @@ for city in hdcs.keys():
         from_id_hdc(hdcs[city])
     else:
         for file in ['city.o5m','cityhighways.o5m','citywalk.o5m']:
-            if os.path.exists(hdcs[city]+'/'+file):
-                os.remove(hdcs[city]+'/'+file)
+            if os.path.exists(str(hdcs[city])+'/'+file):
+                os.remove(str(hdcs[city])+'/'+file)
 
 #for city in hdcs.keys():
 #    try:
