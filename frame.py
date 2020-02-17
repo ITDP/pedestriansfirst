@@ -12,9 +12,9 @@ def from_id_hdc(hdc, folder = None, kwargs = {}):
     #select city from ID number
     with fiona.open('GHS_STAT_UCDB2015MT_GLOBE_R2019A_V1_0.shp','r') as ucdb:
         for city in ucdb:
-            if city['properties']['ID_HDC_G0'] == hdc:
-                city = city
-    return from_city(city, kwargs=kwargs)
+            if int(city['properties']['ID_HDC_G0']) == int(hdc):
+                target = city
+    return from_city(target, kwargs=kwargs)
 
 def from_city(city, kwargs = {}):
     hdc = city['properties']['ID_HDC_G0']
@@ -112,7 +112,6 @@ hdcs = { #test
 
 for city in hdcs.keys():
     if not os.path.exists(str(hdcs[city])+'/results.json'):
-        print ('gonna get',hdcs[city])
         from_id_hdc(hdcs[city])
     else:
         for file in ['city.o5m','cityhighways.o5m','citywalk.o5m']:
