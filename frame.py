@@ -62,7 +62,7 @@ def all_cities():
         with open('all_results.json','w') as out_file:
             json.dump(all_results, out_file)
 
-all_cities()
+#all_cities()
 
 hdcs = { #test
 #'Delhi':6955,
