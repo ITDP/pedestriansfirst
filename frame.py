@@ -62,66 +62,19 @@ def all_cities():
         with open('all_results.json','w') as out_file:
             json.dump(all_results, out_file)
 
-#all_cities()
+all_cities()
 
-hdcs = { #test
-#'Delhi':6955,
-#'Udaipur': 6712,
-#'Abu Dhabi': 5909,
-#'Pune': 7041,
-#'Aqaba':4388,
-#'Amman':4408,
-#'Cairo':3902,
-#'Brasilia': 1210,
-#'Dar es Salaam': 5222,
-#'Manila': 12829,
-#'Chennai': 8675,
-#'Bogota': 621,
-#'Medan': 10692,
-#'Nairobi': 4808,
-#'Jakarta': 11862,
-#'Rio de Janeiro': 1361,
-#'Buenos Aires': 1105,
-#'Ahmadabad': 6651,
-#'London':1912,
-#'Paris':2046,
-#'Amsterdam':2167,
-#'Rome':2897,
-#'Moscow':3675,
-#'New York':945,
-#'Toronto':875,
-#'DC':855,
-#'Boston':1022,
-#'Atlanta':559,
-#'Miami':556,
-#'Houston':315,
-#'LA':14,
-'SF':10,
-'Tel Aviv':3409,
-'Istanbul':3562,
-'Havana':473,
-'Beijing': 10687,
-'Tianjin': 10922,
-'Delhi': 6955,
-'Karachi': 6169,
-'Guangzhou': 12080,
-'Mexico City': 154,
-        }
+#hdcs = { #test
+#'Mexico City': 154,
+#        }
 
 
-
-for city in hdcs.keys():
-    if not os.path.exists(str(hdcs[city])+'/results.json'):
-        from_id_hdc(hdcs[city])
-    else:
-        for file in ['city.o5m','cityhighways.o5m','citywalk.o5m']:
-            if os.path.exists(str(hdcs[city])+'/'+file):
-                os.remove(str(hdcs[city])+'/'+file)
 
 #for city in hdcs.keys():
-#    try:
+#    if not os.path.exists(str(hdcs[city])+'/results.json'):
 #        from_id_hdc(hdcs[city])
-#    except Exception as e:
-#        with open('ERROR'+city+str(hdcs[city])+'.txt', 'w') as errout:
-#            errout.write(str(e))
-#            errout.close()
+#    else:
+#        for file in ['city.o5m','cityhighways.o5m','citywalk.o5m']:
+#            if os.path.exists(str(hdcs[city])+'/'+file):
+#                os.remove(str(hdcs[city])+'/'+file)
+
