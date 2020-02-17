@@ -8,7 +8,7 @@ import wget
 import io
 
 import subprocess
-
+import datetime
 import shutil
 
 import pdb
@@ -61,6 +61,13 @@ def feed_from_id(feed_id):
         if os.path.exists('temp_gtfs_dir'):
             shutil.rmtree('temp_gtfs_dir')
         return False
+    with open('temp_gtfs_dir/calendar.txt','r') as calfile:
+        out = ''
+        for line in calfile:
+            out += line.strip()
+            out += '\n'
+    with open('temp_gtfs_dir/calendar.txt','w') as calfile:
+        calfile.write(out)
     feed = gk.read_gtfs('temp_gtfs_dir/', dist_units = 'km')
     if os.path.exists('temp_gtfs.zip'):
         os.remove('temp_gtfs.zip')
@@ -69,14 +76,11 @@ def feed_from_id(feed_id):
     return feed
 
 def get_freq_stops(feed, headwaylim = 20):
-    #days = feed.get_first_week()[0:5]
+    try:
+        days = feed.get_first_week()[0:5]
+    except:
+        return {}
     counts = {}
-    days = [
-            '20200309',
-            '20200310',
-            '20200311',
-            '20200312',
-            '20200313']
     try:
         stopstats = gk.stops.compute_stop_stats(feed, days, 
                                           headway_start_time= '05:00:00', 
