@@ -16,7 +16,7 @@ def from_id_hdc(hdc, folder = None, kwargs = {}):
                 city = city
     return from_city(city, kwargs=kwargs)
 
-def from_city(city, kwargs = kwargs):
+def from_city(city, kwargs = {}):
     hdc = city['properties']['ID_HDC_G0']
     #save city geometry so that I can take an extract from planet.pbf within it
     if not os.path.isdir(str(hdc)):
