@@ -14,9 +14,9 @@ def from_id_hdc(hdc, folder = None, kwargs = {}):
         for city in ucdb:
             if city['properties']['ID_HDC_G0'] == hdc:
                 city = city
-    return from_city(city)
+    return from_city(city, kwargs=kwargs)
 
-def from_city(city):
+def from_city(city, kwargs = kwargs):
     hdc = city['properties']['ID_HDC_G0']
     #save city geometry so that I can take an extract from planet.pbf within it
     if not os.path.isdir(str(hdc)):
