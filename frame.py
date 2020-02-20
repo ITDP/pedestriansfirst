@@ -52,12 +52,13 @@ def all_cities():
         cities = list(ucdb)
     cities.sort(key=get_pop, reverse = True)
     for city in cities:
-        results = from_city(city)
         if os.path.exists('all_results.json'):
             with open('all_results.json','r') as in_file:
                 all_results = json.load(in_file)
         else:
             all_results = {}
+        pdb.set_trace()
+        results = from_city(city)
         all_results.update({city['properties']['ID_HDC_G0']:results})
         with open('all_results.json','w') as out_file:
             json.dump(all_results, out_file)
