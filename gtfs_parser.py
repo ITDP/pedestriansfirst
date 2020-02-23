@@ -61,11 +61,13 @@ def feed_from_id(feed_id):
         if os.path.exists('temp_gtfs_dir'):
             shutil.rmtree('temp_gtfs_dir')
         return False
-    with open('temp_gtfs_dir/calendar.txt','r') as calfile:
-        out = ''
-        for line in calfile:
-            out += line.strip()
-            out += '\n'
+    if os.path.exists('temp_gtfs_dir/calendar.txt'):
+        #this fixes a bug that was happening because San Francisco, of all places, ended text lines with whitespace
+        with open('temp_gtfs_dir/calendar.txt','r') as calfile:
+            out = ''
+            for line in calfile:
+                out += line.strip()
+                out += '\n'
     with open('temp_gtfs_dir/calendar.txt','w') as calfile:
         calfile.write(out)
     feed = gk.read_gtfs('temp_gtfs_dir/', dist_units = 'km')
