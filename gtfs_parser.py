@@ -68,8 +68,8 @@ def feed_from_id(feed_id):
             for line in calfile:
                 out += line.strip()
                 out += '\n'
-    with open('temp_gtfs_dir/calendar.txt','w') as calfile:
-        calfile.write(out)
+        with open('temp_gtfs_dir/calendar.txt','w') as calfile:
+            calfile.write(out)
     feed = gk.read_gtfs('temp_gtfs_dir/', dist_units = 'km')
     if os.path.exists('temp_gtfs.zip'):
         os.remove('temp_gtfs.zip')
