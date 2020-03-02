@@ -93,6 +93,8 @@ def get_freq_stops(feed, headwaylim = 20):
                                           headway_start_time= '05:00:00', 
                                           headway_end_time= '21:00:00', 
                                           split_directions = False)
+    except TypeError:
+        return {}
     if stopstats.empty:
         return {}
     for stop_id in stopstats.stop_id.unique():
