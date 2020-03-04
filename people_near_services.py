@@ -174,7 +174,7 @@ def pnservices(city, folder_name='', buffer_dist=100, headway_threshold=10,
                                        '["foot"!~"no"]["service"!~"private"]{}').format(ox.settings.default_access)
                 
                 if overpass:
-                    G = ox.graph_from_polygon(patch, custom_filter=walk_filter, simplify=False)
+                    G = ox.graph_from_polygon(patch, custom_filter=walk_filter, simplify=False, retain_all=True)
                 else:
                     boundingarg = '-b='
                     boundingarg += str(patch.bounds[0])+','
@@ -187,7 +187,7 @@ def pnservices(city, folder_name='', buffer_dist=100, headway_threshold=10,
                                            #'--complete-ways',
                                            '--drop-broken-refs',
                                            '-o=patch.osm'])
-                    G = ox.graph_from_file('patch.osm', simplify=False)
+                    G = ox.graph_from_file('patch.osm', simplify=False, retain_all=True)
                     #os.remove('patch.osm')
                 
                 simple_G = ox.simplify_graph(G)
@@ -457,7 +457,7 @@ def pnservices(city, folder_name='', buffer_dist=100, headway_threshold=10,
                     )
             
             if overpass:
-                G = ox.graph_from_polygon(patch, custom_filter=walk_filter, simplify=False)
+                G = ox.graph_from_polygon(patch, custom_filter=walk_filter, simplify=False, retain_all=True)
             else:
                 boundingarg = '-b='
                 boundingarg += str(patch.bounds[0])+','
@@ -471,7 +471,7 @@ def pnservices(city, folder_name='', buffer_dist=100, headway_threshold=10,
                                        '--drop-broken-refs',
                                        '-o=patch.osm'])
                 try:
-                    G = ox.graph_from_file('patch.osm', simplify=False)
+                    G = ox.graph_from_file('patch.osm', simplify=False, retain_all=True)
                 except ox.core.EmptyOverpassResponse:
                     G = False
             
