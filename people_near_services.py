@@ -200,6 +200,7 @@ def pnservices(city, folder_name='', buffer_dist=100, headway_threshold=10,
                             lat = coord[0]
                             lon = coord[1]
                             if unbuffered_patch.bounds[0] < lon < unbuffered_patch.bounds[2] and unbuffered_patch.bounds[1] < lat < unbuffered_patch.bounds[3]:
+                                
                                 point = shapely.geometry.Point(lon,lat)
                                 if not already_covered:
                                     already_covered = point.buffer(50*longitude_factor_m)
@@ -208,6 +209,8 @@ def pnservices(city, folder_name='', buffer_dist=100, headway_threshold=10,
                                     if not nearest in center_nodes[service]:    
                                         center_nodes[service].append(nearest)
                                         already_covered = already_covered.union(point.buffer(50*longitude_factor_m))
+                                else:
+                                    print("already covered")
                 
                 if 'transit' in to_test:
                     center_nodes['transit'] = []
