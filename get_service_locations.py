@@ -111,6 +111,7 @@ class ServiceHandler(osmium.SimpleHandler): #newer
              ('healthcare' in n.tags and 
                n.tags['healthcare'] in ['alternative','birthing_center','centre','midwife','nurse','hospital','doctor','clinic','pharmacy','yes']) ):
             self.locationlist['healthcare'].append((n.location.lat, n.location.lon))
+            print("HEALTHCARE FOUND!")
 
     def area(self, a):
         try:
