@@ -200,9 +200,11 @@ def pnservices(city, folder_name='', buffer_dist=100, headway_threshold=10,
                             lat = coord[0]
                             lon = coord[1]
                             if unbuffered_patch.bounds[0] < lon < unbuffered_patch.bounds[2] and unbuffered_patch.bounds[1] < lat < unbuffered_patch.bounds[3]:
-                                
                                 point = shapely.geometry.Point(lon,lat)
                                 if not already_covered:
+                                    nearest = ox.get_nearest_node(simple_G, coord)
+                                    if not nearest in center_nodes[service]:    
+                                        center_nodes[service].append(nearest)
                                     already_covered = point.buffer(50*longitude_factor_m)
                                 elif not already_covered.contains(point):
                                     nearest = ox.get_nearest_node(simple_G, coord)
@@ -210,7 +212,7 @@ def pnservices(city, folder_name='', buffer_dist=100, headway_threshold=10,
                                         center_nodes[service].append(nearest)
                                         already_covered = already_covered.union(point.buffer(50*longitude_factor_m))
                                 else:
-                                    print("already covered")
+                                    print ("Already covered")
                 
                 if 'transit' in to_test:
                     center_nodes['transit'] = []
@@ -373,7 +375,6 @@ def pnservices(city, folder_name='', buffer_dist=100, headway_threshold=10,
                 
             #a, b = local_isometric.export(quilt_ipolys[service], epsg, service=service, folder=folder_name)
             
-            pdb.set_trace()
             stats = rasterstats.zonal_stats(b, 'pop_dens.tif', stats=['mean'])
             
             total_PNS = 0
