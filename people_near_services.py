@@ -370,6 +370,7 @@ def pnservices(city, folder_name='', buffer_dist=100, headway_threshold=10,
                 
             #a, b = local_isometric.export(quilt_ipolys[service], epsg, service=service, folder=folder_name)
             
+            pdb.set_trace()
             stats = rasterstats.zonal_stats(b, 'pop_dens.tif', stats=['mean'])
             
             total_PNS = 0
