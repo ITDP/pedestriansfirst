@@ -308,7 +308,7 @@ def pnservices(city, folder_name='', buffer_dist=100, headway_threshold=10,
             service_utm = gpd.GeoDataFrame(geometry = [quilt_ipolys[service]])
             service_utm.crs = {'init':'epsg:'+str(epsg)}
             service_utm.geometry = service_utm.geometry.simplify(15) #maybe this should be after the population calculation
-            service_utm = gpd.overlay(service_utm ,boundaries_utm, how='intersect')
+            service_utm = gpd.overlay(service_utm ,boundaries_utm, how='intersection')
             service_latlon = service_utm.to_crs(epsg=4326)
             service_latlon.to_file(folder_name+service+'latlon'+'.geojson', driver='GeoJSON')
             
@@ -337,7 +337,7 @@ def pnservices(city, folder_name='', buffer_dist=100, headway_threshold=10,
             #this is the analysis, the 100m buffer
             carfree_utm = gpd.GeoDataFrame(geometry = [shapely.ops.cascaded_union(carfree_utm.geometry)])
             carfree_utm.geometry = carfree_utm.geometry.simplify(10)
-            carfree_utm = gpd.overlay(carfree_utm ,boundaries_utm, how='intersect')
+            carfree_utm = gpd.overlay(carfree_utm ,boundaries_utm, how='intersection')
             carfree_utm.crs = crs
             carfree_latlon = carfree_utm.to_crs('epsg:4326')
             
@@ -369,7 +369,7 @@ def pnservices(city, folder_name='', buffer_dist=100, headway_threshold=10,
                 intersect = shapely.geometry.MultiPolygon(intersect)
             hs_utm = gpd.GeoDataFrame(geometry = [intersect])
             hs_utm.crs = {'init':'epsg:'+str(epsg)}
-            carfree_utm = gpd.overlay(carfree_utm ,boundaries_utm, how='intersect')
+            carfree_utm = gpd.overlay(carfree_utm ,boundaries_utm, how='intersection')
             hs_utm.geometry = hs_utm.geometry.simplify(15) #maybe this should be after the population calculation
             hs_latlon = hs_utm.to_crs(epsg=4326)
             hs_latlon.to_file(folder_name+service+'latlon'+'.geojson', driver='GeoJSON')
