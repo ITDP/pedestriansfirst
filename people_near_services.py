@@ -334,6 +334,7 @@ def pnservices(city, folder_name='', buffer_dist=100, headway_threshold=10,
             df_utm.geometry = df_utm.geometry.buffer(100)
             df_utm = gpd.GeoDataFrame(geometry = [shapely.ops.cascaded_union(df_utm.geometry)])
             df_utm.crs = crs
+            pdb.set_trace()
             df_latlon = df_utm.to_crs('epsg:4326')
             
             stats = rasterstats.zonal_stats(df_latlon, 'pop_dens.tif', stats=['mean'])
