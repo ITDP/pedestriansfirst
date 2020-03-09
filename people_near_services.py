@@ -298,25 +298,26 @@ def pnservices(city, folder_name='', buffer_dist=100, headway_threshold=10,
     
     if not os.path.exists(folder_name):
         os.makedirs(folder_name)
-       
+     
+    boundaries_latlon = gpd.GeoDataFrame(geometry=[boundaries])
+    boundaries_latlon.crs = {'init':'epsg:4326'}
+    boundaries_utm = bd_latlon.to_crs(crs)
     
     for service in testing_services:
         if quilt_ipolys[service]:
-            a = gpd.GeoDataFrame(geometry = [quilt_ipolys[service]])
-            a.crs = {'init':'epsg:'+str(epsg)}
-            a.geometry = a.geometry.simplify(15) #maybe this should be after the population calculation
-            b = a.to_crs(epsg=4326)
-            b.to_file(folder_name+service+'latlon'+'.geojson', driver='GeoJSON')
-            #b.to_file(folder_name+service+'latlon'+'.shp') #unnecessary later
+            service_utm = gpd.GeoDataFrame(geometry = [quilt_ipolys[service]])
+            service_utm.crs = {'init':'epsg:'+str(epsg)}
+            service_utm.geometry = service_utm.geometry.simplify(15) #maybe this should be after the population calculation
+            service_utm = gpd.overlay(service_utm ,boundaries_utm, how='intersect')
+            service_latlon = service_utm.to_crs(epsg=4326)
+            service_latlon.to_file(folder_name+service+'latlon'+'.geojson', driver='GeoJSON')
             
-            #a, b = local_isometric.export(quilt_ipolys[service], epsg, service=service, folder=folder_name)
-            
-            stats = rasterstats.zonal_stats(b, 'pop_dens.tif', stats=['mean'])
+            stats = rasterstats.zonal_stats(service_latlon, 'pop_dens.tif', stats=['mean'])
             
             total_PNS = 0
             for i in range(0,len(stats)):
                 if stats[i]['mean'] and type(stats[i]['mean']) != numpy.ma.core.MaskedConstant:
-                    total_PNS += (a.area[i]*stats[i]['mean'] / 62500) #62500 = m2 per pixel
+                    total_PNS += (service_utm.area[i]*stats[i]['mean'] / 62500) #62500 = m2 per pixel
             print("\n")
             print('Total People Near Service for', service, ":", total_PNS)
             print(100*total_PNS/total_pop,"% of",total_pop)
@@ -328,28 +329,30 @@ def pnservices(city, folder_name='', buffer_dist=100, headway_threshold=10,
     if 'carfree' in to_test:
         print("getting carfree")
         if citywide_carfree:
-            df_latlon = gpd.GeoDataFrame(geometry = citywide_carfree)
-            df_latlon.crs = {'init':'epsg:4326'}
-            df_utm = df_latlon.to_crs(crs)
-            df_utm.geometry = df_utm.geometry.buffer(100)
-            df_utm = gpd.GeoDataFrame(geometry = [shapely.ops.cascaded_union(df_utm.geometry)])
-            df_utm.crs = crs
-            pdb.set_trace()
-            df_latlon = df_utm.to_crs('epsg:4326')
+            carfree_latlon = gpd.GeoDataFrame(geometry = citywide_carfree)
+            #just a latlon list of points
+            carfree_latlon.crs = {'init':'epsg:4326'}
+            carfree_utm = carfree_latlon.to_crs(crs)
+            carfree_utm.geometry = carfree_utm.geometry.buffer(100)
+            #this is the analysis, the 100m buffer
+            carfree_utm = gpd.GeoDataFrame(geometry = [shapely.ops.cascaded_union(carfree_utm.geometry)])
+            carfree_utm.geometry = df_utm.geometry.simplify(10)
+            carfree_utm = gpd.overlay(carfree_utm ,boundaries_utm, how='intersect')
+            carfree_utm.crs = crs
+            carfree_latlon = carfree_utm.to_crs('epsg:4326')
             
-            stats = rasterstats.zonal_stats(df_latlon, 'pop_dens.tif', stats=['mean'])
+            stats = rasterstats.zonal_stats(carfree_latlon, 'pop_dens.tif', stats=['mean'])
             total_carfree = 0
             for i in range(0,len(stats)):
                 if stats[i]['mean'] and type(stats[i]['mean']) != numpy.ma.core.MaskedConstant:
-                    total_carfree += (df_utm.area[i]*stats[i]['mean'] / 62500) #62500 = m2 per pixel
+                    total_carfree += (carfree_utm.area[i]*stats[i]['mean'] / 62500) #62500 = m2 per pixel
             print("\n")
             print('Total People Near Service for carfree', ":", total_carfree)
             print(100*total_carfree/total_pop,"% of",total_pop)
             results['carfree'] = total_carfree / total_pop
             
-            df_utm.geometry = df_utm.geometry.simplify(10)
-            df_latlon = df_utm.to_crs('epsg:4326')
-            df_latlon.to_file(folder_name+'carfreelatlon'+'.geojson', driver='GeoJSON')
+            carfree_latlon = df_utm.to_crs('epsg:4326')
+            carfree_latlon.to_file(folder_name+'carfreelatlon'+'.geojson', driver='GeoJSON')
             #df_latlon.to_file(folder_name+'carfreelatlon'+'.shp')
         
                 
@@ -364,11 +367,12 @@ def pnservices(city, folder_name='', buffer_dist=100, headway_threshold=10,
             if type(intersect) == shapely.geometry.collection.GeometryCollection:
                 intersect = [obj for obj in intersect if type(obj) == shapely.geometry.polygon.Polygon]
                 intersect = shapely.geometry.MultiPolygon(intersect)
-            a = gpd.GeoDataFrame(geometry = [intersect])
-            a.crs = {'init':'epsg:'+str(epsg)}
-            a.geometry = a.geometry.simplify(15) #maybe this should be after the population calculation
-            b = a.to_crs(epsg=4326)
-            b.to_file(folder_name+service+'latlon'+'.geojson', driver='GeoJSON')
+            hs_utm = gpd.GeoDataFrame(geometry = [intersect])
+            hs_utm.crs = {'init':'epsg:'+str(epsg)}
+            carfree_utm = gpd.overlay(carfree_utm ,boundaries_utm, how='intersect')
+            hs_utm.geometry = hs_utm.geometry.simplify(15) #maybe this should be after the population calculation
+            hs_latlon = hs_utm.to_crs(epsg=4326)
+            hs_latlon.to_file(folder_name+service+'latlon'+'.geojson', driver='GeoJSON')
             #try:
                 #b.to_file(folder_name+service+'latlon'+'.shp') #unnecessary later
             #except:
@@ -376,12 +380,12 @@ def pnservices(city, folder_name='', buffer_dist=100, headway_threshold=10,
                 
             #a, b = local_isometric.export(quilt_ipolys[service], epsg, service=service, folder=folder_name)
             
-            stats = rasterstats.zonal_stats(b, 'pop_dens.tif', stats=['mean'])
+            stats = rasterstats.zonal_stats(hs_latlon, 'pop_dens.tif', stats=['mean'])
             
             total_PNS = 0
             for i in range(0,len(stats)):
                 if stats[i]['mean'] and type(stats[i]['mean']) != numpy.ma.core.MaskedConstant:
-                    total_PNS += (a.area[i]*stats[i]['mean'] / 62500) #62500 = m2 per pixel
+                    total_PNS += (hs_utm.area[i]*stats[i]['mean'] / 62500) #62500 = m2 per pixel
             print("\n")
             print('Total People Near Service for', service, ":", total_PNS)
             print(100*total_PNS/total_pop,"% of",total_pop)
