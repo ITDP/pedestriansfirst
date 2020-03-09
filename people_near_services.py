@@ -301,7 +301,7 @@ def pnservices(city, folder_name='', buffer_dist=100, headway_threshold=10,
      
     boundaries_latlon = gpd.GeoDataFrame(geometry=[boundaries])
     boundaries_latlon.crs = {'init':'epsg:4326'}
-    boundaries_utm = bd_latlon.to_crs(crs)
+    boundaries_utm = boundaries_latlon.to_crs(crs)
     
     for service in testing_services:
         if quilt_ipolys[service]:
@@ -336,7 +336,7 @@ def pnservices(city, folder_name='', buffer_dist=100, headway_threshold=10,
             carfree_utm.geometry = carfree_utm.geometry.buffer(100)
             #this is the analysis, the 100m buffer
             carfree_utm = gpd.GeoDataFrame(geometry = [shapely.ops.cascaded_union(carfree_utm.geometry)])
-            carfree_utm.geometry = df_utm.geometry.simplify(10)
+            carfree_utm.geometry = carfree_utm.geometry.simplify(10)
             carfree_utm = gpd.overlay(carfree_utm ,boundaries_utm, how='intersect')
             carfree_utm.crs = crs
             carfree_latlon = carfree_utm.to_crs('epsg:4326')
@@ -351,7 +351,7 @@ def pnservices(city, folder_name='', buffer_dist=100, headway_threshold=10,
             print(100*total_carfree/total_pop,"% of",total_pop)
             results['carfree'] = total_carfree / total_pop
             
-            carfree_latlon = df_utm.to_crs('epsg:4326')
+            carfree_latlon = carfree_utm.to_crs('epsg:4326')
             carfree_latlon.to_file(folder_name+'carfreelatlon'+'.geojson', driver='GeoJSON')
             #df_latlon.to_file(folder_name+'carfreelatlon'+'.shp')
         
