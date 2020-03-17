@@ -57,7 +57,7 @@ def pnservices(city, folder_name='', buffer_dist=100, headway_threshold=10,
                 ):    
     dt = datetime.datetime.now()
     logger = logging.getLogger()
-    logger.setLevel(logging.DEBUG)
+    logger.setLevel(logging.CRITICAL)
     formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
 
     fh = logging.FileHandler('log_filename.txt')
