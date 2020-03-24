@@ -47,6 +47,8 @@ def make_patches(boundaries, patch_length = 5): #patch_length in km
     hslicers = []
     vslicers = []
     
+    
+    
     for i in range(1,n_hslicers+1):
         h_increment = (bbox[2]-bbox[0])/(n_hslicers+1)
         lat = bbox[0]+(i*h_increment)
@@ -123,9 +125,10 @@ def pedestrians_first(city,
     
     
     crs = None 
+    print (bbox)
+    print (boundaries.bounds)
     
-    
-    patches = make_patches(boundaries, patch_length=patch_length)
+    patches = make_patches(boundaries, bbox, patch_length=patch_length)
     
     print('Evaluating Pedestrians First indicators in',name)
     print('Measuring',str(to_test))
@@ -423,7 +426,7 @@ def pedestrians_first(city,
     if 'blocks' in to_test:
         print("getting blocks")
         
-        patches = make_patches(boundaries, patch_length=patch_length)
+        patches = make_patches(boundaries, bbox, patch_length=patch_length)
         print ("cut", len(list(patches)),"patches for block size in",name)
         
         outblocks = []
