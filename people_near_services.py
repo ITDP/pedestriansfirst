@@ -7,17 +7,14 @@ import statistics
 import rasterstats
 import rasterio.mask
 import subprocess
-import osmium
 import json
 
 import osmnx as ox
 import geopandas as gpd
-import networkx as nx
 import shapely.geometry
 import shapely.ops
-import pyproj
 
-import local_isometric
+import isochrones
 import get_service_locations
 import car_free_streets
 import gtfs_parser
@@ -28,65 +25,10 @@ import logging
 
 ox.utils.config(log_console = False)
 
-#added a test comment and changed it
-
-def weighted_pop_density(array):
-    total = 0
-    for cell in array.compressed():
-        total += cell**2
-    return total / numpy.sum(array)
-
-def pnservices(city, folder_name='', buffer_dist=100, headway_threshold=10,
-               to_test = [
-                       'healthcare',
-                       'schools',
-                       'h+s',
-                       'libraries',
-                       'carfree',
-                       'blocks',
-                       'density',
-                       'transit',
-                       ],
-                distances = {
-                        'healthcare': 1000,
-                        'schools': 1000,
-                        'libraries': 1000,
-                        'transit': 500,
-                        },
-                overpass = False
-                ):    
-    dt = datetime.datetime.now()
-    logger = logging.getLogger()
-    logger.setLevel(logging.CRITICAL)
-    formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
-
-    fh = logging.FileHandler('log_filename.txt')
-    fh.setLevel(logging.DEBUG)
-    fh.setFormatter(formatter)
-    logger.addHandler(fh)
-    
-    ch = logging.StreamHandler()
-    ch.setLevel(logging.DEBUG)
-    ch.setFormatter(formatter)
-    logger.addHandler(ch)
-    
-    
-    boundaries = shapely.geometry.shape(city['geometry'])
-    total_pop = city['properties']['P15']
-    name = city['properties']['UC_NM_MN']
-    hdc = city['properties']['ID_HDC_G0']
-    bbox = (city['properties']['BBX_LATMN'],
-               city['properties']['BBX_LONMN'],
-               city['properties']['BBX_LATMX'],
-               city['properties']['BBX_LONMX'],)
-    
-    SAVED_TSTOPS = []
-    
-    crs = None    
-    
-    print('Evaluating Pedestrians First indicators in',name)
-    print('Measuring',str(to_test))
-    
+def make_patches(boundaries, patch_length = 5): #patch_length in km
+    ''' 
+    'tile' the boundaries of a city into patches, like a patchwork quilt
+    '''
     
     longitude_factor = 0.00898 # degrees per km
     longitude_factor_m = 0.00898 / 1000 # degrees per m
@@ -123,11 +65,76 @@ def pnservices(city, folder_name='', buffer_dist=100, headway_threshold=10,
     
     print("cut"+str(len(list(patches)))+"patches")
     
-    quilt_ipolys = {}
-    quilt_cnodes = {}
+    return patches
+
+def weighted_pop_density(array):
+    total = 0
+    for cell in array.compressed():
+        total += cell**2
+    return total / numpy.sum(array)
+
+def pedestrians_first(city, 
+                      folder_name='', 
+                      buffer_dist=100,#m
+                      headway_threshold=10,#min
+                      to_test = [
+                           'healthcare',
+                           'schools',
+                           'h+s',
+                           'libraries',
+                           'carfree',
+                           'blocks',
+                           'density',
+                           'transit',
+                           ],
+                      distances = { #network buffers, in meters
+                            'healthcare': 1000,
+                            'schools': 1000,
+                            'libraries': 1000,
+                            'transit': 500,
+                            },
+                      overpass = False,
+                      patch_length = 5, #km
+                      ):    
+    dt = datetime.datetime.now()
+    logger = logging.getLogger()
+    logger.setLevel(logging.CRITICAL)
+    formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
+
+    fh = logging.FileHandler('log_filename.txt')
+    fh.setLevel(logging.DEBUG)
+    fh.setFormatter(formatter)
+    logger.addHandler(fh)
+    
+    ch = logging.StreamHandler()
+    ch.setLevel(logging.DEBUG)
+    ch.setFormatter(formatter)
+    logger.addHandler(ch)
+    
+    
+    boundaries = shapely.geometry.shape(city['geometry'])
+    total_pop = city['properties']['P15']
+    name = city['properties']['UC_NM_MN']
+    hdc = city['properties']['ID_HDC_G0']
+    bbox = (city['properties']['BBX_LATMN'],
+               city['properties']['BBX_LONMN'],
+               city['properties']['BBX_LATMX'],
+               city['properties']['BBX_LONMX'],)
+    
+    
+    crs = None 
+    
+    
+    patches = make_patches(boundaries, patch_length=patch_length)
+    
+    print('Evaluating Pedestrians First indicators in',name)
+    print('Measuring',str(to_test))
+    
+    quilt_isochrone_polys = {}
+    quilt_center_nodes = {}
     for service in to_test:
-        quilt_ipolys[service] = False
-        quilt_cnodes[service] = []
+        quilt_isochrone_polys[service] = False
+        quilt_center_nodes[service] = []
     
     patch_times = []
     
@@ -145,7 +152,6 @@ def pnservices(city, folder_name='', buffer_dist=100, headway_threshold=10,
         for service in testing_services:
             all_coords[service] = handler.locationlist[service]
             citywide_carfree = handler.carfreelist
-
 
     if 'transit' in to_test:
         testing_services.append('transit')
@@ -169,12 +175,18 @@ def pnservices(city, folder_name='', buffer_dist=100, headway_threshold=10,
                         )
                         
                 
-                walk_filter = ('["area"!~"yes"]["highway"!~"link|motor|proposed|construction|abandoned|platform|raceway"]'
+                walk_filter = ('["area"!~"yes"]["highway"!~"link|motor'
+                               '|proposed|construction|abandoned'
+                               '|platform|raceway"]'
                                '["service"!~"parking_aisle|driveway"]'
-                                       '["foot"!~"no"]["service"!~"private"]{}').format(ox.settings.default_access)
+                               '["foot"!~"no"]["service"!~"private"]'
+                               '{}').format(ox.settings.default_access)
                 
                 if overpass:
-                    G = ox.graph_from_polygon(patch, custom_filter=walk_filter, simplify=False, retain_all=True)
+                    G = ox.graph_from_polygon(patch, 
+                                              custom_filter=walk_filter, 
+                                              simplify=False, 
+                                              retain_all=True)
                 else:
                     boundingarg = '-b='
                     boundingarg += str(patch.bounds[0])+','
@@ -187,7 +199,8 @@ def pnservices(city, folder_name='', buffer_dist=100, headway_threshold=10,
                                            #'--complete-ways',
                                            '--drop-broken-refs',
                                            '-o=patch.osm'])
-                    G = ox.graph_from_file('patch.osm', simplify=False, retain_all=True)
+                    G = ox.graph_from_file('patch.osm', 
+                                           simplify=False, retain_all=True)
                     #os.remove('patch.osm')
                 
                 simple_G = ox.simplify_graph(G)
@@ -241,8 +254,6 @@ def pnservices(city, folder_name='', buffer_dist=100, headway_threshold=10,
                             headway = 1 / inv_headway
                             if headway <= headway_threshold:
                                 center_nodes['transit'].append(center_node)
-                                if min_hw > headway:
-                                    SAVED_TSTOPS.append((min_hw, headway))
                                 
                 
                 
@@ -269,16 +280,16 @@ def pnservices(city, folder_name='', buffer_dist=100, headway_threshold=10,
                 
                 # Get polygons
                 for service in testing_services:
-                    isochrone_polys[service], fails = local_isometric.make_iso_polys(G, center_nodes[service], distance=distances[service], edge_buff=buffer_dist)
+                    isochrone_polys[service], fails = isochrones.make_iso_polys(G, center_nodes[service], distance=distances[service], edge_buff=buffer_dist)
                     failures[service] += fails
                     
                 for service in isochrone_polys.keys():
-                    if service not in quilt_ipolys.keys() or not quilt_ipolys[service]:
-                        quilt_ipolys[service] = isochrone_polys[service]
+                    if service not in quilt_isochrone_polys.keys() or not quilt_isochrone_polys[service]:
+                        quilt_isochrone_polys[service] = isochrone_polys[service]
                     elif isochrone_polys[service]:
-                        quilt_ipolys[service] = shapely.ops.cascaded_union([quilt_ipolys[service],isochrone_polys[service]])
+                        quilt_isochrone_polys[service] = shapely.ops.cascaded_union([quilt_isochrone_polys[service],isochrone_polys[service]])
                 for service in center_nodes.keys():
-                    quilt_cnodes[service] = quilt_cnodes[service] + center_nodes[service]
+                    quilt_center_nodes[service] = quilt_center_nodes[service] + center_nodes[service]
                 
                 patch_time = datetime.datetime.now() - patch_start
                     
@@ -304,8 +315,8 @@ def pnservices(city, folder_name='', buffer_dist=100, headway_threshold=10,
     boundaries_utm = boundaries_latlon.to_crs(crs)
     
     for service in testing_services:
-        if quilt_ipolys[service]:
-            service_utm = gpd.GeoDataFrame(geometry = [quilt_ipolys[service]])
+        if quilt_isochrone_polys[service]:
+            service_utm = gpd.GeoDataFrame(geometry = [quilt_isochrone_polys[service]])
             service_utm.crs = {'init':'epsg:'+str(epsg)}
             service_utm.geometry = service_utm.geometry.simplify(15) #maybe this should be after the population calculation
             service_utm = gpd.overlay(service_utm ,boundaries_utm, how='intersection')
@@ -353,17 +364,12 @@ def pnservices(city, folder_name='', buffer_dist=100, headway_threshold=10,
             
             carfree_latlon = carfree_utm.to_crs('epsg:4326')
             carfree_latlon.to_file(folder_name+'carfreelatlon'+'.geojson', driver='GeoJSON')
-            #df_latlon.to_file(folder_name+'carfreelatlon'+'.shp')
-        
-                
-            #a, b = local_isometric.export(quilt_ipolys[service], epsg, service=service, folder=folder_name)
-            
             
     
     if 'h+s' in to_test:
-        if quilt_ipolys['healthcare'] and quilt_ipolys['schools']:
+        if quilt_isochrone_polys['healthcare'] and quilt_isochrone_polys['schools']:
             service = 'h+s'
-            intersect = quilt_ipolys['healthcare'].intersection(quilt_ipolys['schools'])
+            intersect = quilt_isochrone_polys['healthcare'].intersection(quilt_isochrone_polys['schools'])
             if type(intersect) == shapely.geometry.collection.GeometryCollection:
                 intersect = [obj for obj in intersect if type(obj) == shapely.geometry.polygon.Polygon]
                 intersect = shapely.geometry.MultiPolygon(intersect)
@@ -373,12 +379,6 @@ def pnservices(city, folder_name='', buffer_dist=100, headway_threshold=10,
             hs_utm.geometry = hs_utm.geometry.simplify(15) #maybe this should be after the population calculation
             hs_latlon = hs_utm.to_crs(epsg=4326)
             hs_latlon.to_file(folder_name+service+'latlon'+'.geojson', driver='GeoJSON')
-            #try:
-                #b.to_file(folder_name+service+'latlon'+'.shp') #unnecessary later
-            #except:
-                #pdb.set_trace()
-                
-            #a, b = local_isometric.export(quilt_ipolys[service], epsg, service=service, folder=folder_name)
             
             stats = rasterstats.zonal_stats(hs_latlon, 'pop_dens.tif', stats=['mean'])
             
@@ -410,7 +410,7 @@ def pnservices(city, folder_name='', buffer_dist=100, headway_threshold=10,
             dest.write(out_image)
             
     #garbage collection
-    quilt_ipolys = None
+    quilt_isochrone_polys = None
     isochrone_polys = None
     out_image = None
     dest = None
@@ -422,37 +422,14 @@ def pnservices(city, folder_name='', buffer_dist=100, headway_threshold=10,
     
     if 'blocks' in to_test:
         print("getting blocks")
-        #most of our patch-cutting variables are still around
-        patch_length = 5 #kilometers
-        n_vslicers = math.floor(height_km / patch_length)
-        n_hslicers = math.floor(width_km / patch_length)
         
-        hslicers = []
-        vslicers = []
+        patches = make_patches(boundaries, patch_length=patch_length)
+        print ("cut", len(list(patches)),"patches for block size in",name)
         
-        for i in range(1,n_hslicers+1):
-            increment = (bbox[2]-bbox[0])/(n_hslicers+1)
-            lat = bbox[0]+(i*increment)
-            slicer = shapely.geometry.LineString([(bbox[1],lat),(bbox[3],lat)])
-            hslicers.append(slicer)
-            
-        for i in range(1,n_vslicers+1):
-            increment = (bbox[3]-bbox[1])/(n_vslicers+1)
-            lon = bbox[1]+(i*increment)
-            slicer = shapely.geometry.LineString([(lon,bbox[0]),(lon, bbox[2])])
-            hslicers.append(slicer)
-            
-        patches = shapely.geometry.MultiPolygon(polygons=[boundaries])
-        for slicer in hslicers+vslicers:
-            patches = shapely.geometry.MultiPolygon(polygons = shapely.ops.split(patches, slicer))
-        patches = list(patches)
-        print ("cut", len(list(patches)),"patches for",name)
-        n=0
         outblocks = []
         block_counts = []
-        for patch in patches:
+        for n, patch in enumerate(patches):
             print("patch"+str(n)+" of "+str(len(patches)) )
-            n+=1
             unbuffered_patch = gpd.GeoSeries(patch, crs={'init':'epsg:4326'})
             unbuffered_patch = unbuffered_patch.to_crs(crs)[0]
             
@@ -530,7 +507,6 @@ def pnservices(city, folder_name='', buffer_dist=100, headway_threshold=10,
         patch_densities_utm['density'] = patch_densities_utm.block_count / (patch_densities_utm.area /1000000)
         patch_densities_latlon = patch_densities_utm.to_crs(epsg=4326)
         patch_densities_latlon.to_file(folder_name+'patch_densities'+'latlon'+'.geojson', driver='GeoJSON')
-        #patch_densities_latlon.to_file(folder_name+'patch_densities'+'latlon'+'.shp')
         
         a = gpd.GeoDataFrame(geometry=[block[0] for block in outblocks])
         a.crs = {'init':'epsg:'+str(epsg)}
@@ -570,8 +546,4 @@ def pnservices(city, folder_name='', buffer_dist=100, headway_threshold=10,
         if os.path.exists(str(hdc)+'/'+file):
             os.remove(str(hdc)+'/'+file)
     return results
-#return failures, SAVED_TSTOPS
 
-#failures, saved_tstops = pnservices('dc.shp',folder_name='dc\\')
-#CITIES = ["atlanta","nyc","houston","mexico","indianapolis","montreal","guadalajara","leon","monterrey","washington","toronto","ottowa","atlanta"]
-#x = pnservices('arax.shp',folder_name='arax/')
