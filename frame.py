@@ -7,7 +7,7 @@ import shutil
 
 import pdb
 
-import people_near_services
+import pedestriansfirst
 
 
 def from_id_hdc(hdc, folder = None, kwargs = {}):
@@ -42,7 +42,7 @@ def from_city(city, kwargs = {}):
     
     folder = str(hdc)+'/'
     
-    return people_near_services.pnservices(city, folder_name = folder, **kwargs)
+    return pedestriansfirst.pedestrians_first(city, folder_name = folder, **kwargs)
 
 def get_pop(city):
     return city['properties']['P15']
