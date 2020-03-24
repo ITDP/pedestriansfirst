@@ -35,9 +35,11 @@ def make_patches(boundaries, patch_length = 5): #patch_length in km
     latitude_factor = (math.cos(abs(boundaries.bounds[1])*0.0174533))/111.319
     latitude_factor_m = latitude_factor / 1000
     
-    height_degrees = abs(boundaries.bounds[3]-boundaries.bounds[1])
+    bbox = boundaries.bounds
+    
+    height_degrees = abs(bbox[3]-bbox[1])
     height_km = height_degrees / latitude_factor
-    width_degrees = abs(boundaries.bounds[2]-boundaries.bounds[0])
+    width_degrees = abs(bbox[2]-bbox[0])
     width_km = width_degrees / longitude_factor
     
     patch_length = 5 #kilometers
@@ -50,15 +52,15 @@ def make_patches(boundaries, patch_length = 5): #patch_length in km
     
     
     for i in range(1,n_hslicers+1):
-        h_increment = (bbox[2]-bbox[0])/(n_hslicers+1)
+        h_increment = (bbox[3]-bbox[1])/(n_hslicers+1)
         lat = bbox[0]+(i*h_increment)
-        slicer = shapely.geometry.LineString([(bbox[1],lat),(bbox[3],lat)])
+        slicer = shapely.geometry.LineString([(bbox[0],lat),(bbox[2],lat)])
         hslicers.append(slicer)
         
     for i in range(1,n_vslicers+1):
-        v_increment = (bbox[3]-bbox[1])/(n_vslicers+1)
+        v_increment = (bbox[2]-bbox[0])/(n_vslicers+1)
         lon = bbox[1]+(i*v_increment)
-        slicer = shapely.geometry.LineString([(lon,bbox[0]),(lon, bbox[2])])
+        slicer = shapely.geometry.LineString([(lon,bbox[1]),(lon, bbox[3])])
         hslicers.append(slicer)
         
     patches = shapely.geometry.MultiPolygon(polygons=[boundaries])
@@ -125,10 +127,8 @@ def pedestrians_first(city,
     
     
     crs = None 
-    print (bbox)
-    print (boundaries.bounds)
     
-    patches = make_patches(boundaries, bbox, patch_length=patch_length)
+    patches = make_patches(boundaries, patch_length=patch_length)
     
     print('Evaluating Pedestrians First indicators in',name)
     print('Measuring',str(to_test))
@@ -426,7 +426,7 @@ def pedestrians_first(city,
     if 'blocks' in to_test:
         print("getting blocks")
         
-        patches = make_patches(boundaries, bbox, patch_length=patch_length)
+        patches = make_patches(boundaries, patch_length=patch_length)
         print ("cut", len(list(patches)),"patches for block size in",name)
         
         outblocks = []
