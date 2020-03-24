@@ -49,8 +49,6 @@ def make_patches(boundaries, patch_length = 5): #patch_length in km
     hslicers = []
     vslicers = []
     
-    
-    
     for i in range(1,n_hslicers+1):
         h_increment = (bbox[3]-bbox[1])/(n_hslicers+1)
         lat = bbox[0]+(i*h_increment)
@@ -129,6 +127,11 @@ def pedestrians_first(city,
     crs = None 
     
     patches = make_patches(boundaries, patch_length=patch_length)
+    
+    longitude_factor = 0.00898 # degrees per km
+    longitude_factor_m = 0.00898 / 1000 # degrees per m
+    latitude_factor = (math.cos(abs(boundaries.bounds[1])*0.0174533))/111.319
+    latitude_factor_m = latitude_factor / 1000
     
     print('Evaluating Pedestrians First indicators in',name)
     print('Measuring',str(to_test))
