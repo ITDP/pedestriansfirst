@@ -286,8 +286,6 @@ def pedestrians_first(city,
                 for service in testing_services:
                     isochrone_polys[service], fails = isochrones.make_iso_polys(G, center_nodes[service], distance=distances[service], edge_buff=buffer_dist)
                     failures[service] += fails
-                    if fails:
-                        pdb.set_trace()
                     
                 for service in isochrone_polys.keys():
                     if service not in quilt_isochrone_polys.keys() or not quilt_isochrone_polys[service]:
