@@ -80,7 +80,7 @@ def make_iso_polys(G, center_nodes, distance=500,
                 new_iso = Polygon(new_iso.exterior)
             polygons.append(new_iso)
         except KeyError:
-            print ("FAILURE AT",i)
+            print ("FAILURE AT",i,center_node)
             #It's normal for a small fraction of center_nodes to not appear
             #when this is used for Pedestrians First.
             #Could be investigated later, but doesn't substantially influence

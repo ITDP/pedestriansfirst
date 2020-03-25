@@ -65,8 +65,6 @@ def make_patches(boundaries, patch_length = 5): #patch_length in km
     for slicer in hslicers+vslicers:
         patches = shapely.geometry.MultiPolygon(polygons = shapely.ops.split(patches, slicer))
     
-    pdb.set_trace()
-    
     print("cut"+str(len(list(patches)))+"patches")
     
     return patches
@@ -134,8 +132,6 @@ def pedestrians_first(city,
     longitude_factor_m = 0.00898 / 1000 # degrees per m
     latitude_factor = (math.cos(abs(boundaries.bounds[1])*0.0174533))/111.319
     latitude_factor_m = latitude_factor / 1000
-    
-    pdb.set_trace()
     
     print('Evaluating Pedestrians First indicators in',name)
     print('Measuring',str(to_test))
@@ -282,16 +278,13 @@ def pedestrians_first(city,
                 for service in to_test:
                     failures[service] = 0
                 
-               
-                
-                
-                        
-                
                 
                 # Get polygons
                 for service in testing_services:
                     isochrone_polys[service], fails = isochrones.make_iso_polys(G, center_nodes[service], distance=distances[service], edge_buff=buffer_dist)
                     failures[service] += fails
+                    if fails:
+                        pdb.set_trace()
                     
                 for service in isochrone_polys.keys():
                     if service not in quilt_isochrone_polys.keys() or not quilt_isochrone_polys[service]:
