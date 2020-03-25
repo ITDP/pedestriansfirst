@@ -87,7 +87,7 @@ def pedestrians_first(city,
                            'carfree',
                            'blocks',
                            'density',
-                           'transit',
+                           #'transit',
                            ],
                       distances = { #network buffers, in meters
                             'healthcare': 1000,
