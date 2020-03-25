@@ -81,14 +81,14 @@ def pedestrians_first(city,
                       buffer_dist=100,#m
                       headway_threshold=10,#min
                       to_test = [
-                           'healthcare',
-                           'schools',
-                           'h+s',
-                           'libraries',
-                           'carfree',
+                           #'healthcare',
+                           #'schools',
+                           #'h+s',
+                           #'libraries',
+                           #'carfree',
                            'blocks',
-                           'density',
-                           'transit',
+                           #'density',
+                           #'transit',
                            ],
                       distances = { #network buffers, in meters
                             'healthcare': 1000,
@@ -430,6 +430,8 @@ def pedestrians_first(city,
         patches = make_patches(boundaries, patch_length=patch_length)
         print ("cut", len(list(patches)),"patches for block size in",name)
         
+        pdb.set_trace()
+        
         outblocks = []
         block_counts = []
         for n, patch in enumerate(patches):
@@ -504,7 +506,7 @@ def pedestrians_first(city,
         
         #export            
         
-        patch_densities = gpd.GeoDataFrame(geometry = patches)
+        patch_densities = gpd.GeoDataFrame(geometry = list(patches))
         patch_densities['block_count'] = block_counts
         patch_densities.crs = {'init':'epsg:4326'}
         patch_densities_utm = patch_densities.to_crs(epsg=epsg)
