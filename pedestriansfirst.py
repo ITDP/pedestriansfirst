@@ -43,8 +43,8 @@ def make_patches(boundaries, patch_length = 5): #patch_length in km
     width_km = width_degrees / longitude_factor
     
     patch_length = 5 #kilometers
-    n_vslicers = math.floor(height_km / patch_length)
-    n_hslicers = math.floor(width_km / patch_length)
+    n_hslicers = math.floor(height_km / patch_length)
+    n_vslicers = math.floor(width_km / patch_length)
     
     hslicers = []
     vslicers = []
@@ -64,6 +64,8 @@ def make_patches(boundaries, patch_length = 5): #patch_length in km
     patches = shapely.geometry.MultiPolygon(polygons=[boundaries])
     for slicer in hslicers+vslicers:
         patches = shapely.geometry.MultiPolygon(polygons = shapely.ops.split(patches, slicer))
+    
+    pdb.set_trace()
     
     print("cut"+str(len(list(patches)))+"patches")
     
