@@ -17,6 +17,8 @@ from copy import deepcopy # duplicar memória do Pyhton
 from tqdm import tqdm # Pacote para visualizar downloads
 import pandas as pd 
 
+import pdb
+
 
 def download_graph(coordinates, distances):
     """
