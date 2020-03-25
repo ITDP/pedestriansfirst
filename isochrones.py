@@ -60,35 +60,35 @@ def make_iso_polys(G, center_nodes, distance=500,
         node_points = [Point((data['x'], data['y'])) 
                        for node, data in subgraph.nodes(data=True)]
         
-        try:
-            nodes_gdf = gpd.GeoDataFrame({'id': subgraph.nodes()},
-                                         geometry=node_points)
+        #try:
+        nodes_gdf = gpd.GeoDataFrame({'id': subgraph.nodes()},
+                                     geometry=node_points)
+    
+        nodes_gdf = nodes_gdf.set_index('id')
+
+        edge_lines = []
+        for n_fr, n_to in subgraph.edges():
+            f = nodes_gdf.loc[n_fr].geometry ##.geometry
+            t = nodes_gdf.loc[n_to].geometry
+            edge_lines.append(LineString([f,t]))
+
+        n = nodes_gdf.buffer(node_buff).geometry
+        e = gpd.GeoSeries(edge_lines).buffer(edge_buff).geometry
+        all_gs = list(n) + list(e)
+        new_iso = gpd.GeoSeries(all_gs).unary_union 
         
-            nodes_gdf = nodes_gdf.set_index('id')
-
-            edge_lines = []
-            for n_fr, n_to in subgraph.edges():
-                f = nodes_gdf.loc[n_fr].geometry ##.geometry
-                t = nodes_gdf.loc[n_to].geometry
-                edge_lines.append(LineString([f,t]))
-
-            n = nodes_gdf.buffer(node_buff).geometry
-            e = gpd.GeoSeries(edge_lines).buffer(edge_buff).geometry
-            all_gs = list(n) + list(e)
-            new_iso = gpd.GeoSeries(all_gs).unary_union 
-            
-            if infill:
-                # try to fill in surrounded areas so shapes will appear solid
-                new_iso = Polygon(new_iso.exterior)
-            polygons.append(new_iso)
-        except KeyError as erro:
-            pdb.set_trace()
-            print ("FAILURE AT",i,center_node)
+        if infill:
+            # try to fill in surrounded areas so shapes will appear solid
+            new_iso = Polygon(new_iso.exterior)
+        polygons.append(new_iso)
+        #except KeyError as erro:
+        #    pdb.set_trace()
+        #    print ("FAILURE AT",i,center_node)
             #It's normal for a small fraction of center_nodes to not appear
             #when this is used for Pedestrians First.
             #Could be investigated later, but doesn't substantially influence
             #the program's results.
-            failures += 1
+         #   failures += 1
         
     isochrone_polys = cascaded_union(polygons) 
     # junta todos os poligonos no entorno das coordenadas 
