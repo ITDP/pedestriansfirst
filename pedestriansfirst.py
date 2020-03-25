@@ -133,6 +133,8 @@ def pedestrians_first(city,
     latitude_factor = (math.cos(abs(boundaries.bounds[1])*0.0174533))/111.319
     latitude_factor_m = latitude_factor / 1000
     
+    pdb.set_trace()
+    
     print('Evaluating Pedestrians First indicators in',name)
     print('Measuring',str(to_test))
     
