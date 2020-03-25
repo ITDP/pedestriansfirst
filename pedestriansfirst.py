@@ -68,7 +68,7 @@ def make_patches(boundaries, patch_length = 5): #patch_length in km
     
     print("cut"+str(len(list(patches)))+"patches")
     
-    return patches
+    return list(patches)
 
 def weighted_pop_density(array):
     total = 0
@@ -128,8 +128,6 @@ def pedestrians_first(city,
     crs = None 
     
     patches = make_patches(boundaries, patch_length=patch_length)
-    
-    pdb.set_trace()
     
     longitude_factor = 0.00898 # degrees per km
     longitude_factor_m = 0.00898 / 1000 # degrees per m
