@@ -10,6 +10,7 @@ import subprocess
 import json
 
 import osmnx as ox
+import networkx as nx
 import geopandas as gpd
 import shapely.geometry
 import shapely.ops
@@ -208,6 +209,10 @@ def pedestrians_first(city,
                     G = ox.graph_from_file('patch.osm', 
                                            simplify=False, retain_all=True)
                     #os.remove('patch.osm')
+                
+                print(len(G.nodes))
+                G.remove_nodes_from(list(nx.isolates(G)))
+                print(len(G.nodes))
                 
                 simple_G = ox.simplify_graph(G)
                 center_nodes = {}
