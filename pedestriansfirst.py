@@ -51,13 +51,13 @@ def make_patches(boundaries, patch_length = 5): #patch_length in km
     
     for i in range(1,n_hslicers+1):
         h_increment = (bbox[3]-bbox[1])/(n_hslicers+1)
-        lat = bbox[0]+(i*h_increment)
+        lat = bbox[1]+(i*h_increment)
         slicer = shapely.geometry.LineString([(bbox[0],lat),(bbox[2],lat)])
         hslicers.append(slicer)
         
     for i in range(1,n_vslicers+1):
         v_increment = (bbox[2]-bbox[0])/(n_vslicers+1)
-        lon = bbox[1]+(i*v_increment)
+        lon = bbox[0]+(i*v_increment)
         slicer = shapely.geometry.LineString([(lon,bbox[1]),(lon, bbox[3])])
         hslicers.append(slicer)
         
