@@ -327,7 +327,7 @@ def pedestrians_first(city,
             service_latlon = service_utm.to_crs(epsg=4326)
             service_latlon.to_file(folder_name+service+'latlon'+'.geojson', driver='GeoJSON')
             
-            stats = rasterstats.zonal_stats(service_latlon, 'GHS_POP_E2015_GLOBE_R2019A_54009_250_V1_0.tif', stats=['mean'])
+            stats = rasterstats.zonal_stats(service_latlon, 'tif1.tif', stats=['mean'])
             
             total_PNS = 0
             for i in range(0,len(stats)):
@@ -356,7 +356,7 @@ def pedestrians_first(city,
             carfree_utm.crs = crs
             carfree_latlon = carfree_utm.to_crs('epsg:4326')
             
-            stats = rasterstats.zonal_stats(carfree_latlon, 'GHS_POP_E2015_GLOBE_R2019A_54009_250_V1_0.tif', stats=['mean'])
+            stats = rasterstats.zonal_stats(carfree_latlon, 'tif1.tif', stats=['mean'])
             total_carfree = 0
             for i in range(0,len(stats)):
                 if stats[i]['mean'] and type(stats[i]['mean']) != numpy.ma.core.MaskedConstant:
@@ -384,7 +384,7 @@ def pedestrians_first(city,
             hs_latlon = hs_utm.to_crs(epsg=4326)
             hs_latlon.to_file(folder_name+service+'latlon'+'.geojson', driver='GeoJSON')
             
-            stats = rasterstats.zonal_stats(hs_latlon, 'GHS_POP_E2015_GLOBE_R2019A_54009_250_V1_0.tif', stats=['mean'])
+            stats = rasterstats.zonal_stats(hs_latlon, 'tif1.tif', stats=['mean'])
             
             total_PNS = 0
             for i in range(0,len(stats)):
@@ -397,20 +397,20 @@ def pedestrians_first(city,
     
     if 'density' in to_test:
         density = rasterstats.zonal_stats(boundaries, 
-                                'GHS_POP_E2015_GLOBE_R2019A_54009_250_V1_0.tif', 
+                                'tif1.tif', 
                                 stats = [],
                                 add_stats={'weighted': weighted_pop_density}
                                 )[0]['weighted']
         results['density'] = density / 0.0625 #km^2 / pixel
         print('weighted pop density', results['density'])
-        with rasterio.open('GHS_POP_E2015_GLOBE_R2019A_54009_250_V1_0.tif') as dataset:
+        with rasterio.open('tif1.tif') as dataset:
             out_image, out_transform = rasterio.mask.mask(dataset, [boundaries], crop=True)
             out_meta = dataset.meta
             out_meta.update({"driver": "GTiff",
                  "height": out_image.shape[1],
                  "width": out_image.shape[2],
                  "transform": out_transform})
-        with rasterio.open(folder_name+"GHS_POP_E2015_GLOBE_R2019A_54009_250_V1_0.tif", "w", **out_meta) as dest:
+        with rasterio.open(folder_name+"tif1.tif", "w", **out_meta) as dest:
             dest.write(out_image)
             
     #garbage collection
