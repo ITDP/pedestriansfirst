@@ -210,9 +210,7 @@ def pedestrians_first(city,
                                            simplify=False, retain_all=True)
                     os.remove('patch.osm')
                 
-                print(len(G.nodes))
                 G.remove_nodes_from(list(nx.isolates(G)))
-                print(len(G.nodes))
                 
                 simple_G = ox.simplify_graph(G)
                 center_nodes = {}
