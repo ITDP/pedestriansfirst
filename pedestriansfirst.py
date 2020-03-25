@@ -88,7 +88,7 @@ def pedestrians_first(city,
                            'carfree',
                            'blocks',
                            'density',
-                           #'transit',
+                           'transit',
                            ],
                       distances = { #network buffers, in meters
                             'healthcare': 1000,
@@ -208,7 +208,7 @@ def pedestrians_first(city,
                                            '-o=patch.osm'])
                     G = ox.graph_from_file('patch.osm', 
                                            simplify=False, retain_all=True)
-                    #os.remove('patch.osm')
+                    os.remove('patch.osm')
                 
                 print(len(G.nodes))
                 G.remove_nodes_from(list(nx.isolates(G)))
