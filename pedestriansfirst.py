@@ -81,14 +81,14 @@ def pedestrians_first(city,
                       buffer_dist=100,#m
                       headway_threshold=10,#min
                       to_test = [
-                           #'healthcare',
-                           #'schools',
-                           #'h+s',
-                           #'libraries',
-                           #'carfree',
+                           'healthcare',
+                           'schools',
+                           'h+s',
+                           'libraries',
+                           'carfree',
                            'blocks',
-                           #'density',
-                           #'transit',
+                           'density',
+                           'transit',
                            ],
                       distances = { #network buffers, in meters
                             'healthcare': 1000,
@@ -128,6 +128,8 @@ def pedestrians_first(city,
     crs = None 
     
     patches = make_patches(boundaries, patch_length=patch_length)
+    
+    pdb.set_trace()
     
     longitude_factor = 0.00898 # degrees per km
     longitude_factor_m = 0.00898 / 1000 # degrees per m
@@ -429,8 +431,6 @@ def pedestrians_first(city,
         
         patches = make_patches(boundaries, patch_length=patch_length)
         print ("cut", len(list(patches)),"patches for block size in",name)
-        
-        pdb.set_trace()
         
         outblocks = []
         block_counts = []
