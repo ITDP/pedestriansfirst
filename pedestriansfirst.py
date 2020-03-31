@@ -8,6 +8,7 @@ import rasterstats
 import rasterio.mask
 import subprocess
 import json
+import traceback
 
 import osmnx as ox
 import networkx as nx
@@ -302,6 +303,12 @@ def pedestrians_first(city,
         
             except ox.EmptyOverpassResponse:
                 print("RECEIVED NO NETWORK FOR PATCH", p_idx)
+            except ValueError:
+                print('ValueError')
+                now = str(datetime.datetime.now())
+                with open('error'+now+'.txt','w') as errout:
+                    traceback.print_exc(limit=3,file=errout)
+                print('saved to error'+now+'.txt')
     
     
                 
