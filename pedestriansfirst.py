@@ -160,6 +160,11 @@ def pedestrians_first(city,
         for service in testing_services:
             all_coords[service] = handler.locationlist[service]
             citywide_carfree = handler.carfreelist
+            
+    if 'special' in to_test:
+        testing_services.append('special')
+        special = gpd.read_file('special.shp')
+        all_coords['special'] = [(pt.y, pt.x) for pt in special.geometry]
 
     if 'transit' in to_test:
         testing_services.append('transit')
@@ -216,7 +221,7 @@ def pedestrians_first(city,
                 simple_G = ox.simplify_graph(G)
                 center_nodes = {}
                 for service in all_coords.keys():
-                    if service in ['healthcare','schools','libraries']:
+                    if service in ['healthcare','schools','libraries','special']:
                         already_covered = None
                         center_nodes[service] = []
                         for coord in all_coords[service]:
