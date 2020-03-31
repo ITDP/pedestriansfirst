@@ -65,7 +65,8 @@ def all_cities():
             with open('all_results.json','w') as out_file:
                 json.dump(all_results, out_file)
 
-all_cities()
+if __name__ == '__main__':
+    all_cities()
 
 #hdcs = { #test
 #'Mexico City': 154,
