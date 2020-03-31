@@ -10,7 +10,7 @@ import pdb
 import pedestriansfirst
 
 
-def from_id_hdc(hdc, folder = None, kwargs = {}):
+def from_id_hdc(hdc, kwargs = {}):
     #select city from ID number
     with fiona.open('GHS_STAT_UCDB2015MT_GLOBE_R2019A_V1_0.shp','r') as ucdb:
         for city in ucdb:
