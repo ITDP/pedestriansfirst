@@ -27,7 +27,7 @@ The results will be hosted in June on our upcoming interactive platform, [pedest
     * [OSMfilter](https://wiki.openstreetmap.org/wiki/Osmfilter)
   * Data files
     * [the Urban Centre Database](https://ghsl.jrc.ec.europa.eu/ghs_stat_ucdb2015mt_r2019a.php)
-    * [the Global Human Settlement Layer population raster](https://ghsl.jrc.ec.europa.eu/ghs_pop2019.php) (downloaded, re-saved with LZW compression (we used ArcMap) and renamed pop-dens.tif)
+    * [the Global Human Settlement Layer population raster](https://drive.google.com/drive/folders/0ACCZEbC3INThUk9PVA) (this is a file that ITDP has prepared using the European Commission data)
     * [planet-latest.osm.pbf](https://planet.openstreetmap.org/)
     
 ## License
