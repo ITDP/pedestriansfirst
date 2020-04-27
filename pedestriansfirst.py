@@ -382,6 +382,9 @@ def pedestrians_first(city,
             
             carfree_latlon = carfree_utm.to_crs('epsg:4326')
             carfree_latlon.to_file(folder_name+'carfreelatlon'+'.geojson', driver='GeoJSON')
+        else:
+            print ('NO SERVICE FOR carfree')
+            results['carfree'] = 0
             
     
     if 'h+s' in to_test:
@@ -393,22 +396,29 @@ def pedestrians_first(city,
                 intersect = shapely.geometry.MultiPolygon(intersect)
             hs_utm = gpd.GeoDataFrame(geometry = [intersect])
             hs_utm.crs = {'init':'epsg:'+str(epsg)}
-            carfree_utm = gpd.overlay(carfree_utm ,boundaries_utm, how='intersection')
+            hs_utm = gpd.overlay(hs_utm ,boundaries_utm, how='intersection')
             hs_utm.geometry = hs_utm.geometry.simplify(15) #maybe this should be after the population calculation
-            hs_latlon = hs_utm.to_crs(epsg=4326)
-            hs_latlon.to_file(folder_name+service+'latlon'+'.geojson', driver='GeoJSON')
-            
-            pdb.set_trace()
-            stats = rasterstats.zonal_stats(hs_latlon, 'pop_dens.tif', stats=['mean'])
-            
-            total_PNS = 0
-            for i in range(0,len(stats)):
-                if stats[i]['mean'] and type(stats[i]['mean']) != numpy.ma.core.MaskedConstant:
-                    total_PNS += (hs_utm.area[i]*stats[i]['mean'] / 62500) #62500 = m2 per pixel
-            print("\n")
-            print('Total People Near Service for', service, ":", total_PNS)
-            print(100*total_PNS/total_pop,"% of",total_pop)
-            results[service] = total_PNS / total_pop
+            if hs_utm.geometry.area.sum() != 0:
+                hs_latlon = hs_utm.to_crs(epsg=4326)
+                hs_latlon.to_file(folder_name+service+'latlon'+'.geojson', driver='GeoJSON')
+                
+                pdb.set_trace()
+                stats = rasterstats.zonal_stats(hs_latlon, 'pop_dens.tif', stats=['mean'])
+                
+                total_PNS = 0
+                for i in range(0,len(stats)):
+                    if stats[i]['mean'] and type(stats[i]['mean']) != numpy.ma.core.MaskedConstant:
+                        total_PNS += (hs_utm.area[i]*stats[i]['mean'] / 62500) #62500 = m2 per pixel
+                print("\n")
+                print('Total People Near Service for', service, ":", total_PNS)
+                print(100*total_PNS/total_pop,"% of",total_pop)
+                results[service] = total_PNS / total_pop
+            else:
+                print ('NO SERVICE FOR h+s')
+                results['h+s'] = 0
+        else:
+            print ('NO SERVICE FOR h+s')
+            results['h+s'] = 0
     
     if 'density' in to_test:
         density = rasterstats.zonal_stats(boundaries, 
