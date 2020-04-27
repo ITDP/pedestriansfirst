@@ -401,8 +401,6 @@ def pedestrians_first(city,
             if hs_utm.geometry.area.sum() != 0:
                 hs_latlon = hs_utm.to_crs(epsg=4326)
                 hs_latlon.to_file(folder_name+service+'latlon'+'.geojson', driver='GeoJSON')
-                
-                pdb.set_trace()
                 stats = rasterstats.zonal_stats(hs_latlon, 'pop_dens.tif', stats=['mean'])
                 
                 total_PNS = 0
