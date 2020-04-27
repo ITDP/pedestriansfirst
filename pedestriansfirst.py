@@ -395,10 +395,10 @@ def pedestrians_first(city,
                 intersect = [obj for obj in intersect if type(obj) == shapely.geometry.polygon.Polygon]
                 intersect = shapely.geometry.MultiPolygon(intersect)
             hs_utm = gpd.GeoDataFrame(geometry = [intersect])
-            hs_utm.crs = {'init':'epsg:'+str(epsg)}
-            hs_utm = gpd.overlay(hs_utm ,boundaries_utm, how='intersection')
-            hs_utm.geometry = hs_utm.geometry.simplify(15) #maybe this should be after the population calculation
+            hs_utm.crs = {'init':'epsg:'+str(epsg)} #maybe this should be after the population calculation
             if hs_utm.geometry.area.sum() != 0:
+                hs_utm = gpd.overlay(hs_utm ,boundaries_utm, how='intersection')
+                hs_utm.geometry = hs_utm.geometry.simplify(15)
                 hs_latlon = hs_utm.to_crs(epsg=4326)
                 hs_latlon.to_file(folder_name+service+'latlon'+'.geojson', driver='GeoJSON')
                 stats = rasterstats.zonal_stats(hs_latlon, 'pop_dens.tif', stats=['mean'])
