@@ -318,7 +318,7 @@ def pedestrians_first(city,
                 print('saved to error'+now+'.txt')
     
     
-                
+    pdb.set_trace()           
     epsg = 32600+int(G.graph['crs'].split(' ')[1].split('=')[1]) #This is wild -- 
     #osmnx seems to just give all data in northern-hemisphere format
     #Sorry about the stupid parsing of the projection definition, I'm lazy 
