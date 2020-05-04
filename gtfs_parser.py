@@ -12,6 +12,7 @@ import datetime
 import shutil
 
 import pdb
+import pandas
 
 
 api_key = "0b073186-cfc0-47e2-959a-a2be054025ff"
@@ -70,7 +71,10 @@ def feed_from_id(feed_id):
                 out += '\n'
         with open('temp_gtfs_dir/calendar.txt','w') as calfile:
             calfile.write(out)
-    feed = gk.read_gtfs('temp_gtfs_dir/', dist_units = 'km')
+    try:
+        feed = gk.read_gtfs('temp_gtfs_dir/', dist_units = 'km')
+    except pandas.errors.ParserError:
+        return False
     if os.path.exists('temp_gtfs.zip'):
         os.remove('temp_gtfs.zip')
     if os.path.exists('temp_gtfs_dir'):
