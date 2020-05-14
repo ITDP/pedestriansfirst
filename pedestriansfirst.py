@@ -555,11 +555,12 @@ def pedestrians_first(city,
         c['lemgth'] = [block[3] for block in outblocks]
         try:
             blockmedian = statistics.median([block[1] for block in filtered_blocks])
+            print('median block density')
+            results['blockmedian_density'] = 1000000 / blockmedian
+            print(results['blockmedian_density'])
         except:
-            blockmedian = 0
-        print('median block density')
-        results['blockmedian_density'] = 1000000 / blockmedian
-        print(results['blockmedian_density'])
+            results['blockmedian_density'] = 0
+            print('BLOCK MEDIAN COULD NOT BE CALCULATED')
         blockmean = statistics.mean([block[1] for block in filtered_blocks])
         print('mean block density')
         results['blockmean_density'] = 1000000 / blockmean
