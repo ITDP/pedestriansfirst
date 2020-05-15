@@ -561,10 +561,14 @@ def pedestrians_first(city,
         except:
             results['blockmedian_density'] = 0
             print('BLOCK MEDIAN COULD NOT BE CALCULATED')
-        blockmean = statistics.mean([block[1] for block in filtered_blocks])
-        print('mean block density')
-        results['blockmean_density'] = 1000000 / blockmean
-        print(results['blockmean_density'])
+        try:
+            blockmean = statistics.mean([block[1] for block in filtered_blocks])
+            print('mean block density')
+            results['blockmean_density'] = 1000000 / blockmean
+            print(results['blockmean_density'])
+        except:
+            results['blockmean_density'] = 0
+            print('BLOCK MEAN COULD NOT BE CALCULATED')
         
     ft = datetime.datetime.now()
     print("total", str(ft-dt))
