@@ -104,6 +104,7 @@ def get_freq_stops(feed, headwaylim = 20):
     for stop_id in stopstats.stop_id.unique():
         headway = stopstats.loc[stopstats['stop_id']==stop_id].mean_headway.mean()
         if headway <= headwaylim and headway != 0:
+            pdb.set_trace()
             row = feed.stops.loc[feed.stops['stop_id']==stop_id].iloc[0]
             lat = row['stop_lat']
             lon = row['stop_lon']
