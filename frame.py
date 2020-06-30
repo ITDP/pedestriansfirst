@@ -60,10 +60,11 @@ def all_cities():
         else:
             all_results = {}
         if not str(city['properties']['ID_HDC_G0']) in all_results.keys():
-            results = from_city(city)
-            all_results.update({city['properties']['ID_HDC_G0']:results})
-            with open('all_results.json','w') as out_file:
-                json.dump(all_results, out_file)
+            if not str(city['properties']['ID_HDC_G0']) == '4541': #there's one city in south sudan that doesn't work right.
+                results = from_city(city)
+                all_results.update({city['properties']['ID_HDC_G0']:results})
+                with open('all_results.json','w') as out_file:
+                    json.dump(all_results, out_file)
 
 if __name__ == '__main__':
     all_cities()
