@@ -317,8 +317,6 @@ def pedestrians_first(city,
             #         traceback.print_exc(limit=3,file=errout)
             #     print('saved to error'+now+'.txt')
     
-    import pdb
-    pdb.set_trace()
     epsg = 32600+int(crs.split(' ')[1].split('=')[1]) #This is wild -- 
     #osmnx seems to just give all data in northern-hemisphere format
     #Sorry about the stupid parsing of the projection definition, I'm lazy 
@@ -335,7 +333,7 @@ def pedestrians_first(city,
     for service in testing_services:
         if quilt_isochrone_polys[service]:
             service_utm = gpd.GeoDataFrame(geometry = [quilt_isochrone_polys[service]])
-            service_utm.crs = {'init':'epsg:'+str(epsg)}
+            service_utm.crs = crs#{'init':'epsg:'+str(epsg)}
             service_utm.geometry = service_utm.geometry.simplify(15) #maybe this should be after the population calculation
             service_utm = gpd.overlay(service_utm ,boundaries_utm, how='intersection')
             service_latlon = service_utm.to_crs(epsg=4326)
@@ -395,7 +393,7 @@ def pedestrians_first(city,
                 intersect = [obj for obj in intersect if type(obj) == shapely.geometry.polygon.Polygon]
                 intersect = shapely.geometry.MultiPolygon(intersect)
             hs_utm = gpd.GeoDataFrame(geometry = [intersect])
-            hs_utm.crs = {'init':'epsg:'+str(epsg)} #maybe this should be after the population calculation
+            hs_utm.crs = crs#{'init':'epsg:'+str(epsg)} #maybe this should be after the population calculation
             if hs_utm.geometry.area.sum() != 0:
                 hs_utm = gpd.overlay(hs_utm ,boundaries_utm, how='intersection')
                 hs_utm.geometry = hs_utm.geometry.simplify(15)
@@ -530,13 +528,13 @@ def pedestrians_first(city,
         patch_densities = gpd.GeoDataFrame(geometry = list(patches))
         patch_densities['block_count'] = block_counts
         patch_densities.crs = {'init':'epsg:4326'}
-        patch_densities_utm = patch_densities.to_crs(epsg=epsg)
+        patch_densities_utm = patch_densities.to_crs(crs)
         patch_densities_utm['density'] = patch_densities_utm.block_count / (patch_densities_utm.area /1000000)
         patch_densities_latlon = patch_densities_utm.to_crs(epsg=4326)
         patch_densities_latlon.to_file(folder_name+'patch_densities'+'latlon'+'.geojson', driver='GeoJSON')
         
         a = gpd.GeoDataFrame(geometry=[block[0] for block in outblocks])
-        a.crs = {'init':'epsg:'+str(epsg)}
+        a.crs = crs#{'init':'epsg:'+str(epsg)}
         a['area'] = [block[1] for block in outblocks]
         a['perim'] = [block[2] for block in outblocks]
         a['lemgth'] = [block[3] for block in outblocks]
@@ -550,7 +548,7 @@ def pedestrians_first(city,
                 if 1000 < block[1] < 1000000:
                     filtered_blocks.append(block)
         c = gpd.GeoDataFrame(geometry=[block[0] for block in outblocks])
-        c.crs = {'init':'epsg:'+str(epsg)}
+        c.crs = crs#{'init':'epsg:'+str(epsg)}
         c['area'] = [block[1] for block in outblocks]
         c['perim'] = [block[2] for block in outblocks]
         c['lemgth'] = [block[3] for block in outblocks]
