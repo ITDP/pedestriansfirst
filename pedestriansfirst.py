@@ -483,8 +483,8 @@ def pedestrians_first(city,
                                        '--drop-broken-refs',
                                        '-o=patch.osm'])
                 try:
-                    G = ox.graph_from_file('patch.osm', simplify=False, retain_all=True)
-                except ox.core.EmptyOverpassResponse:
+                    G = ox.graph_from_xml('patch.osm', simplify=False, retain_all=True)
+                except:
                     G = False
             
             if G:
