@@ -214,7 +214,7 @@ def pedestrians_first(city,
                                            #'--complete-ways',
                                            '--drop-broken-refs',
                                            '-o=patch.osm'])
-                    G = ox.graph_from_file('patch.osm', 
+                    G = ox.graph_from_xml('patch.osm', 
                                            simplify=False, retain_all=True)
                     os.remove('patch.osm')
                 
@@ -308,14 +308,14 @@ def pedestrians_first(city,
                 print("finished patch #",p_idx,'out of', len(patches),"in",str(patch_time))
                 patch_times.append(patch_time)
         
-            except ox.EmptyOverpassResponse:
-                print("RECEIVED NO NETWORK FOR PATCH", p_idx)
-            except ValueError:
-                print('ValueError')
-                now = str(datetime.datetime.now())
-                with open('error'+now+'.txt','w') as errout:
-                    traceback.print_exc(limit=3,file=errout)
-                print('saved to error'+now+'.txt')
+            except:
+                print("GOT SOME ERROR FOR PATCH", p_idx)
+            # except ValueError:
+            #     print('ValueError')
+            #     now = str(datetime.datetime.now())
+            #     with open('error'+now+'.txt','w') as errout:
+            #         traceback.print_exc(limit=3,file=errout)
+            #     print('saved to error'+now+'.txt')
     
              
     epsg = 32600+int(crs.split(' ')[1].split('=')[1]) #This is wild -- 
