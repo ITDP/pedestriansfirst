@@ -339,7 +339,7 @@ def pedestrians_first(city,
             service_latlon = service_utm.to_crs(epsg=4326)
             service_latlon.to_file(folder_name+service+'latlon'+'.geojson', driver='GeoJSON')
             
-            stats = rasterstats.zonal_stats(service_latlon, 'pop_dens.tif', stats=['sum'])[0]['sum']            
+            stats = rasterstats.zonal_stats(service_latlon, 'pop_dens.tif', stats=['sum'])           
             total_PNS = stats[0]['sum']
             print("\n")
             print('Total People Near Service for', service, ":", total_PNS)
