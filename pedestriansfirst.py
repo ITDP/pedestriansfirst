@@ -481,7 +481,7 @@ def pedestrians_first(city,
                 G = ox.project_graph(G, to_crs=crs)
                 G = ox.simplify_graph(G)
                 
-                streets = ox.save_load.graph_to_gdfs(G, nodes = False)
+                streets = ox.utils_graph.graph_to_gdfs(G, nodes = False)
                 
                 if not streets.empty:
                     streets = shapely.geometry.MultiLineString(list(streets.geometry))
