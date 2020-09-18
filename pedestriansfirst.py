@@ -339,12 +339,8 @@ def pedestrians_first(city,
             service_latlon = service_utm.to_crs(epsg=4326)
             service_latlon.to_file(folder_name+service+'latlon'+'.geojson', driver='GeoJSON')
             
-            stats = rasterstats.zonal_stats(service_latlon, 'pop_dens.tif', stats=['mean'])
-            
-            total_PNS = 0
-            for i in range(0,len(stats)):
-                if stats[i]['mean'] and type(stats[i]['mean']) != numpy.ma.core.MaskedConstant:
-                    total_PNS += (service_utm.area[i]*stats[i]['mean'] / 62500) #62500 = m2 per pixel
+            stats = rasterstats.zonal_stats(service_latlon, 'pop_dens.tif', stats=['sum'])[0]['sum']            
+            total_PNS = stats[0]['sum']
             print("\n")
             print('Total People Near Service for', service, ":", total_PNS)
             print(100*total_PNS/total_pop,"% of",total_pop)
@@ -368,11 +364,8 @@ def pedestrians_first(city,
             carfree_utm.crs = crs
             carfree_latlon = carfree_utm.to_crs('epsg:4326')
             
-            stats = rasterstats.zonal_stats(carfree_latlon, 'pop_dens.tif', stats=['mean'])
-            total_carfree = 0
-            for i in range(0,len(stats)):
-                if stats[i]['mean'] and type(stats[i]['mean']) != numpy.ma.core.MaskedConstant:
-                    total_carfree += (carfree_utm.area[i]*stats[i]['mean'] / 62500) #62500 = m2 per pixel
+            stats = rasterstats.zonal_stats(carfree_latlon, 'pop_dens.tif', stats=['sum'])
+            total_carfree = stats[0]['sum']
             print("\n")
             print('Total People Near Service for carfree', ":", total_carfree)
             print(100*total_carfree/total_pop,"% of",total_pop)
@@ -399,12 +392,9 @@ def pedestrians_first(city,
                 hs_utm.geometry = hs_utm.geometry.simplify(15)
                 hs_latlon = hs_utm.to_crs(epsg=4326)
                 hs_latlon.to_file(folder_name+service+'latlon'+'.geojson', driver='GeoJSON')
-                stats = rasterstats.zonal_stats(hs_latlon, 'pop_dens.tif', stats=['mean'])
+                stats = rasterstats.zonal_stats(hs_latlon, 'pop_dens.tif', stats=['sum'])
                 
-                total_PNS = 0
-                for i in range(0,len(stats)):
-                    if stats[i]['mean'] and type(stats[i]['mean']) != numpy.ma.core.MaskedConstant:
-                        total_PNS += (hs_utm.area[i]*stats[i]['mean'] / 62500) #62500 = m2 per pixel
+                total_PNS = stats[0]['sum']
                 print("\n")
                 print('Total People Near Service for', service, ":", total_PNS)
                 print(100*total_PNS/total_pop,"% of",total_pop)
