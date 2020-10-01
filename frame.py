@@ -10,15 +10,15 @@ import pdb
 import pedestriansfirst
 
 
-def from_id_hdc(hdc, kwargs = {}):
+def from_id_hdc(hdc, folder_prefix = '', kwargs = {}):
     #select city from ID number
     with fiona.open('GHS_STAT_UCDB2015MT_GLOBE_R2019A_V1_0.shp','r') as ucdb:
         for city in ucdb:
             if int(city['properties']['ID_HDC_G0']) == int(hdc):
                 target = city
-    return from_city(target, kwargs=kwargs)
+    return from_city(target, folder_prefix = folder_prefix, kwargs=kwargs)
 
-def from_city(city, kwargs = {}):
+def from_city(city, folder_prefix = '', kwargs = {}):
     hdc = city['properties']['ID_HDC_G0']
     #save city geometry so that I can take an extract from planet.pbf within it
     if not os.path.isdir(str(hdc)):
@@ -40,7 +40,7 @@ def from_city(city, kwargs = {}):
     print(command)
     subprocess.check_call(command, shell=True)
     
-    folder = str(hdc)+'/'
+    folder = folder_prefix + str(hdc) + '/'
     
     return pedestriansfirst.pedestrians_first(city, folder_name = folder, **kwargs)
 

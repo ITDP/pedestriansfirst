@@ -101,6 +101,7 @@ def pedestrians_first(city,
                             },
                       overpass = False,
                       patch_length = 5, #km
+                      boundary_buffer = 0, #km
                       ):    
     dt = datetime.datetime.now()
     logger = logging.getLogger()
@@ -119,7 +120,16 @@ def pedestrians_first(city,
     
     
     boundaries = shapely.geometry.shape(city['geometry'])
-    total_pop = city['properties']['P15']
+    
+    if boundary_buffer > 0:
+        bound_latlon = gpd.GeoDataFrame(geometry = [boundaries])
+        longitude = round(numpy.mean(bound_latlon.geometry.centroid.x),10)
+        utm_zone = int(math.floor((longitude + 180) / 6) + 1)
+        utm_crs = '+proj=utm +zone={} +ellps=WGS84 +datum=WGS84 +units=m +no_defs'.format(utm_zone)
+        bound_utm = bound_latlon.to_crs(utm_crs)
+        bound_utm.geometry = bound_utm.geometry.buffer(boundary_buffer*1000)
+        bound_latlon = bound_utm.to_crs(epsg=4326)
+    
     name = city['properties']['UC_NM_MN']
     hdc = city['properties']['ID_HDC_G0']
     bbox = (city['properties']['BBX_LATMN'],
@@ -171,6 +181,7 @@ def pedestrians_first(city,
     if 'transit' in to_test:
         testing_services.append('transit')
         sources = gtfs_parser.get_feed_infos(gtfs_parser.get_relevant_locs(bbox))
+        #note! This doesn't reflect a buffered boundary if boundary_buffer > 0
         transit_stop_sets = gtfs_parser.count_all_sources(sources, headwaylim = headway_threshold * 2)
     
     if len(to_test) > 0 and to_test != ["blocks"]:
@@ -329,6 +340,9 @@ def pedestrians_first(city,
     boundaries_latlon = gpd.GeoDataFrame(geometry=[boundaries])
     boundaries_latlon.crs = {'init':'epsg:4326'}
     boundaries_utm = boundaries_latlon.to_crs(crs)
+    
+    stats = rasterstats.zonal_stats(boundaries_latlon, 'pop_dens.tif', stats=['sum'])           
+    total_pop = stats[0]['sum'] 
     
     for service in testing_services:
         if quilt_isochrone_polys[service]:
