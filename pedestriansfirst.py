@@ -123,6 +123,7 @@ def pedestrians_first(city,
     
     if boundary_buffer > 0:
         bound_latlon = gpd.GeoDataFrame(geometry = [boundaries])
+        bound_latlon.crs = {'init':'epsg:4326'}
         longitude = round(numpy.mean(bound_latlon.geometry.centroid.x),10)
         utm_zone = int(math.floor((longitude + 180) / 6) + 1)
         utm_crs = '+proj=utm +zone={} +ellps=WGS84 +datum=WGS84 +units=m +no_defs'.format(utm_zone)
