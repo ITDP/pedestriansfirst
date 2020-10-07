@@ -236,25 +236,16 @@ def pedestrians_first(city,
                 center_nodes = {}
                 for service in all_coords.keys():
                     if service in ['healthcare','schools','libraries','special']:
-                        already_covered = None
                         center_nodes[service] = []
                         for coord in all_coords[service]:
                             lat = coord[0]
                             lon = coord[1]
                             if unbuffered_patch.bounds[0] < lon < unbuffered_patch.bounds[2] and unbuffered_patch.bounds[1] < lat < unbuffered_patch.bounds[3]:
                                 point = shapely.geometry.Point(lon,lat)
-                                if not already_covered:
-                                    nearest = ox.get_nearest_node(simple_G, coord)
-                                    if not nearest in center_nodes[service]:    
-                                        center_nodes[service].append(nearest)
-                                    already_covered = point.buffer(50*longitude_factor_m)
-                                elif not already_covered.contains(point):
-                                    nearest = ox.get_nearest_node(simple_G, coord)
-                                    if not nearest in center_nodes[service]:    
-                                        center_nodes[service].append(nearest)
-                                        already_covered = already_covered.union(point.buffer(50*longitude_factor_m))
-                                else:
-                                    print ("Already covered")
+                                nearest = ox.get_nearest_node(simple_G, coord)
+                                if not nearest in center_nodes[service]:    
+                                    center_nodes[service].append(nearest)
+                                    already_covered = already_covered.union(point.buffer(50*longitude_factor_m))
                 
                 if 'transit' in to_test:
                     center_nodes['transit'] = []
