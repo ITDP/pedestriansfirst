@@ -245,7 +245,6 @@ def pedestrians_first(city,
                                 nearest = ox.get_nearest_node(simple_G, coord)
                                 if not nearest in center_nodes[service]:    
                                     center_nodes[service].append(nearest)
-                                    already_covered = already_covered.union(point.buffer(50*longitude_factor_m))
                 
                 if 'transit' in to_test:
                     center_nodes['transit'] = []
