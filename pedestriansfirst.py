@@ -191,7 +191,7 @@ def pedestrians_first(city,
                                                               headwaylim = headway_threshold * 2)
         else:
             transit_stop_sets = gtfs_parser.count_all_sources(gtfs_files, 
-                                                              source_type = 'openmobilitydata',
+                                                              source_type = 'local_files',
                                                               headwaylim = headway_threshold * 2)
             
     
