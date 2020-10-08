@@ -82,6 +82,7 @@ def feed_from_id(feed_id):
     return feed
 
 def feed_from_filename(filename):
+    try:
         command = 'unzip '+filename+' -d temp_gtfs_dir/'
         print(command)
         subprocess.check_call(command, shell=True)
