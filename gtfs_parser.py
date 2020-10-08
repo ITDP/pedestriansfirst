@@ -164,10 +164,10 @@ def count_all_sources(sources, source_type, headwaylim = 20):
                 counts = get_freq_stops(feed, headwaylim = headwaylim)
                 if counts:
                     stop_sets.append(counts)
-                    print ("succeded (i hope) for", feed_id)
+                    print ("succeded (i hope) for", source)
                 else:
-                    print ("failed for", feed_id, 'no frequent service')
+                    print ("failed for", source, 'no frequent service')
             else:
-                print ("failed for", feed_id, 'no feed')
+                print ("failed for", source, 'no feed')
         
     return stop_sets
