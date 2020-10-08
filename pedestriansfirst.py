@@ -102,6 +102,7 @@ def pedestrians_first(city,
                       overpass = False,
                       patch_length = 5, #km
                       boundary_buffer = 0, #km
+                      gtfs_files = [],
                       ):    
     dt = datetime.datetime.now()
     logger = logging.getLogger()
@@ -181,9 +182,18 @@ def pedestrians_first(city,
 
     if 'transit' in to_test:
         testing_services.append('transit')
-        sources = gtfs_parser.get_feed_infos(gtfs_parser.get_relevant_locs(bbox))
-        #note! This doesn't reflect a buffered boundary if boundary_buffer > 0
-        transit_stop_sets = gtfs_parser.count_all_sources(sources, headwaylim = headway_threshold * 2)
+        #this approach does not let us combine OpenMobilityData files with local files.
+        if len(gtfs_files) == 0:
+            sources = gtfs_parser.get_feed_infos(gtfs_parser.get_relevant_locs(bbox))
+            #note! This doesn't reflect a buffered boundary if boundary_buffer > 0
+            transit_stop_sets = gtfs_parser.count_all_sources(sources, 
+                                                              source_type = 'openmobilitydata',
+                                                              headwaylim = headway_threshold * 2)
+        else:
+            transit_stop_sets = gtfs_parser.count_all_sources(gtfs_files, 
+                                                              source_type = 'openmobilitydata',
+                                                              headwaylim = headway_threshold * 2)
+            
     
     if len(to_test) > 0 and to_test != ["blocks"]:
         for p_idx, patch in enumerate(patches):

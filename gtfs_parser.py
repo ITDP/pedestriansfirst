@@ -81,6 +81,31 @@ def feed_from_id(feed_id):
         shutil.rmtree('temp_gtfs_dir')
     return feed
 
+def feed_from_filename(filename):
+        command = 'unzip '+filename+' -d temp_gtfs_dir/'
+        print(command)
+        subprocess.check_call(command, shell=True)
+    except:
+        if os.path.exists('temp_gtfs_dir'):
+            shutil.rmtree('temp_gtfs_dir')
+        return False
+    if os.path.exists('temp_gtfs_dir/calendar.txt'):
+        #this fixes a bug that was happening because San Francisco, of all places, ended text lines with whitespace
+        with open('temp_gtfs_dir/calendar.txt','r') as calfile:
+            out = ''
+            for line in calfile:
+                out += line.strip()
+                out += '\n'
+        with open('temp_gtfs_dir/calendar.txt','w') as calfile:
+            calfile.write(out)
+    try:
+        feed = gk.read_gtfs('temp_gtfs_dir/', dist_units = 'km')
+    except pandas.errors.ParserError:
+        return False
+    if os.path.exists('temp_gtfs_dir'):
+        shutil.rmtree('temp_gtfs_dir')
+    return feed
+
 def get_freq_stops(feed, headwaylim = 20):
     try:
         days = feed.get_first_week()[0:5]
@@ -115,12 +140,25 @@ def get_freq_stops(feed, headwaylim = 20):
         print ("got counts!")
     return counts
     
-def count_all_sources(sources, headwaylim = 20):
+def count_all_sources(sources, source_type, headwaylim = 20):
     stop_sets = []
-    for source in sources:
-        if 'id' in source.keys():
-            feed_id = source['id']
-            feed = feed_from_id(feed_id)
+    if source_type == "openmobilitydata":
+        for source in sources:
+            if 'id' in source.keys():
+                feed_id = source['id']
+                feed = feed_from_id(feed_id)
+                if feed:
+                    counts = get_freq_stops(feed, headwaylim = headwaylim)
+                    if counts:
+                        stop_sets.append(counts)
+                        print ("succeded (i hope) for", feed_id)
+                    else:
+                        print ("failed for", feed_id, 'no frequent service')
+                else:
+                    print ("failed for", feed_id, 'no feed')
+    elif source_type == "local_files":
+        for source in sources:
+            feed = feed_from_filename(source)
             if feed:
                 counts = get_freq_stops(feed, headwaylim = headwaylim)
                 if counts:
@@ -130,4 +168,5 @@ def count_all_sources(sources, headwaylim = 20):
                     print ("failed for", feed_id, 'no frequent service')
             else:
                 print ("failed for", feed_id, 'no feed')
+        
     return stop_sets
