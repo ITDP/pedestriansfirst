@@ -131,7 +131,7 @@ def pedestrians_first(city,
         bound_utm = bound_latlon.to_crs(utm_crs)
         bound_utm.geometry = bound_utm.geometry.buffer(boundary_buffer*1000)
         bound_latlon = bound_utm.to_crs(epsg=4326)
-        boundaries = bound_latlon.geometry.unary_union()
+        boundaries = bound_latlon.geometry.unary_union
     
     name = city['properties']['UC_NM_MN']
     hdc = city['properties']['ID_HDC_G0']
