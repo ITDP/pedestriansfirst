@@ -10,10 +10,13 @@ import subprocess
 import json
 import traceback
 
+import numpy as np
 import osmnx as ox
 import networkx as nx
 import geopandas as gpd
 import shapely.geometry
+from shapely.geometry import LineString
+from shapely.ops import unary_union
 import shapely.ops
 
 import isochrones
@@ -176,6 +179,21 @@ def pedestrians_first(city,
             all_coords[service] = handler.locationlist[service]
             citywide_carfree = handler.carfreelist
             
+    #should I finish this?
+    if 'highways' in to_test:     
+        highway_filter = '["area"!~"yes"]["highway"~"motorway|trunk"]'
+        G_hwys = ox.graph_from_polygon(boundaries,
+                                custom_filter=highway_filter,
+                                retain_all=True)
+        G_hwys = ox.project_graph(G_hwys)
+        edges_hwys = ox.utils_graph.graph_to_gdfs(G_hwys, nodes=False)
+        edges_polyline = edges_hwys.geometry.unary_union
+        increment_dist = 25
+        distances = np.arange(0, edges_polyline.length, increment_dist)
+        points = [edges_polyline.interpolate(distance) for distance in distances] + [edges_polyline.boundary[1]]
+        multipoint = unary_union(points)
+        #need to switch back to latlon and put in all_coords['highway']
+        
     if 'special' in to_test:
         testing_services.append('special')
         special = gpd.read_file(str(hdc)+'/special.shp')
@@ -494,36 +512,39 @@ def pedestrians_first(city,
                     G = False
             
             if G:
-                G = ox.project_graph(G, to_crs=crs)
-                G = ox.simplify_graph(G)
-                
-                streets = ox.utils_graph.graph_to_gdfs(G, nodes = False)
-                
-                if not streets.empty:
-                    streets = shapely.geometry.MultiLineString(list(streets.geometry))
-                    merged = shapely.ops.linemerge(streets)
-                    if merged:
-                        borders = shapely.ops.unary_union(merged)
-                        blocks = list(shapely.ops.polygonize(borders))
-                        all_blocks = []
-                        selected_areas = []
-                        for block in blocks:
-                            if 500 < block.area: #< 200000000:
-                                if block.interiors:
-                                    block = shapely.geometry.Polygon(block.exterior)
-                                if block.centroid.within(unbuffered_patch):
-                                    area = round(block.area, 3)
-                                    perim = round(block.length, 3)
-                                    lemgth = round((perim * perim) / area, 3)
-                                    block = block.simplify(15)
-                                    all_blocks.append((block, area, perim, lemgth))
-                                    if (lemgth < 50) and (1000 < area < 1000000):
-                                        selected_areas.append(area)
-                        outblocks += all_blocks
-                        block_counts.append(len(all_blocks))
-                    else:
-                        block_counts.append(0)
-                        print('not merged!')
+                try:
+                    G = ox.project_graph(G, to_crs=crs)
+                    G = ox.simplify_graph(G)
+                    
+                    streets = ox.utils_graph.graph_to_gdfs(G, nodes = False)
+                    
+                    if not streets.empty:
+                        streets = shapely.geometry.MultiLineString(list(streets.geometry))
+                        merged = shapely.ops.linemerge(streets)
+                        if merged:
+                            borders = shapely.ops.unary_union(merged)
+                            blocks = list(shapely.ops.polygonize(borders))
+                            all_blocks = []
+                            selected_areas = []
+                            for block in blocks:
+                                if 500 < block.area: #< 200000000:
+                                    if block.interiors:
+                                        block = shapely.geometry.Polygon(block.exterior)
+                                    if block.centroid.within(unbuffered_patch):
+                                        area = round(block.area, 3)
+                                        perim = round(block.length, 3)
+                                        lemgth = round((perim * perim) / area, 3)
+                                        block = block.simplify(15)
+                                        all_blocks.append((block, area, perim, lemgth))
+                                        if (lemgth < 50) and (1000 < area < 1000000):
+                                            selected_areas.append(area)
+                            outblocks += all_blocks
+                            block_counts.append(len(all_blocks))
+                        else:
+                            block_counts.append(0)
+                            print('not merged!')
+                except:
+                    print('Hawassa Error')
                 else:
                     block_counts.append(0)
             else:
