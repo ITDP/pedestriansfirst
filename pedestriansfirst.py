@@ -545,6 +545,7 @@ def pedestrians_first(city,
                             print('not merged!')
                 except:
                     print('Hawassa Error')
+                    block_counts.append(0)
                 else:
                     block_counts.append(0)
             else:
