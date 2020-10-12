@@ -41,7 +41,7 @@ def from_city(city, folder_prefix = '', boundary_buffer = 0, kwargs = {}):
         boundaries = bound_latlon.geometry.unary_union
         geom_in_geojson = geojson.Feature(geometry=boundaries, properties={})
         with open(str(hdc)+'/boundaries.geojson', 'w') as out:
-            out.write(json.dumps(boundaries))
+            out.write(json.dumps(geom_in_geojson))
     else:
         with open(str(hdc)+'/boundaries.geojson', 'w') as out:
             out.write(json.dumps(city))
