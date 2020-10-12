@@ -4,27 +4,44 @@ import os
 import os.path
 import json
 import shutil
+import shapely
+import geopandas as gpd
+import numpy
+import math
 
 import pdb
 
 import pedestriansfirst
 
 
-def from_id_hdc(hdc, folder_prefix = '', kwargs = {}):
+def from_id_hdc(hdc, folder_prefix = '', boundary_buffer = 0, kwargs = {}):
     #select city from ID number
     with fiona.open('GHS_STAT_UCDB2015MT_GLOBE_R2019A_V1_0.shp','r') as ucdb:
         for city in ucdb:
             if int(city['properties']['ID_HDC_G0']) == int(hdc):
                 target = city
-    return from_city(target, folder_prefix = folder_prefix, kwargs=kwargs)
+    return from_city(target, folder_prefix = folder_prefix, boundary_buffer = boundary_buffer, kwargs=kwargs)
 
-def from_city(city, folder_prefix = '', kwargs = {}):
+def from_city(city, folder_prefix = '', boundary_buffer = 0, kwargs = {}):
     hdc = city['properties']['ID_HDC_G0']
     #save city geometry so that I can take an extract from planet.pbf within it
     if not os.path.isdir(str(hdc)):
         os.mkdir(str(hdc))
-    with open(str(hdc)+'/boundaries.geojson', 'w') as out:
-        out.write(json.dumps(city))
+    if boundary_buffer > 0:
+        boundaries = shapely.geometry.shape(city['geometry'])
+        bound_latlon = gpd.GeoDataFrame(geometry = [boundaries])
+        bound_latlon.crs = {'init':'epsg:4326'}
+        longitude = round(numpy.mean(bound_latlon.geometry.centroid.x),10)
+        utm_zone = int(math.floor((longitude + 180) / 6) + 1)
+        utm_crs = '+proj=utm +zone={} +ellps=WGS84 +datum=WGS84 +units=m +no_defs'.format(utm_zone)
+        bound_utm = bound_latlon.to_crs(utm_crs)
+        bound_utm.geometry = bound_utm.geometry.buffer(boundary_buffer*1000)
+        bound_latlon = bound_utm.to_crs(epsg=4326)
+        boundaries = bound_latlon.geometry.unary_union
+        bound_latlon.to_file(str(hdc)+'/boundaries.geojson',driver='GeoJSON')
+    else:
+        with open(str(hdc)+'/boundaries.geojson', 'w') as out:
+            out.write(json.dumps(city))
     #take extract from planet.pbf
     if not os.path.exists('{}/city.pbf'.format(str(hdc))):
         command = "osmium extract planet-latest.osm.pbf -p {}/boundaries.geojson -s complete_ways -v -o {}/city.pbf".format(str(hdc), str(hdc))

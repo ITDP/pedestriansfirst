@@ -195,9 +195,10 @@ def pedestrians_first(city,
         #need to switch back to latlon and put in all_coords['highway']
         
     if 'special' in to_test:
-        testing_services.append('special')
-        special = gpd.read_file(str(hdc)+'/special.shp')
-        all_coords['special'] = [(pt.y, pt.x) for pt in special.geometry]
+        if os.path.isfile(str(hdc)+'/special.shp'):
+            testing_services.append('special')
+            special = gpd.read_file(str(hdc)+'/special.shp')
+            all_coords['special'] = [(pt.y, pt.x) for pt in special.geometry]
 
     if 'transit' in to_test:
         testing_services.append('transit')
