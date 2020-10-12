@@ -8,6 +8,7 @@ import shapely
 import geopandas as gpd
 import numpy
 import math
+import geojson
 
 import pdb
 
@@ -38,6 +39,7 @@ def from_city(city, folder_prefix = '', boundary_buffer = 0, kwargs = {}):
         bound_utm.geometry = bound_utm.geometry.buffer(boundary_buffer*1000)
         bound_latlon = bound_utm.to_crs(epsg=4326)
         boundaries = bound_latlon.geometry.unary_union
+        geom_in_geojson = geojson.Feature(geometry=boundaries, properties={})
         with open(str(hdc)+'/boundaries.geojson', 'w') as out:
             out.write(json.dumps(boundaries))
     else:
