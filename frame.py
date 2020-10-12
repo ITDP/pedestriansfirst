@@ -39,8 +39,7 @@ def from_city(city, folder_prefix = '', boundary_buffer = 0, kwargs = {}):
         bound_latlon = bound_utm.to_crs(epsg=4326)
         boundaries = bound_latlon.geometry.unary_union
         with open(str(hdc)+'/boundaries.geojson', 'w') as out:
-            out.write(json.dumps(boundaries.geometry[0]))
-        bound_latlon.to_file(str(hdc)+'/boundaries.geojson',driver='GeoJSON')
+            out.write(json.dumps(boundaries))
     else:
         with open(str(hdc)+'/boundaries.geojson', 'w') as out:
             out.write(json.dumps(city))
