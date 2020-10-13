@@ -105,6 +105,7 @@ def pedestrians_first(city,
                       overpass = False,
                       patch_length = 5, #km
                       boundary_buffer = 0, #km
+                      blocks_simplification = 15, #m
                       gtfs_files = [],
                       ):    
     dt = datetime.datetime.now()
@@ -535,7 +536,8 @@ def pedestrians_first(city,
                                         area = round(block.area, 3)
                                         perim = round(block.length, 3)
                                         lemgth = round((perim * perim) / area, 3)
-                                        block = block.simplify(15)
+                                        if blocks_simplification:
+                                            block = block.simplify(blocks_simplification)
                                         all_blocks.append((block, area, perim, lemgth))
                                         if (lemgth < 50) and (1000 < area < 1000000):
                                             selected_areas.append(area)
