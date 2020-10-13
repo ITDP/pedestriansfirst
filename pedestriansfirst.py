@@ -361,8 +361,13 @@ def pedestrians_first(city,
      
     boundaries_latlon = gpd.GeoDataFrame(geometry=[boundaries])
     boundaries_latlon.crs = {'init':'epsg:4326'}
-    boundaries_utm = boundaries_latlon.to_crs(crs)
-    
+    try:
+        boundaries_utm = boundaries_latlon.to_crs(crs)
+    except NameError:
+        longitude = round(numpy.mean(boundaries_latlon.geometry.centroid.x),10)
+        utm_zone = int(math.floor((longitude + 180) / 6) + 1)
+        utm_crs = '+proj=utm +zone={} +ellps=WGS84 +datum=WGS84 +units=m +no_defs'.format(utm_zone)
+        
     stats = rasterstats.zonal_stats(boundaries_latlon, 'pop_dens.tif', stats=['sum'])           
     total_pop = stats[0]['sum'] 
     
