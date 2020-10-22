@@ -136,9 +136,11 @@ def get_freq_stops(feed, headwaylim = 20):
                 lon = row['stop_lon']
                 counts[stop_id] = [headway, lat, lon]
             except IndexError:
-                print("YOLO")
+                print("IndexError")
     if counts:
         print ("got counts!")
+    else:
+        print("did not get counts")
     return counts
     
 def count_all_sources(sources, source_type, headwaylim = 20):
