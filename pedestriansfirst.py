@@ -80,7 +80,9 @@ def weighted_pop_density(array):
         total += cell**2
     return total / numpy.sum(array)
 
-def pedestrians_first(city, 
+def pedestrians_first(boundaries, 
+                      id_code,
+                      name,
                       folder_name='', 
                       buffer_dist=100,#m
                       headway_threshold=10,#min
@@ -124,7 +126,6 @@ def pedestrians_first(city,
     logger.addHandler(ch)
     
     
-    boundaries = shapely.geometry.shape(city['geometry'])
     
     if boundary_buffer > 0:
         bound_latlon = gpd.GeoDataFrame(geometry = [boundaries])
@@ -137,13 +138,7 @@ def pedestrians_first(city,
         bound_latlon = bound_utm.to_crs(epsg=4326)
         boundaries = bound_latlon.geometry.unary_union
     
-    name = city['properties']['UC_NM_MN']
-    hdc = city['properties']['ID_HDC_G0']
-    bbox = (city['properties']['BBX_LATMN'],
-               city['properties']['BBX_LONMN'],
-               city['properties']['BBX_LATMX'],
-               city['properties']['BBX_LONMX'],)
-    
+    bbox = boundaries.bounds
     
     crs = None 
     
@@ -175,7 +170,7 @@ def pedestrians_first(city,
     
     if len(testing_services) > 0:
         handler = get_service_locations.ServiceHandler()
-        handler.apply_file(str(hdc)+'/city.o5m', locations=True)
+        handler.apply_file(folder_name+'/city.o5m', locations=True)
         for service in testing_services:
             all_coords[service] = handler.locationlist[service]
             citywide_carfree = handler.carfreelist
@@ -196,9 +191,9 @@ def pedestrians_first(city,
         #need to switch back to latlon and put in all_coords['highway']
         
     if 'special' in to_test:
-        if os.path.isfile(str(hdc)+'/special.shp'):
+        if os.path.isfile(folder_name+'/special.shp'):
             testing_services.append('special')
-            special = gpd.read_file(str(hdc)+'/special.shp')
+            special = gpd.read_file(folder_name+'/special.shp')
             all_coords['special'] = [(pt.y, pt.x) for pt in special.geometry]
 
     if 'transit' in to_test:
@@ -252,7 +247,7 @@ def pedestrians_first(city,
                     boundingarg += str(patch.bounds[2])+','
                     boundingarg += str(patch.bounds[3])
                     subprocess.check_call(['osmconvert',
-                                           str(hdc)+'/citywalk.o5m',
+                                           str(folder_name)+'/citywalk.o5m',
                                            boundingarg,
                                            #'--complete-ways',
                                            '--drop-broken-refs',
@@ -354,7 +349,7 @@ def pedestrians_first(city,
     #osmnx seems to just give all data in northern-hemisphere format
     #Sorry about the stupid parsing of the projection definition, I'm lazy 
     
-    results = {'name':name,'hdc':hdc}
+    results = {'name':name,'id_code':id_code}
     
     if not os.path.exists(folder_name):
         os.makedirs(folder_name)
@@ -510,7 +505,7 @@ def pedestrians_first(city,
                 boundingarg += str(patch.bounds[2])+','
                 boundingarg += str(patch.bounds[3])
                 subprocess.check_call(['osmconvert',
-                                       str(hdc)+'/citywalk.o5m',
+                                       folder_name+'/citywalk.o5m',
                                        boundingarg,
                                        #'--complete-ways',
                                        '--drop-broken-refs',
@@ -614,7 +609,7 @@ def pedestrians_first(city,
     with open(folder_name+"results.json","w") as output:
         output.write(json.dumps(results))
     for file in ['city.o5m','cityhighways.o5m','citywalk.o5m']:
-        if os.path.exists(str(hdc)+'/'+file):
-            os.remove(str(hdc)+'/'+file)
+        if os.path.exists(folder_name+'/'+file):
+            os.remove(folder_name+'/'+file)
     return results
 
