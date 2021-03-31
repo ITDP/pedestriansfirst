@@ -59,6 +59,7 @@ def prep_from_poly(poly, folder_name, boundary_buffer = 0):
     command = f'osmfilter {str(folder_name)}/city.o5m --keep="highway=" -o={str(folder_name)}/cityhighways.o5m'
     print(command)
     subprocess.check_call(command, shell=True)
+    #todo -- read both bikeways and walkways direct from a patch'd cityhighways.osm; do walking/cycling selection logic in here.
     command = [f'osmfilter {str(folder_name)}/cityhighways.o5m --drop="area=yes highway=link =motor =proposed =construction =abandoned =platform =raceway service=parking_aisle =driveway =private foot=no" -o={str(folder_name)}/citywalk.o5m']
     print(command)
     subprocess.check_call(command, shell=True)
@@ -105,6 +106,66 @@ def all_cities():
 
 if __name__ == '__main__':
     all_cities()
+
+def pnb_run():
+    osmids = [6362934,
+            2697338,
+            1376330,
+            5605820,
+            9185096,
+            1766358,
+            3287346,
+            2315704,
+            175905,
+            912940,
+            303585,
+            5606060,
+            1707699,
+            302588,
+            #396479,
+            5466227,
+            #531015974,
+            912999,
+            945043,
+            ]
+    for osmid in osmids:
+        if os.path.exists('pnb_results.json'):
+            with open('pnb_results.json','r') as in_file:
+                pnb_results = json.load(in_file)
+        else:
+            pnb_results = {}
+        if not str(osmid) in pnb_results.keys():
+            results = from_osmid(osmid, kwargs={'to_test':['pnb']})
+            pnb_results.update({osmid:results})
+            with open('pnb_results.json','w') as out_file:
+                json.dump(pnb_results, out_file)
+                
+def dc_pnb_run():
+    osmids = [206845,
+            5396194,
+            206642,
+            945043,
+            206637,
+            206874,
+            944948,
+            1149984,
+            206870,
+            936412,
+            936970,
+            133345,
+            3864712,
+            ]
+    for osmid in osmids:
+        if os.path.exists('dc_pnb.json'):
+            with open('dc_pnb.json','r') as in_file:
+                dc_pnb = json.load(in_file)
+        else:
+            dc_pnb = {}
+        if not str(osmid) in dc_pnb.keys():
+            results = from_osmid(osmid, kwargs={'to_test':['pnb']})
+            dc_pnb.update({osmid:results})
+            with open('dc_pnb.json','w') as out_file:
+                json.dump(dc_pnb, out_file)
 
 #hdcs = { #test
 #'Mexico City': 154,

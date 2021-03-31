@@ -1,7 +1,7 @@
 import requests
 import json
 import fiona
-import osmnx
+import osmnx as ox
 
 import osmium
 import shapely.wkb
@@ -186,12 +186,12 @@ def get_point_locations(poly, query):
     overpass_url = "http://overpass-api.de/api/interpreter" 
     #check this is good before production
     
-    poly_str = osmnx.get_polygons_coordinates(poly)[0]
+    poly_str = ox.get_polygons_coordinates(poly)[0]
     
     services = []
     
     print ('Querying OSM for locations...')
-    data = osmnx.overpass_request(data={'data':query.format(poly=poly_str)}, timeout=900)
+    data = ox.overpass_request(data={'data':query.format(poly=poly_str)}, timeout=900)
     for element in data['elements']:
         if element['type'] == 'node':
             services.append(
@@ -204,3 +204,6 @@ def get_point_locations(poly, query):
                     )
     
     return services
+    
+def get_bikeways(x):
+    pass

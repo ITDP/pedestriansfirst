@@ -78,8 +78,10 @@ def make_iso_polys(G, center_nodes, distance=500,
             new_iso = gpd.GeoSeries(all_gs).unary_union 
             
             if infill:
-                # try to fill in surrounded areas so shapes will appear solid
-                new_iso = Polygon(new_iso.exterior)
+                try:# try to fill in surrounded areas so shapes will appear solid
+                    new_iso = Polygon(new_iso.exterior)
+                except AttributeError: #empty geometrycollection?
+                    pass
             polygons.append(new_iso)
         except KeyError:
             print ("FAILURE AT",i,center_node)

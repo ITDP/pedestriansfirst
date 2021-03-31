@@ -21,7 +21,6 @@ import shapely.ops
 
 import isochrones
 import get_service_locations
-import car_free_streets
 import gtfs_parser
 
 import pdb
@@ -95,6 +94,7 @@ def pedestrians_first(boundaries,
                            'blocks',
                            'density',
                            'transit',
+                           'pnb',
                            #'special',
                            ],
                       distances = { #network buffers, in meters
@@ -103,6 +103,7 @@ def pedestrians_first(boundaries,
                             'libraries': 1000,
                             'transit': 500,
                             'special': 500,
+                            'pnb': 250,
                             },
                       overpass = False,
                       patch_length = 5, #km
@@ -125,7 +126,11 @@ def pedestrians_first(boundaries,
     ch.setFormatter(formatter)
     logger.addHandler(ch)
     
+    useful_tags = ox.settings.useful_tags_way + ['cycleway', 'cycleway:left', 'cycleway:right']
+    ox.config(use_cache=True, log_console=True, useful_tags_way=useful_tags)
     
+    if folder_name != '' and not folder_name[-1:] == '/':
+        folder_name += '/'
     
     if boundary_buffer > 0:
         bound_latlon = gpd.GeoDataFrame(geometry = [boundaries])
@@ -142,7 +147,12 @@ def pedestrians_first(boundaries,
     
     crs = None 
     
-    patches = make_patches(boundaries, patch_length=patch_length)
+    if type(boundaries) == shapely.geometry.multipolygon.MultiPolygon:
+        patches = []
+        for poly in list(boundaries):
+            patches += make_patches(poly, patch_length=patch_length)
+    else:
+        patches = make_patches(boundaries, patch_length=patch_length)
     
     longitude_factor = 0.00898 # degrees per km
     longitude_factor_m = 0.00898 / 1000 # degrees per m
@@ -210,7 +220,10 @@ def pedestrians_first(boundaries,
                                                               source_type = 'local_files',
                                                               headwaylim = headway_threshold * 2)
             
-    
+    if 'pnb' in to_test:
+        testing_services.append('pnb')
+        
+        
     if len(to_test) > 0 and to_test != ["blocks"]:
         for p_idx, patch in enumerate(patches):
             try:
@@ -255,8 +268,20 @@ def pedestrians_first(boundaries,
                     G = ox.graph_from_xml('patch.osm', 
                                            simplify=False, retain_all=True)
                     os.remove('patch.osm')
+                    if 'pnb' in to_test:
+                        subprocess.check_call(['osmconvert',
+                                           str(folder_name)+'/cityhighways.o5m',
+                                           boundingarg,
+                                           #'--complete-ways',
+                                           '--drop-broken-refs',
+                                           '-o=allhwyspatch.osm'])
+                        G_allhwys = ox.graph_from_xml('allhwyspatch.osm', 
+                                           simplify=False, retain_all=True)
+                        os.remove('allhwyspatch.osm')
+                        
                 
                 G.remove_nodes_from(list(nx.isolates(G)))
+                G_allhwys.remove_nodes_from(list(nx.isolates(G_allhwys)))
                 
                 simple_G = ox.simplify_graph(G)
                 center_nodes = {}
@@ -271,6 +296,30 @@ def pedestrians_first(boundaries,
                                 nearest = ox.get_nearest_node(simple_G, coord)
                                 if not nearest in center_nodes[service]:    
                                     center_nodes[service].append(nearest)
+                
+                if 'pnb' in to_test:
+                    center_nodes['pnb'] = []
+                    allhwys_gdf = ox.graph_to_gdfs(G_allhwys, nodes=False)
+                    print(allhwys_gdf.columns)
+                    waytypes = []
+                    if 'highway' in allhwys_gdf.columns:
+                        waytypes.append(allhwys_gdf[allhwys_gdf['highway'] == 'cycleway'])
+                    if 'cycleway' in allhwys_gdf.columns:
+                        waytypes.append(allhwys_gdf[allhwys_gdf['cycleway'] == 'track'])
+                    if 'cycleway:left' in allhwys_gdf.columns:
+                        waytypes.append(allhwys_gdf[allhwys_gdf['cycleway:left'] == 'track'])
+                    if 'cycleway:right' in allhwys_gdf.columns:
+                        waytypes.append(allhwys_gdf[allhwys_gdf['cycleway:right'] == 'track'])
+                    cycletracknodes = []
+                    for waytype in waytypes:
+                        for edge in waytype.index:
+                            if not edge[0] in cycletracknodes:
+                                cycletracknodes.append(edge[0])
+                            if not edge[1] in cycletracknodes:
+                                cycletracknodes.append(edge[1])
+                    for node in cycletracknodes:
+                        if node in simple_G.nodes:
+                            center_nodes['pnb'].append(node)
                 
                 if 'transit' in to_test:
                     center_nodes['transit'] = []
@@ -335,9 +384,12 @@ def pedestrians_first(boundaries,
                     
                 print("finished patch #",p_idx,'out of', len(patches),"in",str(patch_time))
                 patch_times.append(patch_time)
-        
-            except:
-                print("GOT SOME ERROR FOR PATCH", p_idx)
+            except ox._errors.EmptyOverpassResponse:
+                pass
+            except ValueError:
+                pass #sorry 
+            #except:
+            #    print("GOT SOME ERROR FOR PATCH", p_idx)
             # except ValueError:
             #     print('ValueError')
             #     now = str(datetime.datetime.now())
