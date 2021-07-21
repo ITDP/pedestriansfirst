@@ -7,6 +7,7 @@ import shutil
 import shapely
 from shapely.geometry import LineString, Polygon, shape, mapping
 import geopandas as gpd
+import pandas as pd
 import numpy
 import math
 import osmnx as ox
@@ -108,36 +109,22 @@ if __name__ == '__main__':
     all_cities()
 
 def pnb_run():
-    osmids = [6362934,
-            2697338,
-            1376330,
-            5605820,
-            9185096,
-            1766358,
-            3287346,
-            2315704,
-            175905,
-            912940,
-            303585,
-            5606060,
-            1707699,
-            302588,
-            #396479,
-            5466227,
-            #531015974,
-            912999,
-            945043,
-            ]
+    osmids = list(pd.read_csv('cities_for_pnb_20210517.csv')['OSM ID'])
+
     for osmid in osmids:
-        if os.path.exists('pnb_results.json'):
-            with open('pnb_results.json','r') as in_file:
+        print('pnb run',osmid)
+        if os.path.exists('pnb_results_jun21.json'):
+            with open('pnb_results_jun21.json','r') as in_file:
                 pnb_results = json.load(in_file)
         else:
             pnb_results = {}
         if not str(osmid) in pnb_results.keys():
-            results = from_osmid(osmid, kwargs={'to_test':['pnb']})
+            try:
+                results = from_osmid(osmid, kwargs={'to_test':['pnb','density','bikeshare']})
+            except ValueError:
+                results = "ValueError"
             pnb_results.update({osmid:results})
-            with open('pnb_results.json','w') as out_file:
+            with open('pnb_results_jun21.json','w') as out_file:
                 json.dump(pnb_results, out_file)
                 
 def dc_pnb_run():
@@ -162,7 +149,7 @@ def dc_pnb_run():
         else:
             dc_pnb = {}
         if not str(osmid) in dc_pnb.keys():
-            results = from_osmid(osmid, kwargs={'to_test':['pnb']})
+            results = from_osmid(osmid, kwargs={'to_test':['pnb','density','bikeshare']})
             dc_pnb.update({osmid:results})
             with open('dc_pnb.json','w') as out_file:
                 json.dump(dc_pnb, out_file)

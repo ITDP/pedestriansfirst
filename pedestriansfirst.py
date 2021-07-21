@@ -9,6 +9,10 @@ import rasterio.mask
 import subprocess
 import json
 import traceback
+import utm
+import geojson
+import shutil
+#import utm_zone
 
 import numpy as np
 import osmnx as ox
@@ -46,7 +50,6 @@ def make_patches(boundaries, patch_length = 5): #patch_length in km
     width_degrees = abs(bbox[2]-bbox[0])
     width_km = width_degrees / longitude_factor
     
-    patch_length = 5 #kilometers
     n_hslicers = math.floor(height_km / patch_length)
     n_vslicers = math.floor(width_km / patch_length)
     
@@ -90,20 +93,24 @@ def pedestrians_first(boundaries,
                            'schools',
                            'h+s',
                            'libraries',
+                           'bikeshare',
                            'carfree',
                            'blocks',
                            'density',
                            'transit',
-                           'pnb',
+                           'pnpb', #protected bikeways
+                           'pnab', #all bikeways
                            #'special',
                            ],
                       distances = { #network buffers, in meters
                             'healthcare': 1000,
                             'schools': 1000,
                             'libraries': 1000,
+                            'bikeshare': 500,
                             'transit': 500,
                             'special': 500,
-                            'pnb': 250,
+                            'pnpb': 250,
+                            'pnab': 250,
                             },
                       overpass = False,
                       patch_length = 5, #km
@@ -132,20 +139,24 @@ def pedestrians_first(boundaries,
     if folder_name != '' and not folder_name[-1:] == '/':
         folder_name += '/'
     
+    bound_latlon = gpd.GeoDataFrame(geometry = [boundaries])
+    bound_latlon.crs = {'init':'epsg:4326'}
+    longitude = round(numpy.mean(bound_latlon.geometry.centroid.x),10)
+    utm_zone = int(math.floor((longitude + 180) / 6) + 1)
+    utm_crs = '+proj=utm +zone={} +ellps=WGS84 +datum=WGS84 +units=m +no_defs'.format(utm_zone)
+    crs=utm_crs
+    
     if boundary_buffer > 0:
-        bound_latlon = gpd.GeoDataFrame(geometry = [boundaries])
-        bound_latlon.crs = {'init':'epsg:4326'}
-        longitude = round(numpy.mean(bound_latlon.geometry.centroid.x),10)
-        utm_zone = int(math.floor((longitude + 180) / 6) + 1)
-        utm_crs = '+proj=utm +zone={} +ellps=WGS84 +datum=WGS84 +units=m +no_defs'.format(utm_zone)
         bound_utm = bound_latlon.to_crs(utm_crs)
         bound_utm.geometry = bound_utm.geometry.buffer(boundary_buffer*1000)
         bound_latlon = bound_utm.to_crs(epsg=4326)
         boundaries = bound_latlon.geometry.unary_union
-    
+    print(utm_crs)
     bbox = boundaries.bounds
     
-    crs = None 
+    reppoint = boundaries.representative_point()
+    #crs = utm_zone.epsg(geojson.Point((reppoint.x[0],reppoint.y[0])))
+
     
     if type(boundaries) == shapely.geometry.multipolygon.MultiPolygon:
         patches = []
@@ -167,13 +178,19 @@ def pedestrians_first(boundaries,
     for service in to_test:
         quilt_isochrone_polys[service] = False
         quilt_center_nodes[service] = []
+        if 'pnb' in to_test:
+            quilt_isochrone_polys['pnab'] = False
+            quilt_center_nodes['pnab'] = []
+            quilt_isochrone_polys['pnpb'] = False
+            quilt_center_nodes['pnpb'] = []
+            
     
     patch_times = []
     
     all_coords={}
     
     testing_services = []
-    for service in ['healthcare', 'schools', 'libraries']:
+    for service in ['healthcare', 'schools', 'libraries', 'bikeshare']:
         if service in to_test:
             testing_services.append(service)
             #all_coords[service] = get_point_locations(boundaries, queries[service])
@@ -221,25 +238,51 @@ def pedestrians_first(boundaries,
                                                               headwaylim = headway_threshold * 2)
             
     if 'pnb' in to_test:
-        testing_services.append('pnb')
-        
+        testing_services.append('pnpb')
+        testing_services.append('pnab')
+        total_protectedbike_oneway = gpd.GeoDataFrame()
+        total_protectedbike_twoway = gpd.GeoDataFrame()
+        total_unprotectedbike_oneway = gpd.GeoDataFrame()
+        total_unprotectedbike_twoway = gpd.GeoDataFrame()
         
     if len(to_test) > 0 and to_test != ["blocks"]:
         for p_idx, patch in enumerate(patches):
             try:
+                
+            
                 patch_start = datetime.datetime.now()
                 
                 unbuffered_patch = patch
                 
                 max_service_dist_km = max(distances.values())/1000
                 
-                patch = shapely.geometry.box(
-                        patch.bounds[0] - (max_service_dist_km * longitude_factor),
-                        patch.bounds[1] - (max_service_dist_km * latitude_factor),
-                        patch.bounds[2] + (max_service_dist_km * longitude_factor),
-                        patch.bounds[3] + (max_service_dist_km * latitude_factor)
-                        )
+                # patch = shapely.geometry.box(
+                        # patch.bounds[0] - (max_service_dist_km * longitude_factor),
+                        # patch.bounds[1] - (max_service_dist_km * latitude_factor),
+                        # patch.bounds[2] + (max_service_dist_km * longitude_factor),
+                        # patch.bounds[3] + (max_service_dist_km * latitude_factor)
+                        # )
                         
+                patchgdf = gpd.GeoDataFrame(geometry=[patch], crs=4326)
+                patchgdf_utm = patchgdf.to_crs(crs) #NEED TO DEFINE CRS EARLIER
+                patchgdf_utm.geometry = patchgdf_utm.geometry.buffer(max_service_dist_km*1000)
+                patchgdf = patchgdf_utm.to_crs(4326)
+                patch = patchgdf.geometry.unary_union.intersection(boundaries)
+                patchgdf = gpd.GeoDataFrame(geometry=[patch], crs=4326)
+                
+                if os.path.exists('pathbounds.geojson'):
+                    os.remove('patchbounds.geojson')
+                if os.path.exists('pathbounds.poly'):
+                    os.remove('patchbounds.poly')
+                if os.path.exists('patch.osm'):
+                    os.remove('patch.osm')
+                if os.path.exists('allhwyspatch.osm'):
+                    os.remove('allhwyspatch.osm')
+                
+                patchgdf.to_file('patchbounds.geojson', driver='GeoJSON')
+                
+                shutil.copy('patchbounds.geojson', f'{str(folder_name)}/patchbounds{str(p_idx)}.geojson')
+                subprocess.run('python ogr2poly/ogr2poly.py patchbounds.geojson > patchbounds.poly', shell=True, check=True)
                 
                 walk_filter = ('["area"!~"yes"]["highway"!~"link|motor'
                                '|proposed|construction|abandoned'
@@ -254,39 +297,54 @@ def pedestrians_first(boundaries,
                                               simplify=False, 
                                               retain_all=True)
                 else:
-                    boundingarg = '-b='
-                    boundingarg += str(patch.bounds[0])+','
-                    boundingarg += str(patch.bounds[1])+','
-                    boundingarg += str(patch.bounds[2])+','
-                    boundingarg += str(patch.bounds[3])
-                    subprocess.check_call(['osmconvert',
-                                           str(folder_name)+'/citywalk.o5m',
-                                           boundingarg,
-                                           #'--complete-ways',
-                                           '--drop-broken-refs',
-                                           '-o=patch.osm'])
-                    G = ox.graph_from_xml('patch.osm', 
-                                           simplify=False, retain_all=True)
-                    os.remove('patch.osm')
-                    if 'pnb' in to_test:
+                    try:
+                        boundingarg = '-b='
+                        boundingarg += str(patch.bounds[0])+','
+                        boundingarg += str(patch.bounds[1])+','
+                        boundingarg += str(patch.bounds[2])+','
+                        boundingarg += str(patch.bounds[3])
                         subprocess.check_call(['osmconvert',
-                                           str(folder_name)+'/cityhighways.o5m',
-                                           boundingarg,
-                                           #'--complete-ways',
-                                           '--drop-broken-refs',
-                                           '-o=allhwyspatch.osm'])
-                        G_allhwys = ox.graph_from_xml('allhwyspatch.osm', 
-                                           simplify=False, retain_all=True)
-                        os.remove('allhwyspatch.osm')
+                                               str(folder_name)+'/citywalk.o5m',
+                                               #boundingarg, #OR
+                                               "-B=patchbounds.poly",
+                                               #'--complete-ways',  #was commented
+                                               '--drop-broken-refs',  #was uncommented
+                                               '-o=patch.osm'])
+                        G = ox.graph_from_xml('patch.osm', 
+                                               simplify=False, retain_all=True)
+                        os.remove('patch.osm')
+                        if 'pnb' in to_test:
+                            subprocess.check_call(['osmconvert',
+                                               str(folder_name)+'/cityhighways.o5m',
+                                               #boundingarg, #OR
+                                               "-B=patchbounds.poly",
+                                               #'--complete-ways',
+                                               '--drop-broken-refs',
+                                               '-o=allhwyspatch.osm'])
+                            G_allhwys = ox.graph_from_xml('allhwyspatch.osm', 
+                                               simplify=False, retain_all=True)
+                            os.remove('allhwyspatch.osm')
+                    except KeyError: #something to do with clipping, seems to happen once in a while
+                        #this is a very stupid band-aid, but it works for now, I think
+                        print ('KEYERROR FROM CLIPPING PATCH', p_idx)
+                        with open(str(folder_name)+"/patcherrorlog.txt", "a") as patcherrorlog:
+                            patcherrorlog.write('KEYERROR FROM CLIPPING PATCH '+str(p_idx))
+                        G = ox.graph_from_polygon(patch, 
+                                              custom_filter=walk_filter, 
+                                              simplify=False, 
+                                              retain_all=True)
+                        G_allhwys = G.copy()
                         
                 
                 G.remove_nodes_from(list(nx.isolates(G)))
-                G_allhwys.remove_nodes_from(list(nx.isolates(G_allhwys)))
+                if 'pnb' in to_test:
+                    G_allhwys.remove_nodes_from(list(nx.isolates(G_allhwys)))
                 
                 simple_G = ox.simplify_graph(G)
+                
                 center_nodes = {}
                 for service in all_coords.keys():
-                    if service in ['healthcare','schools','libraries','special']:
+                    if service in ['healthcare','schools','libraries','bikeshare','special']:
                         center_nodes[service] = []
                         for coord in all_coords[service]:
                             lat = coord[0]
@@ -298,28 +356,104 @@ def pedestrians_first(boundaries,
                                     center_nodes[service].append(nearest)
                 
                 if 'pnb' in to_test:
-                    center_nodes['pnb'] = []
                     allhwys_gdf = ox.graph_to_gdfs(G_allhwys, nodes=False)
                     print(allhwys_gdf.columns)
-                    waytypes = []
+                    protected_oneway = gpd.GeoDataFrame()
+                    protected_twoway = gpd.GeoDataFrame()
+                    unprotected_oneway = gpd.GeoDataFrame()
+                    unprotected_twoway = gpd.GeoDataFrame()
                     if 'highway' in allhwys_gdf.columns:
-                        waytypes.append(allhwys_gdf[allhwys_gdf['highway'] == 'cycleway'])
+                        if 'oneway' in allhwys_gdf.columns:
+                            protected_oneway = protected_oneway.append(allhwys_gdf[(allhwys_gdf['highway'] == 'cycleway') & (allhwys_gdf['oneway'] == 'yes')])
+                            protected_twoway = protected_twoway.append(allhwys_gdf[(allhwys_gdf['highway'] == 'cycleway') & (allhwys_gdf['oneway'] != 'yes')])
+                        else:
+                            protected_twoway = protected_twoway.append(allhwys_gdf[(allhwys_gdf['highway'] == 'cycleway')])
+                    if ('highway' in allhwys_gdf.columns) and ('bicycle' in allhwys_gdf.columns):
+                        if 'oneway' in allhwys_gdf.columns:
+                            protected_oneway = protected_oneway.append(allhwys_gdf[(allhwys_gdf['highway'] == 'path') & (allhwys_gdf['bicycle'] == 'designated') & (allhwys_gdf['oneway'] == 'yes')])
+                            protected_twoway = protected_twoway.append(allhwys_gdf[(allhwys_gdf['highway'] == 'path') & (allhwys_gdf['bicycle'] == 'designated') & (allhwys_gdf['oneway'] != 'yes')])
+                        else:
+                            protected_twoway = protected_twoway.append(allhwys_gdf[(allhwys_gdf['highway'] == 'path') & (allhwys_gdf['bicycle'] == 'designated')])
                     if 'cycleway' in allhwys_gdf.columns:
-                        waytypes.append(allhwys_gdf[allhwys_gdf['cycleway'] == 'track'])
+                        if 'oneway' in allhwys_gdf.columns:
+                            if 'oneway:bicycle' in allhwys_gdf.columns:
+                                protected_oneway = protected_oneway.append(allhwys_gdf[(allhwys_gdf['cycleway'] == 'track') & (allhwys_gdf['oneway'] == 'yes') & (allhwys_gdf['oneway:bicycle'] != 'no')])
+                                protected_twoway = protected_twoway.append(allhwys_gdf[(allhwys_gdf['cycleway'] == 'track') & (allhwys_gdf['oneway'] == 'yes') & (allhwys_gdf['oneway:bicycle'] == 'no')])
+                                protected_twoway = protected_twoway.append(allhwys_gdf[(allhwys_gdf['cycleway'] == 'track') & (allhwys_gdf['oneway'] != 'yes')])
+                                unprotected_oneway = unprotected_oneway.append(allhwys_gdf[(allhwys_gdf['cycleway'] == 'lane') & (allhwys_gdf['oneway'] == 'yes') & (allhwys_gdf['oneway:bicycle'] != 'no')])
+                                unprotected_twoway = unprotected_twoway.append(allhwys_gdf[(allhwys_gdf['cycleway'] == 'lane') & (allhwys_gdf['oneway'] == 'yes') & (allhwys_gdf['oneway:bicycle'] == 'no')])
+                                unprotected_twoway = unprotected_twoway.append(allhwys_gdf[(allhwys_gdf['cycleway'] == 'lane') & (allhwys_gdf['oneway'] != 'yes')])
+                            else:
+                                protected_oneway = protected_oneway.append(allhwys_gdf[(allhwys_gdf['cycleway'] == 'track') & (allhwys_gdf['oneway'] == 'yes')])
+                                protected_twoway = protected_twoway.append(allhwys_gdf[(allhwys_gdf['cycleway'] == 'track') & (allhwys_gdf['oneway'] != 'yes')])
+                                unprotected_oneway = unprotected_oneway.append(allhwys_gdf[(allhwys_gdf['cycleway'] == 'lane') & (allhwys_gdf['oneway'] == 'yes')])
+                                unprotected_twoway = unprotected_twoway.append(allhwys_gdf[(allhwys_gdf['cycleway'] == 'lane') & (allhwys_gdf['oneway'] != 'yes')])
+                        else:
+                            protected_twoway = protected_twoway.append(allhwys_gdf[(allhwys_gdf['cycleway'] == 'track')])
+                            unprotected_twoway = unprotected_twoway.append(allhwys_gdf[(allhwys_gdf['cycleway'] == 'lane')])
+                    if 'cycleway:both' in allhwys_gdf.columns:
+                        protected_twoway = protected_twoway.append(allhwys_gdf[(allhwys_gdf['cycleway:both'] == 'track')])
+                        unprotected_twoway = unprotected_twoway.append(allhwys_gdf[(allhwys_gdf['cycleway:both'] == 'lane')])
                     if 'cycleway:left' in allhwys_gdf.columns:
-                        waytypes.append(allhwys_gdf[allhwys_gdf['cycleway:left'] == 'track'])
+                        if 'cycleway:left:oneway' in allhwys_gdf.columns:
+                            protected_twoway = protected_twoway.append(allhwys_gdf[(allhwys_gdf['cycleway:left'] == 'track') & (allhwys_gdf['cycleway:left:oneway'] == 'no')])
+                            unprotected_twoway = unprotected_oneway.append(allhwys_gdf[(allhwys_gdf['cycleway:left'] == 'lane') & (allhwys_gdf['cycleway:left:oneway'] == 'no')])
+                            protected_oneway = protected_oneway.append(allhwys_gdf[(allhwys_gdf['cycleway:left'] == 'track') & (allhwys_gdf['cycleway:left:oneway'] != 'no')])
+                            unprotected_oneway = unprotected_oneway.append(allhwys_gdf[(allhwys_gdf['cycleway:left'] == 'lane') & (allhwys_gdf['cycleway:left:oneway'] != 'no')])
+                        else:
+                            protected_oneway = protected_oneway.append(allhwys_gdf[(allhwys_gdf['cycleway:left'] == 'track')])
+                            unprotected_oneway = unprotected_oneway.append(allhwys_gdf[(allhwys_gdf['cycleway:left'] == 'lane')])
                     if 'cycleway:right' in allhwys_gdf.columns:
-                        waytypes.append(allhwys_gdf[allhwys_gdf['cycleway:right'] == 'track'])
-                    cycletracknodes = []
-                    for waytype in waytypes:
-                        for edge in waytype.index:
-                            if not edge[0] in cycletracknodes:
-                                cycletracknodes.append(edge[0])
-                            if not edge[1] in cycletracknodes:
-                                cycletracknodes.append(edge[1])
-                    for node in cycletracknodes:
+                        if 'cycleway:right:oneway' in allhwys_gdf.columns:
+                            protected_twoway = protected_twoway.append(allhwys_gdf[(allhwys_gdf['cycleway:right'] == 'track') & (allhwys_gdf['cycleway:right:oneway'] == 'no')])
+                            unprotected_twoway = unprotected_twoway.append(allhwys_gdf[(allhwys_gdf['cycleway:right'] == 'lane') & (allhwys_gdf['cycleway:right:oneway'] == 'no')])
+                            protected_oneway = protected_oneway.append(allhwys_gdf[(allhwys_gdf['cycleway:right'] == 'track') & (allhwys_gdf['cycleway:right:oneway'] != 'no')])
+                            unprotected_oneway = unprotected_oneway.append(allhwys_gdf[(allhwys_gdf['cycleway:right'] == 'lane') & (allhwys_gdf['cycleway:right:oneway'] != 'no')])
+                        else:
+                            protected_oneway = protected_oneway.append(allhwys_gdf[(allhwys_gdf['cycleway:right'] == 'track')])
+                            unprotected_oneway = unprotected_oneway.append(allhwys_gdf[(allhwys_gdf['cycleway:right'] == 'lane')])
+                    total_protectedbike_oneway = total_protectedbike_oneway.append(protected_oneway)
+                    total_unprotectedbike_oneway = total_unprotectedbike_oneway.append(unprotected_oneway)
+                    total_protectedbike_twoway = total_protectedbike_twoway.append(protected_twoway)
+                    total_unprotectedbike_twoway = total_unprotectedbike_twoway.append(unprotected_twoway)
+                    center_nodes['pnpb'] = []
+                    center_nodes['pnab'] = []
+                    pnpbnodes = []
+                    pnabnodes = []
+                    for edge in protected_twoway.index:
+                        if not edge[0] in pnpbnodes:
+                            pnpbnodes.append(edge[0])
+                        if not edge[1] in pnpbnodes:
+                            pnpbnodes.append(edge[1])
+                        if not edge[0] in pnabnodes:
+                            pnabnodes.append(edge[0])
+                        if not edge[1] in pnabnodes:
+                            pnabnodes.append(edge[1])
+                    for edge in protected_oneway.index:
+                        if not edge[0] in pnpbnodes:
+                            pnpbnodes.append(edge[0])
+                        if not edge[1] in pnpbnodes:
+                            pnpbnodes.append(edge[1])
+                        if not edge[0] in pnabnodes:
+                            pnabnodes.append(edge[0])
+                        if not edge[1] in pnabnodes:
+                            pnabnodes.append(edge[1])
+                    for edge in unprotected_oneway.index:
+                        if not edge[0] in pnabnodes:
+                            pnabnodes.append(edge[0])
+                        if not edge[1] in pnabnodes:
+                            pnabnodes.append(edge[1])
+                    for edge in unprotected_twoway.index:
+                        if not edge[0] in pnabnodes:
+                            pnabnodes.append(edge[0])
+                        if not edge[1] in pnabnodes:
+                            pnabnodes.append(edge[1])
+                    for node in pnpbnodes:
                         if node in simple_G.nodes:
-                            center_nodes['pnb'].append(node)
+                            center_nodes['pnpb'].append(node)
+                    for node in pnabnodes:
+                        if node in simple_G.nodes:
+                            center_nodes['pnab'].append(node)
                 
                 if 'transit' in to_test:
                     center_nodes['transit'] = []
@@ -365,10 +499,15 @@ def pedestrians_first(boundaries,
                 failures = {}
                 for service in to_test:
                     failures[service] = 0
+                    if 'pnb' in to_test:
+                        failures['pnab']=0
+                        failures['pnpb']=0
+                
                 
                 
                 # Get polygons
                 for service in testing_services:
+                    print('getting polygons for',service,len(center_nodes[service]),'center_nodes')
                     isochrone_polys[service], fails = isochrones.make_iso_polys(G, center_nodes[service], distance=distances[service], edge_buff=buffer_dist)
                     failures[service] += fails
                     
@@ -385,9 +524,11 @@ def pedestrians_first(boundaries,
                 print("finished patch #",p_idx,'out of', len(patches),"in",str(patch_time))
                 patch_times.append(patch_time)
             except ox._errors.EmptyOverpassResponse:
+                print('EmptyOverpassResponse')
                 pass
             except ValueError:
-                pass #sorry 
+                print('ValueError')
+                pass #sorry
             #except:
             #    print("GOT SOME ERROR FOR PATCH", p_idx)
             # except ValueError:
@@ -396,7 +537,6 @@ def pedestrians_first(boundaries,
             #     with open('error'+now+'.txt','w') as errout:
             #         traceback.print_exc(limit=3,file=errout)
             #     print('saved to error'+now+'.txt')
-    
     #epsg = 32600+int(crs.split(' ')[1].split('=')[1]) #This is wild -- 
     #osmnx seems to just give all data in northern-hemisphere format
     #Sorry about the stupid parsing of the projection definition, I'm lazy 
@@ -438,6 +578,38 @@ def pedestrians_first(boundaries,
         else:
             print ('NO SERVICE FOR', service)
             results[service] = 0
+            
+    if 'pnb' in to_test:
+        protected_km = 0
+        unprotected_km = 0
+        if not os.path.exists(folder_name+'bikeways/'):
+            os.makedirs(folder_name+'bikeways/')
+        if not total_protectedbike_oneway.empty:
+            merged_protectedbike_oneway = gpd.GeoDataFrame(geometry = [total_protectedbike_oneway.geometry.unary_union], crs=4326)
+            merged_protectedbike_oneway.index=range(0,len(merged_protectedbike_oneway))
+            merged_protectedbike_oneway = gpd.clip(merged_protectedbike_oneway, boundaries)
+            merged_protectedbike_oneway.to_file(folder_name+'bikeways/protected_oneway.geojson',driver='GeoJSON')
+            protected_km += sum(merged_protectedbike_oneway.to_crs(crs).geometry.length) / 2 
+        if not total_unprotectedbike_oneway.empty:
+            merged_unprotectedbike_oneway = gpd.GeoDataFrame(geometry = [total_unprotectedbike_oneway.geometry.unary_union], crs=4326)
+            merged_unprotectedbike_oneway = gpd.clip(merged_unprotectedbike_oneway, boundaries)
+            merged_unprotectedbike_oneway.crs = 4326
+            merged_unprotectedbike_oneway.to_file(folder_name+'bikeways/unprotected_oneway.geojson',driver='GeoJSON')
+            unprotected_km += sum(merged_unprotectedbike_oneway.to_crs(crs).geometry.length) / 2 
+        if not total_protectedbike_twoway.empty:
+            merged_protectedbike_twoway = gpd.GeoDataFrame(geometry = [total_protectedbike_twoway.geometry.unary_union], crs=4326)
+            merged_protectedbike_twoway = gpd.clip(merged_protectedbike_twoway, boundaries)
+            merged_protectedbike_twoway.crs = 4326
+            merged_protectedbike_twoway.to_file(folder_name+'bikeways/protected_twoway.geojson',driver='GeoJSON')
+            protected_km += sum(merged_protectedbike_twoway.to_crs(crs).geometry.length)
+        if not total_unprotectedbike_twoway.empty:
+            merged_unprotectedbike_twoway = gpd.GeoDataFrame(geometry = [total_unprotectedbike_twoway.geometry.unary_union], crs=4326)
+            merged_unprotectedbike_twoway = gpd.clip(merged_unprotectedbike_twoway, boundaries)
+            merged_unprotectedbike_twoway.crs = 4326
+            merged_unprotectedbike_twoway.to_file(folder_name+'bikeways/unprotected_twoway.geojson',driver='GeoJSON')
+            protected_km += sum(merged_unprotectedbike_twoway.to_crs(crs).geometry.length) 
+        results['protected_bikeways_km'] = protected_km
+        results['all_bikeways_km'] = protected_km + unprotected_km
     
     if 'carfree' in to_test:
         print("getting carfree")
