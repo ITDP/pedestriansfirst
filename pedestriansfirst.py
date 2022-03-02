@@ -178,7 +178,7 @@ def pedestrians_first(boundaries,
     for service in to_test:
         quilt_isochrone_polys[service] = False
         quilt_center_nodes[service] = []
-        if 'pnb' in to_test:
+        if 'pnab' in to_test or 'pnpb' in to_test:
             quilt_isochrone_polys['pnab'] = False
             quilt_center_nodes['pnab'] = []
             quilt_isochrone_polys['pnpb'] = False
@@ -241,7 +241,7 @@ def pedestrians_first(boundaries,
                                                               source_type = 'local_files',
                                                               headwaylim = headway_threshold * 2)
             
-    if 'pnb' in to_test:
+    if 'pnab' in to_test or 'pnpb' in to_test:
         testing_services.append('pnpb')
         testing_services.append('pnab')
         total_protectedbike_oneway = gpd.GeoDataFrame()
@@ -320,7 +320,7 @@ def pedestrians_first(boundaries,
                         G = ox.graph_from_xml('patch.osm', 
                                                simplify=False, retain_all=True)
                         os.remove('patch.osm')
-                        if 'pnb' in to_test:
+                        if 'pnab' in to_test or 'pnpb' in to_test:
                             subprocess.check_call(['osmconvert',
                                                str(folder_name)+'cityhighways.o5m',
                                                #boundingarg, #OR
@@ -345,7 +345,7 @@ def pedestrians_first(boundaries,
                         
                 
                 G.remove_nodes_from(list(nx.isolates(G)))
-                if 'pnb' in to_test:
+                if 'pnab' in to_test or 'pnpb' in to_test:
                     G_allhwys.remove_nodes_from(list(nx.isolates(G_allhwys)))
                 
                 simple_G = ox.simplify_graph(G)
@@ -363,7 +363,7 @@ def pedestrians_first(boundaries,
                                 if not nearest in center_nodes[service]:    
                                     center_nodes[service].append(nearest)
                 
-                if 'pnb' in to_test:
+                if ''pnab' in to_test or 'pnpb' in to_test:
                     allhwys_gdf = ox.graph_to_gdfs(G_allhwys, nodes=False)
                     print(allhwys_gdf.columns)
                     protected_oneway = gpd.GeoDataFrame()
@@ -507,7 +507,7 @@ def pedestrians_first(boundaries,
                 failures = {}
                 for service in to_test:
                     failures[service] = 0
-                    if 'pnb' in to_test:
+                    if 'pnab' in to_test or 'pnpb' in to_test:
                         failures['pnab']=0
                         failures['pnpb']=0
                 
@@ -587,7 +587,7 @@ def pedestrians_first(boundaries,
             print ('NO SERVICE FOR', service)
             results[service] = 0
             
-    if 'pnb' in to_test:
+    if 'pnpb' in to_test or 'pnab' in to_test:
         protected_km = 0
         unprotected_km = 0
         if not os.path.exists(folder_name+'bikeways/'):
