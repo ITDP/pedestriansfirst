@@ -127,7 +127,7 @@ def pnb_run():
             pnb_results = {}
         if not str(osmid) in pnb_results.keys():
             try:
-                results = from_osmid(osmid, kwargs={'to_test':['pnpb','pnab','density']}
+                results = from_osmid(osmid, kwargs={'to_test':['pnpb','pnab','density']})
             except ValueError:
                 results = "ValueError"
             pnb_results.update({osmid:results})
