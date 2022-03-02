@@ -363,7 +363,7 @@ def pedestrians_first(boundaries,
                                 if not nearest in center_nodes[service]:    
                                     center_nodes[service].append(nearest)
                 
-                if ''pnab' in to_test or 'pnpb' in to_test:
+                if 'pnab' in to_test or 'pnpb' in to_test:
                     allhwys_gdf = ox.graph_to_gdfs(G_allhwys, nodes=False)
                     print(allhwys_gdf.columns)
                     protected_oneway = gpd.GeoDataFrame()
