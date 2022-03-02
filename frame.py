@@ -36,6 +36,7 @@ def poly_from_ghsl_hdc(hdc):
 
 def prep_from_poly(poly, folder_name, boundary_buffer = 0):
     #save city geometry so that I can take an extract from planet.pbf within it
+    #return True if overpass will be needed (planet.pbf unavailable), False otherwise
     if not os.path.isdir(str(folder_name)):
         os.mkdir(str(folder_name))
     bound_latlon = gpd.GeoDataFrame(geometry = [poly], crs=4326)
@@ -50,20 +51,24 @@ def prep_from_poly(poly, folder_name, boundary_buffer = 0):
     with open(folder_name+'/boundaries.geojson', 'w') as out:
         out.write(json.dumps(geom_in_geojson))
     #take extract from planet.pbf
-    if not os.path.exists('{}/city.pbf'.format(str(folder_name))):
-        command = f"osmium extract planet-latest.osm.pbf -p {str(folder_name)}/boundaries.geojson -s complete_ways -v -o {str(folder_name)}/city.pbf"
+    if os.path.exists('planet-latest.osm.pbf'):
+        if not os.path.exists('{}/city.pbf'.format(str(folder_name))):
+            command = f"osmium extract planet-latest.osm.pbf -p {str(folder_name)}/boundaries.geojson -s complete_ways -v -o {str(folder_name)}/city.pbf"
+            print(command)
+            subprocess.check_call(command.split(' '))
+        command = f"osmconvert {str(folder_name)}/city.pbf -o={str(folder_name)}/city.o5m"
         print(command)
         subprocess.check_call(command.split(' '))
-    command = f"osmconvert {str(folder_name)}/city.pbf -o={str(folder_name)}/city.o5m"
-    print(command)
-    subprocess.check_call(command.split(' '))
-    command = f'osmfilter {str(folder_name)}/city.o5m --keep="highway=" -o={str(folder_name)}/cityhighways.o5m'
-    print(command)
-    subprocess.check_call(command, shell=True)
-    #todo -- read both bikeways and walkways direct from a patch'd cityhighways.osm; do walking/cycling selection logic in here.
-    command = [f'osmfilter {str(folder_name)}/cityhighways.o5m --drop="area=yes highway=link =motor =proposed =construction =abandoned =platform =raceway service=parking_aisle =driveway =private foot=no" -o={str(folder_name)}/citywalk.o5m']
-    print(command)
-    subprocess.check_call(command, shell=True)
+        command = f'osmfilter {str(folder_name)}/city.o5m --keep="highway=" -o={str(folder_name)}/cityhighways.o5m'
+        print(command)
+        subprocess.check_call(command, shell=True)
+        #todo -- read both bikeways and walkways direct from a patch'd cityhighways.osm; do walking/cycling selection logic in here.
+        command = [f'osmfilter {str(folder_name)}/cityhighways.o5m --drop="area=yes highway=link =motor =proposed =construction =abandoned =platform =raceway service=parking_aisle =driveway =private foot=no" -o={str(folder_name)}/citywalk.o5m']
+        print(command)
+        subprocess.check_call(command, shell=True)
+        return False
+    else:
+        return True
     
     
 def from_id_hdc(hdc, folder_prefix = '', boundary_buffer = 0, kwargs = {}):
@@ -72,7 +77,8 @@ def from_id_hdc(hdc, folder_prefix = '', boundary_buffer = 0, kwargs = {}):
     else:
         folder_name = str(hdc)
     poly, name = poly_from_ghsl_hdc(hdc)
-    prep_from_poly(poly, folder_name, boundary_buffer)
+    overpass = prep_from_poly(poly, folder_name, boundary_buffer)
+    kwargs['overpass'] = overpass
     return pedestriansfirst.pedestrians_first(poly, hdc, name, folder_name, **kwargs)
     
 def from_osmid(osmid, folder_prefix = '', boundary_buffer = 0, kwargs = {}):
@@ -81,7 +87,8 @@ def from_osmid(osmid, folder_prefix = '', boundary_buffer = 0, kwargs = {}):
     else:
         folder_name = str(osmid)
     poly, name = poly_from_osm_cityid(osmid)
-    prep_from_poly(poly, folder_name, boundary_buffer)
+    overpass = prep_from_poly(poly, folder_name, boundary_buffer)
+    kwargs['overpass'] = overpass
     return pedestriansfirst.pedestrians_first(poly, osmid, name, folder_name, **kwargs)
 
 def get_pop_ghsl(city):
@@ -105,13 +112,13 @@ def all_cities():
                 with open('all_results.json','w') as out_file:
                     json.dump(all_results, out_file)
 
-if __name__ == '__main__':
-    all_cities()
+
 
 def pnb_run():
-    osmids = list(pd.read_csv('cities_for_pnb_20210517.csv')['OSM ID'])
+    osmids = list(pd.read_csv('cities_for_pnb.csv')['OSM ID'])
 
     for osmid in osmids:
+        osmid=str(int(osmid))
         print('pnb run',osmid)
         if os.path.exists('pnb_results_jun21.json'):
             with open('pnb_results_jun21.json','r') as in_file:
@@ -120,39 +127,15 @@ def pnb_run():
             pnb_results = {}
         if not str(osmid) in pnb_results.keys():
             try:
-                results = from_osmid(osmid, kwargs={'to_test':['pnb','density','bikeshare']})
+                results = from_osmid(osmid, kwargs={'to_test':['pnb','density']})
             except ValueError:
                 results = "ValueError"
             pnb_results.update({osmid:results})
             with open('pnb_results_jun21.json','w') as out_file:
                 json.dump(pnb_results, out_file)
                 
-def dc_pnb_run():
-    osmids = [206845,
-            5396194,
-            206642,
-            945043,
-            206637,
-            206874,
-            944948,
-            1149984,
-            206870,
-            936412,
-            936970,
-            133345,
-            3864712,
-            ]
-    for osmid in osmids:
-        if os.path.exists('dc_pnb.json'):
-            with open('dc_pnb.json','r') as in_file:
-                dc_pnb = json.load(in_file)
-        else:
-            dc_pnb = {}
-        if not str(osmid) in dc_pnb.keys():
-            results = from_osmid(osmid, kwargs={'to_test':['pnb','density','bikeshare']})
-            dc_pnb.update({osmid:results})
-            with open('dc_pnb.json','w') as out_file:
-                json.dump(dc_pnb, out_file)
+if __name__ == '__main__':
+    pnb_run()
 
 #hdcs = { #test
 #'Mexico City': 154,
