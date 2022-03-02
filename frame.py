@@ -109,7 +109,7 @@ if __name__ == '__main__':
     all_cities()
 
 def pnb_run():
-    osmids = list(pd.read_csv('cities_for_pnb_20210517.csv')['OSM ID'])
+    osmids = list(pd.read_csv('cities_for_pnb.csv')['OSM ID'])
 
     for osmid in osmids:
         print('pnb run',osmid)
@@ -120,11 +120,11 @@ def pnb_run():
             pnb_results = {}
         if not str(osmid) in pnb_results.keys():
             try:
-                results = from_osmid(osmid, kwargs={'to_test':['pnb','density','bikeshare']})
+                results = from_osmid(osmid, kwargs={'to_test':['pnpb','pnab','density','bikeshare']})
             except ValueError:
                 results = "ValueError"
             pnb_results.update({osmid:results})
-            with open('pnb_results_jun21.json','w') as out_file:
+            with open('pnb_results.json','w') as out_file:
                 json.dump(pnb_results, out_file)
                 
 def dc_pnb_run():
