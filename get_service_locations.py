@@ -205,5 +205,3 @@ def get_point_locations(poly, query):
     
     return services
     
-def get_bikeways(x):
-    pass

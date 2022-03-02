@@ -196,11 +196,15 @@ def pedestrians_first(boundaries,
             #all_coords[service] = get_point_locations(boundaries, queries[service])
     
     if len(testing_services) > 0:
-        handler = get_service_locations.ServiceHandler()
-        handler.apply_file(folder_name+'/city.o5m', locations=True)
-        for service in testing_services:
-            all_coords[service] = handler.locationlist[service]
-            citywide_carfree = handler.carfreelist
+        if overpass:
+            raise RuntimeError
+            #haven't set this up yet, because I don't have a query for bikeshare or carfree
+        else:
+            handler = get_service_locations.ServiceHandler()
+            handler.apply_file(folder_name+'city.o5m', locations=True)
+            for service in testing_services:
+                all_coords[service] = handler.locationlist[service]
+                citywide_carfree = handler.carfreelist
             
     #should I finish this?
     if 'highways' in to_test:     
@@ -218,9 +222,9 @@ def pedestrians_first(boundaries,
         #need to switch back to latlon and put in all_coords['highway']
         
     if 'special' in to_test:
-        if os.path.isfile(folder_name+'/special.shp'):
+        if os.path.isfile(folder_name+'special.shp'):
             testing_services.append('special')
-            special = gpd.read_file(folder_name+'/special.shp')
+            special = gpd.read_file(folder_name+'special.shp')
             all_coords['special'] = [(pt.y, pt.x) for pt in special.geometry]
 
     if 'transit' in to_test:
@@ -281,6 +285,8 @@ def pedestrians_first(boundaries,
                 
                 patchgdf.to_file('patchbounds.geojson', driver='GeoJSON')
                 
+                if os.path.exists('patchbounds.poly'):
+                    os.remove('patchbounds.poly')
                 shutil.copy('patchbounds.geojson', f'{str(folder_name)}/patchbounds{str(p_idx)}.geojson')
                 subprocess.run('python ogr2poly/ogr2poly.py patchbounds.geojson > patchbounds.poly', shell=True, check=True)
                 
@@ -296,6 +302,7 @@ def pedestrians_first(boundaries,
                                               custom_filter=walk_filter, 
                                               simplify=False, 
                                               retain_all=True)
+                    G_allhwys = G.copy()
                 else:
                     try:
                         boundingarg = '-b='
@@ -304,7 +311,7 @@ def pedestrians_first(boundaries,
                         boundingarg += str(patch.bounds[2])+','
                         boundingarg += str(patch.bounds[3])
                         subprocess.check_call(['osmconvert',
-                                               str(folder_name)+'/citywalk.o5m',
+                                               str(folder_name)+'citywalk.o5m',
                                                #boundingarg, #OR
                                                "-B=patchbounds.poly",
                                                #'--complete-ways',  #was commented
@@ -315,7 +322,7 @@ def pedestrians_first(boundaries,
                         os.remove('patch.osm')
                         if 'pnb' in to_test:
                             subprocess.check_call(['osmconvert',
-                                               str(folder_name)+'/cityhighways.o5m',
+                                               str(folder_name)+'cityhighways.o5m',
                                                #boundingarg, #OR
                                                "-B=patchbounds.poly",
                                                #'--complete-ways',
@@ -327,13 +334,14 @@ def pedestrians_first(boundaries,
                     except KeyError: #something to do with clipping, seems to happen once in a while
                         #this is a very stupid band-aid, but it works for now, I think
                         print ('KEYERROR FROM CLIPPING PATCH', p_idx)
-                        with open(str(folder_name)+"/patcherrorlog.txt", "a") as patcherrorlog:
+                        with open(str(folder_name)+"patcherrorlog.txt", "a") as patcherrorlog:
                             patcherrorlog.write('KEYERROR FROM CLIPPING PATCH '+str(p_idx))
                         G = ox.graph_from_polygon(patch, 
                                               custom_filter=walk_filter, 
                                               simplify=False, 
                                               retain_all=True)
                         G_allhwys = G.copy()
+                os.remove('patchbounds.poly')
                         
                 
                 G.remove_nodes_from(list(nx.isolates(G)))
@@ -729,7 +737,7 @@ def pedestrians_first(boundaries,
                 boundingarg += str(patch.bounds[2])+','
                 boundingarg += str(patch.bounds[3])
                 subprocess.check_call(['osmconvert',
-                                       folder_name+'/citywalk.o5m',
+                                       folder_name+'citywalk.o5m',
                                        boundingarg,
                                        #'--complete-ways',
                                        '--drop-broken-refs',
@@ -833,7 +841,7 @@ def pedestrians_first(boundaries,
     with open(folder_name+"results.json","w") as output:
         output.write(json.dumps(results))
     for file in ['city.o5m','cityhighways.o5m','citywalk.o5m']:
-        if os.path.exists(folder_name+'/'+file):
-            os.remove(folder_name+'/'+file)
+        if os.path.exists(folder_name+file):
+            os.remove(folder_name+file)
     return results
 
