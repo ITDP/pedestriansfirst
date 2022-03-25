@@ -282,25 +282,25 @@ def pedestrians_first(boundaries,
                         boundingarg += str(patch.bounds[1])+','
                         boundingarg += str(patch.bounds[2])+','
                         boundingarg += str(patch.bounds[3])
-                        subprocess.check_call(['osmconvert',
+                        x=subprocess.check_call(['osmconvert',
                                                str(folder_name)+'citywalk.o5m',
                                                #boundingarg, #OR
                                                "-B=patchbounds.poly",
                                                #'--complete-ways',  #was commented
                                                '--drop-broken-refs',  #was uncommented
                                                '-o=patch.osm'])
+                        print(x)
                         G = ox.graph_from_xml('patch.osm', 
                                                simplify=False, retain_all=True)
                         os.remove('patch.osm')
                         if 'pnab' in to_test or 'pnpb' in to_test:
-                            x=subprocess.check_call(['osmconvert',
+                            subprocess.check_call(['osmconvert',
                                                str(folder_name)+'cityhighways.o5m',
                                                #boundingarg, #OR
                                                "-B=patchbounds.poly",
                                                #'--complete-ways',
                                                '--drop-broken-refs',
                                                '-o=allhwyspatch.osm'])
-                            print(x)
                             G_allhwys = ox.graph_from_xml('allhwyspatch.osm', 
                                                simplify=False, retain_all=True)
                             os.remove('allhwyspatch.osm')
