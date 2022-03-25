@@ -11,7 +11,6 @@ import pandas as pd
 import numpy
 import math
 import osmnx as ox
-import geojson
 
 import pdb
 
