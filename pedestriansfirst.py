@@ -388,14 +388,14 @@ def pedestrians_first(boundaries,
                             if edge[0] in simple_G.nodes:
                                 center_nodes['pnpb'].append(edge[0])
                         if not edge[1] in center_nodes['pnpb']:
-                            if edge[0] in simple_G.nodes:
+                            if edge[1] in simple_G.nodes:
                                 center_nodes['pnpb'].append(edge[1])
                     for edge in total_allbike.index:
                         if not edge[0] in center_nodes['pnab']:
                             if edge[0] in simple_G.nodes:
                                 center_nodes['pnab'].append(edge[0])
                         if not edge[1] in center_nodes['pnab']:
-                            if edge[0] in simple_G.nodes:
+                            if edge[1] in simple_G.nodes:
                                 center_nodes['pnab'].append(edge[1])
                            
                 if 'transit' in to_test:
