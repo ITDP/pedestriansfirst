@@ -46,7 +46,7 @@ def prep_from_poly(poly, folder_name, boundary_buffer = 0):
         bound_utm = bound_latlon.to_crs(utm_crs)
         bound_utm.geometry = bound_utm.geometry.buffer(boundary_buffer*1000)
         bound_latlon = bound_utm.to_crs(epsg=4326)
-    bound_latlon.to_file('/boundaries.geojson',driver='GeoJSON')
+    bound_latlon.to_file('boundaries.geojson',driver='GeoJSON')
     #take extract from planet.pbf
     if os.path.exists('planet-latest.osm.pbf'):
         if not os.path.exists('{}/city.pbf'.format(str(folder_name))):
