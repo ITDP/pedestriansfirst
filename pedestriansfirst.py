@@ -135,7 +135,7 @@ def pedestrians_first(boundaries,
     ch.setFormatter(formatter)
     logger.addHandler(ch)
     
-    useful_tags = ox.settings.useful_tags_way + ['cycleway', 'cycleway:left', 'cycleway:right']
+    useful_tags = ox.settings.useful_tags_way + ['cycleway', 'cycleway:left', 'cycleway:right', 'cycleway:both', 'bicycle']
     ox.config(use_cache=True, log_console=True, useful_tags_way=useful_tags)
     
     if folder_name != '' and not folder_name[-1:] == '/':
@@ -156,7 +156,7 @@ def pedestrians_first(boundaries,
     print(utm_crs)
     bbox = boundaries.bounds
     
-    reppoint = boundaries.representative_point()
+    #reppoint = boundaries.representative_point()
     #crs = utm_zone.epsg(geojson.Point((reppoint.x[0],reppoint.y[0])))
 
     
@@ -250,7 +250,7 @@ def pedestrians_first(boundaries,
         total_allbike = gpd.GeoDataFrame()
         
     if len(to_test) > 0 and to_test != ["blocks"]:
-        for p_idx, patch in enumerate(patches):
+        for p_idx, patch in enumerate(patches[16:]): #!!!!!!!!!!!!! DEBUG !!!!!!!!
             try:
                 
             
@@ -330,6 +330,7 @@ def pedestrians_first(boundaries,
                                                simplify=False, retain_all=True)
                             os.remove('allhwyspatch.osm')
                     except KeyError: #something to do with clipping, seems to happen once in a while
+                        pdb.set_trace()
                         #this is a very stupid band-aid, but it works for now, I think
                         print ('KEYERROR FROM CLIPPING PATCH', p_idx)
                         with open(str(folder_name)+"patcherrorlog.txt", "a") as patcherrorlog:
