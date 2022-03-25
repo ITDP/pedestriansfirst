@@ -293,13 +293,14 @@ def pedestrians_first(boundaries,
                                                simplify=False, retain_all=True)
                         os.remove('patch.osm')
                         if 'pnab' in to_test or 'pnpb' in to_test:
-                            subprocess.check_call(['osmconvert',
+                            x=subprocess.check_call(['osmconvert',
                                                str(folder_name)+'cityhighways.o5m',
                                                #boundingarg, #OR
                                                "-B=patchbounds.poly",
                                                #'--complete-ways',
                                                '--drop-broken-refs',
                                                '-o=allhwyspatch.osm'])
+                            print(x)
                             G_allhwys = ox.graph_from_xml('allhwyspatch.osm', 
                                                simplify=False, retain_all=True)
                             os.remove('allhwyspatch.osm')
