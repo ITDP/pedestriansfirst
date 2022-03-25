@@ -292,6 +292,7 @@ def pedestrians_first(boundaries,
                         print(x)
                         G = ox.graph_from_xml('patch.osm', 
                                                simplify=False, retain_all=True)
+                        print('deleted')
                         os.remove('patch.osm')
                         if 'pnab' in to_test or 'pnpb' in to_test:
                             subprocess.check_call(['osmconvert',
