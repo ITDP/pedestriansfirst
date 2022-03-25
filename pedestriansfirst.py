@@ -378,8 +378,8 @@ def pedestrians_first(boundaries,
                                                    (allhwys_gdf['cycleway:both'] == 'lane') |
                                                    (allhwys_gdf['cycleway'] == 'lane')]
                     
-                    total_protectedbike = pd.concat(tagged_cycleways, cycle_paths, on_street_tracks)
-                    total_allbike = pd.concat(total_protectedbike, on_street_lanes)
+                    total_protectedbike = pd.concat([tagged_cycleways, cycle_paths, on_street_tracks])
+                    total_allbike = pd.concat([total_protectedbike, on_street_lanes])
                     
                     center_nodes['pnpb'] = []
                     center_nodes['pnab'] = [] 
