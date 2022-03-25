@@ -303,7 +303,7 @@ def pedestrians_first(boundaries,
                             G_allhwys = ox.graph_from_xml('allhwyspatch.osm', 
                                                simplify=False, retain_all=True)
                             os.remove('allhwyspatch.osm')
-                    except KeyError: #something to do with clipping, seems to happen once in a while
+                    except TypeError: #something to do with clipping, seems to happen once in a while
                         pdb.set_trace()
                         #this is a very stupid band-aid, but it works for now, I think
                         print ('KEYERROR FROM CLIPPING PATCH', p_idx)
