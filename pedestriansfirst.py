@@ -224,7 +224,7 @@ def pedestrians_first(boundaries,
         testing_services.append('pnab')
         
     if len(to_test) > 0 and to_test != ["blocks"]:
-        for p_idx, patch in enumerate(patches): 
+        for p_idx, patch in enumerate(patches[31:]): #!!!DEBUG!!!! 
             try:
                 
             
