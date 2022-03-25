@@ -9,8 +9,6 @@ import rasterio.mask
 import subprocess
 import json
 import traceback
-import utm
-import geojson
 import shutil
 #import utm_zone
 
@@ -29,7 +27,6 @@ import get_service_locations
 import gtfs_parser
 
 import pdb
-import logging
 
 
 ox.utils.config(log_console = False)
@@ -119,21 +116,7 @@ def pedestrians_first(boundaries,
                       blocks_simplification = 15, #m
                       gtfs_files = [],
                       debug = False,
-                      ):    
-    dt = datetime.datetime.now()
-    logger = logging.getLogger()
-    logger.setLevel(logging.CRITICAL)
-    formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
-
-    fh = logging.FileHandler('log_filename.txt')
-    fh.setLevel(logging.DEBUG)
-    fh.setFormatter(formatter)
-    logger.addHandler(fh)
-    
-    ch = logging.StreamHandler()
-    ch.setLevel(logging.DEBUG)
-    ch.setFormatter(formatter)
-    logger.addHandler(ch)
+                      ):   
     
     useful_tags = ox.settings.useful_tags_way + ['cycleway', 'cycleway:left', 'cycleway:right', 'cycleway:both', 'bicycle']
     ox.config(use_cache=True, log_console=True, useful_tags_way=useful_tags)
@@ -246,8 +229,6 @@ def pedestrians_first(boundaries,
     if 'pnab' in to_test or 'pnpb' in to_test:
         testing_services.append('pnpb')
         testing_services.append('pnab')
-        total_protectedbike= gpd.GeoDataFrame()
-        total_allbike = gpd.GeoDataFrame()
         
     if len(to_test) > 0 and to_test != ["blocks"]:
         for p_idx, patch in enumerate(patches[16:]): #!!!!!!!!!!!!! DEBUG !!!!!!!!
