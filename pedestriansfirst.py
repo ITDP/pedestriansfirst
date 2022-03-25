@@ -224,7 +224,7 @@ def pedestrians_first(boundaries,
         testing_services.append('pnab')
         
     if len(to_test) > 0 and to_test != ["blocks"]:
-        for p_idx, patch in enumerate(patches[16:]): #!!!!!!!!!!!!! DEBUG !!!!!!!!
+        for p_idx, patch in enumerate(patches): 
             try:
                 
             
@@ -433,7 +433,7 @@ def pedestrians_first(boundaries,
                     if service not in quilt_isochrone_polys.keys() or not quilt_isochrone_polys[service]:
                         quilt_isochrone_polys[service] = isochrone_polys[service]
                     elif isochrone_polys[service]:
-                        quilt_isochrone_polys[service] = shapely.ops.cascaded_union([quilt_isochrone_polys[service],isochrone_polys[service]])
+                        quilt_isochrone_polys[service] = shapely.ops.unary_union([quilt_isochrone_polys[service],isochrone_polys[service]])
                 for service in center_nodes.keys():
                     quilt_center_nodes[service] = quilt_center_nodes[service] + center_nodes[service]
                 
@@ -526,7 +526,7 @@ def pedestrians_first(boundaries,
             carfree_utm = carfree_latlon.to_crs(crs)
             carfree_utm.geometry = carfree_utm.geometry.buffer(100)
             #this is the analysis, the 100m buffer
-            carfree_utm = gpd.GeoDataFrame(geometry = [shapely.ops.cascaded_union(carfree_utm.geometry)])
+            carfree_utm = gpd.GeoDataFrame(geometry = [shapely.ops.unary_union(carfree_utm.geometry)])
             carfree_utm.geometry = carfree_utm.geometry.simplify(10)
             carfree_utm = gpd.overlay(carfree_utm ,boundaries_utm, how='intersection')
             carfree_utm.crs = crs
