@@ -144,6 +144,7 @@ def pedestrians_first(boundaries,
 
     
     if type(boundaries) == shapely.geometry.multipolygon.MultiPolygon:
+        pdb.set_trace()
         patches = []
         for poly in list(boundaries):
             patches += make_patches(poly, patch_length=patch_length)
