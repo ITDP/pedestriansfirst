@@ -65,8 +65,11 @@ def make_patches(boundaries, patch_length = 5): #patch_length in km
         lon = bbox[0]+(i*v_increment)
         slicer = shapely.geometry.LineString([(lon,bbox[1]),(lon, bbox[3])])
         hslicers.append(slicer)
-        
-    patches = shapely.geometry.MultiPolygon(polygons=[boundaries])
+    
+    if type(boundaries) == shapely.geometry.multipolygon.MultiPolygon:
+        patches=boundaries
+    else:
+        patches = shapely.geometry.MultiPolygon(polygons=[boundaries])
     for slicer in hslicers+vslicers:
         patches = shapely.geometry.MultiPolygon(polygons = shapely.ops.split(patches, slicer))
     
@@ -143,18 +146,7 @@ def pedestrians_first(boundaries,
     #crs = utm_zone.epsg(geojson.Point((reppoint.x[0],reppoint.y[0])))
 
     
-    if type(boundaries) == shapely.geometry.multipolygon.MultiPolygon:
-        pdb.set_trace()
-        patches = []
-        for poly in list(boundaries):
-            patches += make_patches(poly, patch_length=patch_length)
-    else:
-        patches = make_patches(boundaries, patch_length=patch_length)
-    
-    longitude_factor = 0.00898 # degrees per km
-    longitude_factor_m = 0.00898 / 1000 # degrees per m
-    latitude_factor = (math.cos(abs(boundaries.bounds[1])*0.0174533))/111.319
-    latitude_factor_m = latitude_factor / 1000
+    patches = make_patches(boundaries, patch_length=patch_length)
     
     print('Evaluating Pedestrians First indicators in',name)
     print('Measuring',str(to_test))
