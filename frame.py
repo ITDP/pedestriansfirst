@@ -4,6 +4,7 @@ import os
 import os.path
 import json
 import shutil
+import geojson
 import shapely
 from shapely.geometry import LineString, Polygon, shape, mapping
 import geopandas as gpd
@@ -46,7 +47,9 @@ def prep_from_poly(poly, folder_name, boundary_buffer = 0):
         bound_utm = bound_latlon.to_crs(utm_crs)
         bound_utm.geometry = bound_utm.geometry.buffer(boundary_buffer*1000)
         bound_latlon = bound_utm.to_crs(epsg=4326)
-    bound_latlon.to_file(f'{str(folder_name)}/boundaries.geojson',driver='GeoJSON')
+    geom_in_geojson = geojson.Feature(geometry=bound_latlon.geometry.unary_union, properties={})
+    with open(folder_name+'/boundaries.geojson', 'w') as out:
+        out.write(json.dumps(geom_in_geojson))
     #take extract from planet.pbf
     if os.path.exists('planet-latest.osm.pbf'):
         if not os.path.exists('{}/city.pbf'.format(str(folder_name))):
