@@ -282,17 +282,14 @@ def pedestrians_first(boundaries,
                         boundingarg += str(patch.bounds[1])+','
                         boundingarg += str(patch.bounds[2])+','
                         boundingarg += str(patch.bounds[3])
-                        x=subprocess.check_call(['osmconvert',
+                        subprocess.check_call(['osmconvert',
                                                str(folder_name)+'citywalk.o5m',
                                                #boundingarg, #OR
                                                "-B=patchbounds.poly",
                                                #'--complete-ways',  #was commented
                                                '--drop-broken-refs',  #was uncommented
                                                '-o=patch.osm'])
-                        print(x)
-                        G = ox.graph_from_xml('patch.osm', 
-                                               simplify=False, retain_all=True)
-                        print('deleted')
+                        G = ox.graph_from_xml('patch.osm', simplify=False, retain_all=False)
                         os.remove('patch.osm')
                         if 'pnab' in to_test or 'pnpb' in to_test:
                             subprocess.check_call(['osmconvert',
@@ -306,11 +303,11 @@ def pedestrians_first(boundaries,
                                                simplify=False, retain_all=True)
                             os.remove('allhwyspatch.osm')
                     except TypeError: #something to do with clipping, seems to happen once in a while
-                        pdb.set_trace()
+                        #pdb.set_trace()
                         #this is a very stupid band-aid, but it works for now, I think
-                        print ('KEYERROR FROM CLIPPING PATCH', p_idx)
+                        print ('TYPEERROR FROM CLIPPING PATCH', p_idx)
                         with open(str(folder_name)+"patcherrorlog.txt", "a") as patcherrorlog:
-                            patcherrorlog.write('KEYERROR FROM CLIPPING PATCH '+str(p_idx))
+                            patcherrorlog.write('TYPEERROR FROM CLIPPING PATCH '+str(p_idx))
                         G = ox.graph_from_polygon(patch, 
                                               custom_filter=walk_filter, 
                                               simplify=False, 
