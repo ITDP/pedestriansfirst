@@ -1,3 +1,7 @@
+import warnings
+warnings.simplefilter(action='error', category=FutureWarning)
+
+
 import fiona
 import datetime
 import os

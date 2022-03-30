@@ -87,7 +87,7 @@ def make_iso_polys(G, center_nodes, distance=500,
             print ("FAILURE AT",i,center_node)
             failures += 1
         
-    isochrone_polys = cascaded_union(polygons) 
+    isochrone_polys = unary_union(polygons) 
     # junta todos os poligonos no entorno das coordenadas 
 
     return isochrone_polys, failures
