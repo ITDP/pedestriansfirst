@@ -121,6 +121,13 @@ def pedestrians_first(boundaries,
                       debug = False,
                       ):   
     
+    dt = datetime.datetime.now()
+    
+    longitude_factor = 0.00898 # degrees per km
+    longitude_factor_m = 0.00898 / 1000 # degrees per m
+    latitude_factor = (math.cos(abs(boundaries.bounds[1])*0.0174533))/111.319
+    latitude_factor_m = latitude_factor / 1000
+    
     useful_tags = ox.settings.useful_tags_way + ['cycleway', 'cycleway:left', 'cycleway:right', 'cycleway:both', 'bicycle']
     ox.config(use_cache=True, log_console=True, useful_tags_way=useful_tags)
     
@@ -234,12 +241,12 @@ def pedestrians_first(boundaries,
                 
                 max_service_dist_km = max(distances.values())/1000
                 
-                # patch = shapely.geometry.box(
-                        # patch.bounds[0] - (max_service_dist_km * longitude_factor),
-                        # patch.bounds[1] - (max_service_dist_km * latitude_factor),
-                        # patch.bounds[2] + (max_service_dist_km * longitude_factor),
-                        # patch.bounds[3] + (max_service_dist_km * latitude_factor)
-                        # )
+                patch = shapely.geometry.box(
+                        patch.bounds[0] - (max_service_dist_km * longitude_factor),
+                        patch.bounds[1] - (max_service_dist_km * latitude_factor),
+                        patch.bounds[2] + (max_service_dist_km * longitude_factor),
+                        patch.bounds[3] + (max_service_dist_km * latitude_factor)
+                        )
                         
                 patchgdf = gpd.GeoDataFrame(geometry=[patch], crs=4326)
                 patchgdf_utm = patchgdf.to_crs(crs) #NEED TO DEFINE CRS EARLIER
@@ -501,6 +508,7 @@ def pedestrians_first(boundaries,
         unprotected_km = 0
         if not os.path.exists(folder_name+'bikeways/'):
             os.makedirs(folder_name+'bikeways/')
+        import pdb; pdb.set_trace()
         if not total_protectedbike.empty:
             merged_protectedbike = gpd.GeoDataFrame(geometry = [total_protectedbike.geometry.unary_union], crs=4326)
             merged_protectedbike = gpd.clip(merged_protectedbike, boundaries)
@@ -512,7 +520,8 @@ def pedestrians_first(boundaries,
             merged_allbike = gpd.clip(merged_allbike, boundaries)
             merged_allbike.crs = 4326
             merged_allbike.to_file(folder_name+'bikeways/allbike.geojson',driver='GeoJSON')
-            unprotected_km += sum(merged_allbike.to_crs(crs).geometry.length) 
+            unprotected_km += sum(merged_allbike.to_crs(crs).geometry.length)
+            
         results['protected_bikeways_km'] = protected_km
         results['all_bikeways_km'] = protected_km + unprotected_km
     
