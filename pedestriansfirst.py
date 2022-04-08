@@ -39,7 +39,6 @@ def make_patches(bound_latlon, crs_utm, patch_length = 10000, buffer = 500): #pa
     ''' 
     'tile' the boundaries of a city into patches, like a patchwork quilt, including a buffer
     '''
-    
     bounds_utm_poly = bound_latlon.to_crs(crs_utm).geometry.unary_union
     bbox_utm = bounds_utm_poly.bounds
     
@@ -75,7 +74,8 @@ def make_patches(bound_latlon, crs_utm, patch_length = 10000, buffer = 500): #pa
     
     buffered_patches = []
     for patch in patches:
-        buffered_patches.append(patch.buffer(buffer))
+        buffered_patch = patch.buffer(buffer).intersection(bounds_utm_poly)
+        buffered_patches.append(buffered_patch)
     patches_utm = gpd.GeoDataFrame(geometry=buffered_patches, crs=crs_utm)
     patches_latlon = patches_utm.to_crs(4326)
     
@@ -232,11 +232,7 @@ def pedestrians_first(boundaries,
     if len(to_test) > 0 and to_test != ["blocks"]:
         for p_idx, patch in enumerate(patches.geometry):
             try:
-                
-            
                 patch_start = datetime.datetime.now()
-                
-                unbuffered_patch = patch
                 
                 max_service_dist_km = max(distances.values())/1000
                 
