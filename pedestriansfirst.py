@@ -1,5 +1,5 @@
 import warnings
-warnings.simplefilter(action='error', category=FutureWarning)
+warnings.simplefilter(action='once', category=FutureWarning)
 
 
 import fiona
@@ -35,51 +35,53 @@ import pdb
 
 ox.utils.config(log_console = False)
 
-def make_patches(boundaries, patch_length = 5): #patch_length in km
+def make_patches(bound_latlon, crs_utm, patch_length = 10000, buffer = 500): #patch_length and buffer in m
     ''' 
-    'tile' the boundaries of a city into patches, like a patchwork quilt
+    'tile' the boundaries of a city into patches, like a patchwork quilt, including a buffer
     '''
     
-    longitude_factor = 0.00898 # degrees per km
-    longitude_factor_m = 0.00898 / 1000 # degrees per m
-    latitude_factor = (math.cos(abs(boundaries.bounds[1])*0.0174533))/111.319
-    latitude_factor_m = latitude_factor / 1000
+    bounds_utm_poly = bound_latlon.to_crs(crs_utm).geometry.unary_union
+    bbox_utm = bounds_utm_poly.bounds
     
-    bbox = boundaries.bounds
+    height_m = abs(bbox_utm[3]-bbox_utm[1])
+    width_m = abs(bbox_utm[2]-bbox_utm[0])
     
-    height_degrees = abs(bbox[3]-bbox[1])
-    height_km = height_degrees / latitude_factor
-    width_degrees = abs(bbox[2]-bbox[0])
-    width_km = width_degrees / longitude_factor
-    
-    n_hslicers = math.floor(height_km / patch_length)
-    n_vslicers = math.floor(width_km / patch_length)
+    n_hslicers = math.floor(height_m / patch_length)
+    n_vslicers = math.floor(width_m / patch_length)
     
     hslicers = []
     vslicers = []
     
     for i in range(1,n_hslicers+1):
-        h_increment = (bbox[3]-bbox[1])/(n_hslicers+1)
-        lat = bbox[1]+(i*h_increment)
-        slicer = shapely.geometry.LineString([(bbox[0],lat),(bbox[2],lat)])
+        h_increment = height_m/(n_hslicers+1)
+        lat = bbox_utm[1]+(i*h_increment)
+        slicer = shapely.geometry.LineString([(bbox_utm[0],lat),(bbox_utm[2],lat)])
         hslicers.append(slicer)
         
     for i in range(1,n_vslicers+1):
-        v_increment = (bbox[2]-bbox[0])/(n_vslicers+1)
-        lon = bbox[0]+(i*v_increment)
-        slicer = shapely.geometry.LineString([(lon,bbox[1]),(lon, bbox[3])])
-        hslicers.append(slicer)
+        v_increment = width_m/(n_vslicers+1)
+        lon = bbox_utm[0]+(i*v_increment)
+        slicer = shapely.geometry.LineString([(lon,bbox_utm[1]),(lon, bbox_utm[3])])
+        vslicers.append(slicer)
     
-    if type(boundaries) == shapely.geometry.multipolygon.MultiPolygon:
-        patches=boundaries
-    else:
-        patches = shapely.geometry.MultiPolygon(polygons=[boundaries])
+    
+    patches = [bounds_utm_poly] #a list of polygons
+    
     for slicer in hslicers+vslicers:
-        patches = shapely.geometry.MultiPolygon(polygons = shapely.ops.split(patches, slicer))
+        newpatches = []
+        for patch in patches:
+            newpatches += list(shapely.ops.split(patch, slicer).geoms)
+        patches = newpatches
     
-    print("cut"+str(len(list(patches)))+"patches")
+    buffered_patches = []
+    for patch in patches:
+        buffered_patches.append(patch.buffer(buffer))
+    patches_utm = gpd.GeoDataFrame(geometry=buffered_patches, crs=crs_utm)
+    patches_latlon = patches_utm.to_crs(4326)
     
-    return list(patches)
+    print(f"cut {len(patches)} patches")
+    
+    return patches_latlon
 
 def weighted_pop_density(array):
     total = 0
@@ -98,7 +100,7 @@ def pedestrians_first(boundaries,
                            'schools',
                            'h+s',
                            'libraries',
-                           'bikeshare',
+                           #'bikeshare',
                            'carfree',
                            'blocks',
                            'density',
@@ -118,8 +120,8 @@ def pedestrians_first(boundaries,
                             'pnab': 250,
                             },
                       overpass = False,
-                      patch_length = 5, #km
-                      boundary_buffer = 0, #km
+                      patch_length = 10000, #m
+                      boundary_buffer = 500, #m
                       blocks_simplification = 15, #m
                       gtfs_files = [],
                       debug = False,
@@ -127,10 +129,6 @@ def pedestrians_first(boundaries,
     
     dt = datetime.datetime.now()
     
-    longitude_factor = 0.00898 # degrees per km
-    longitude_factor_m = 0.00898 / 1000 # degrees per m
-    latitude_factor = (math.cos(abs(boundaries.bounds[1])*0.0174533))/111.319
-    latitude_factor_m = latitude_factor / 1000
     
     useful_tags = ox.settings.useful_tags_way + ['cycleway', 'cycleway:left', 'cycleway:right', 'cycleway:both', 'bicycle']
     ox.config(use_cache=True, log_console=True, useful_tags_way=useful_tags)
@@ -143,21 +141,18 @@ def pedestrians_first(boundaries,
     longitude = round(numpy.mean(bound_latlon.geometry.centroid.x),10)
     utm_zone = int(math.floor((longitude + 180) / 6) + 1)
     utm_crs = '+proj=utm +zone={} +ellps=WGS84 +datum=WGS84 +units=m +no_defs'.format(utm_zone)
-    crs=utm_crs
+    
     
     if boundary_buffer > 0:
         bound_utm = bound_latlon.to_crs(utm_crs)
-        bound_utm.geometry = bound_utm.geometry.buffer(boundary_buffer*1000)
+        bound_utm.geometry = bound_utm.geometry.buffer(boundary_buffer)
         bound_latlon = bound_utm.to_crs(epsg=4326)
         boundaries = bound_latlon.geometry.unary_union
     print(utm_crs)
     bbox = boundaries.bounds
     
-    #reppoint = boundaries.representative_point()
-    #crs = utm_zone.epsg(geojson.Point((reppoint.x[0],reppoint.y[0])))
-
     
-    patches = make_patches(boundaries, patch_length=patch_length)
+    patches = make_patches(bound_latlon, utm_crs, patch_length=patch_length)
     
     print('Evaluating Pedestrians First indicators in',name)
     print('Measuring',str(to_test))
@@ -235,7 +230,7 @@ def pedestrians_first(boundaries,
         testing_services.append('pnab')
         
     if len(to_test) > 0 and to_test != ["blocks"]:
-        for p_idx, patch in enumerate(patches[31:]): #!!!DEBUG!!!! 
+        for p_idx, patch in enumerate(patches.geometry):
             try:
                 
             
@@ -245,15 +240,9 @@ def pedestrians_first(boundaries,
                 
                 max_service_dist_km = max(distances.values())/1000
                 
-                patch = shapely.geometry.box(
-                        patch.bounds[0] - (max_service_dist_km * longitude_factor),
-                        patch.bounds[1] - (max_service_dist_km * latitude_factor),
-                        patch.bounds[2] + (max_service_dist_km * longitude_factor),
-                        patch.bounds[3] + (max_service_dist_km * latitude_factor)
-                        )
                         
                 patchgdf = gpd.GeoDataFrame(geometry=[patch], crs=4326)
-                patchgdf_utm = patchgdf.to_crs(crs) #NEED TO DEFINE CRS EARLIER
+                patchgdf_utm = patchgdf.to_crs(utm_crs) 
                 patchgdf_utm.geometry = patchgdf_utm.geometry.buffer(max_service_dist_km*1000)
                 patchgdf = patchgdf_utm.to_crs(4326)
                 patch = patchgdf.geometry.unary_union.intersection(boundaries)
@@ -416,11 +405,7 @@ def pedestrians_first(boundaries,
                 
                 
                 # Project Graph
-                if not crs: #this only runs once, crs is invariable over patches
-                    G = ox.project_graph(G)
-                    crs = G.graph['crs'] 
-                else:
-                    G = ox.project_graph(G, to_crs=crs)
+                G = ox.project_graph(G, to_crs=utm_crs)
                 G = ox.simplify_graph(G)
                 
                 isochrone_polys = {}
@@ -476,28 +461,21 @@ def pedestrians_first(boundaries,
      
     boundaries_latlon = gpd.GeoDataFrame(geometry=[boundaries])
     boundaries_latlon.crs = {'init':'epsg:4326'}
-    try:
-        boundaries_utm = boundaries_latlon.to_crs(crs)
-    except ValueError:
-        longitude = round(numpy.mean(boundaries_latlon.geometry.centroid.x),10)
-        utm_zone = int(math.floor((longitude + 180) / 6) + 1)
-        utm_crs = '+proj=utm +zone={} +ellps=WGS84 +datum=WGS84 +units=m +no_defs'.format(utm_zone)
-        crs = utm_crs
-        boundaries_utm = boundaries_latlon.to_crs(crs)
+    boundaries_utm = boundaries_latlon.to_crs(utm_crs)
         
-    stats = rasterstats.zonal_stats(boundaries_latlon, 'pop_dens.tif', stats=['sum'])           
+    stats = rasterstats.zonal_stats(boundaries_latlon, 'input_data/pop_dens.tif', stats=['sum'])           
     total_pop = stats[0]['sum'] 
     
     for service in testing_services:
         if quilt_isochrone_polys[service]:
             service_utm = gpd.GeoDataFrame(geometry = [quilt_isochrone_polys[service]])
-            service_utm.crs = crs#{'init':'epsg:'+str(epsg)}
+            service_utm.crs = utm_crs#{'init':'epsg:'+str(epsg)}
             service_utm.geometry = service_utm.geometry.simplify(15) #maybe this should be after the population calculation
             service_utm = gpd.overlay(service_utm ,boundaries_utm, how='intersection')
             service_latlon = service_utm.to_crs(epsg=4326)
             service_latlon.to_file(folder_name+service+'latlon'+'.geojson', driver='GeoJSON')
             
-            stats = rasterstats.zonal_stats(service_latlon, 'pop_dens.tif', stats=['sum'])           
+            stats = rasterstats.zonal_stats(service_latlon, 'input_data/pop_dens.tif', stats=['sum'])           
             total_PNS = stats[0]['sum']
             print("\n")
             print('Total People Near Service for', service, ":", total_PNS)
@@ -512,19 +490,18 @@ def pedestrians_first(boundaries,
         unprotected_km = 0
         if not os.path.exists(folder_name+'bikeways/'):
             os.makedirs(folder_name+'bikeways/')
-        import pdb; pdb.set_trace()
         if not total_protectedbike.empty:
             merged_protectedbike = gpd.GeoDataFrame(geometry = [total_protectedbike.geometry.unary_union], crs=4326)
             merged_protectedbike = gpd.clip(merged_protectedbike, boundaries)
             merged_protectedbike.crs = 4326
             merged_protectedbike.to_file(folder_name+'bikeways/protectedbike.geojson',driver='GeoJSON')
-            protected_km += sum(merged_protectedbike.to_crs(crs).geometry.length)
+            protected_km += sum(merged_protectedbike.to_crs(utm_crs).geometry.length)
         if not total_allbike.empty:
             merged_allbike = gpd.GeoDataFrame(geometry = [total_allbike.geometry.unary_union], crs=4326)
             merged_allbike = gpd.clip(merged_allbike, boundaries)
             merged_allbike.crs = 4326
             merged_allbike.to_file(folder_name+'bikeways/allbike.geojson',driver='GeoJSON')
-            unprotected_km += sum(merged_allbike.to_crs(crs).geometry.length)
+            unprotected_km += sum(merged_allbike.to_crs(utm_crs).geometry.length)
             
         results['protected_bikeways_km'] = protected_km
         results['all_bikeways_km'] = protected_km + unprotected_km
@@ -535,16 +512,16 @@ def pedestrians_first(boundaries,
             carfree_latlon = gpd.GeoDataFrame(geometry = citywide_carfree)
             #just a latlon list of points
             carfree_latlon.crs = {'init':'epsg:4326'}
-            carfree_utm = carfree_latlon.to_crs(crs)
+            carfree_utm = carfree_latlon.to_crs(utm_crs)
             carfree_utm.geometry = carfree_utm.geometry.buffer(100)
             #this is the analysis, the 100m buffer
             carfree_utm = gpd.GeoDataFrame(geometry = [shapely.ops.unary_union(carfree_utm.geometry)])
             carfree_utm.geometry = carfree_utm.geometry.simplify(10)
             carfree_utm = gpd.overlay(carfree_utm ,boundaries_utm, how='intersection')
-            carfree_utm.crs = crs
+            carfree_utm.crs = utm_crs
             carfree_latlon = carfree_utm.to_crs('epsg:4326')
             
-            stats = rasterstats.zonal_stats(carfree_latlon, 'pop_dens.tif', stats=['sum'])
+            stats = rasterstats.zonal_stats(carfree_latlon, 'input_data/pop_dens.tif', stats=['sum'])
             total_carfree = stats[0]['sum']
             print("\n")
             print('Total People Near Service for carfree', ":", total_carfree)
@@ -565,14 +542,13 @@ def pedestrians_first(boundaries,
             if type(intersect) == shapely.geometry.collection.GeometryCollection:
                 intersect = [obj for obj in intersect if type(obj) == shapely.geometry.polygon.Polygon]
                 intersect = shapely.geometry.MultiPolygon(intersect)
-            hs_utm = gpd.GeoDataFrame(geometry = [intersect])
-            hs_utm.crs = crs#{'init':'epsg:'+str(epsg)} #maybe this should be after the population calculation
+            hs_utm = gpd.GeoDataFrame(geometry = [intersect], crs=utm_crs)
             if hs_utm.geometry.area.sum() != 0:
                 hs_utm = gpd.overlay(hs_utm ,boundaries_utm, how='intersection')
                 hs_utm.geometry = hs_utm.geometry.simplify(15)
                 hs_latlon = hs_utm.to_crs(epsg=4326)
                 hs_latlon.to_file(folder_name+service+'latlon'+'.geojson', driver='GeoJSON')
-                stats = rasterstats.zonal_stats(hs_latlon, 'pop_dens.tif', stats=['sum'])
+                stats = rasterstats.zonal_stats(hs_latlon, 'input_data/pop_dens.tif', stats=['sum'])
                 
                 total_PNS = stats[0]['sum']
                 print("\n")
@@ -588,13 +564,13 @@ def pedestrians_first(boundaries,
     
     if 'density' in to_test:
         density = rasterstats.zonal_stats(boundaries, 
-                                'pop_dens.tif', 
+                                'input_data/pop_dens.tif', 
                                 stats = [],
                                 add_stats={'weighted': weighted_pop_density}
                                 )[0]['weighted']
         results['density'] = density / 0.0625 #km^2 / pixel
         print('weighted pop density', results['density'])
-        with rasterio.open('pop_dens.tif') as dataset:
+        with rasterio.open('input_data/pop_dens.tif') as dataset:
             out_image, out_transform = rasterio.mask.mask(dataset, [boundaries], crop=True)
             out_meta = dataset.meta
             out_meta.update({"driver": "GTiff",
@@ -623,21 +599,13 @@ def pedestrians_first(boundaries,
         
         outblocks = []
         block_counts = []
-        for n, patch in enumerate(patches):
+        for n, patch in enumerate(patches.geometry):
             print("patch"+str(n)+" of "+str(len(patches)) )
             unbuffered_patch = gpd.GeoSeries(patch, crs={'init':'epsg:4326'})
-            unbuffered_patch = unbuffered_patch.to_crs(crs)[0]
+            unbuffered_patch = unbuffered_patch.to_crs(utm_crs)[0]
             
             
-            buffer_dist = 1
-            
-            patch = shapely.geometry.box(
-                    patch.bounds[0] - (buffer_dist * longitude_factor),
-                    patch.bounds[1] - (buffer_dist * latitude_factor),
-                    patch.bounds[2] + (buffer_dist * longitude_factor),
-                    patch.bounds[3] + (buffer_dist * latitude_factor)
-                    )
-            
+           
             if overpass:
                 G = ox.graph_from_polygon(patch, custom_filter=walk_filter, simplify=False, retain_all=True)
             else:
@@ -659,7 +627,7 @@ def pedestrians_first(boundaries,
             
             if G:
                 try:
-                    G = ox.project_graph(G, to_crs=crs)
+                    G = ox.project_graph(G, to_crs=utm_crs)
                     G = ox.simplify_graph(G)
                     
                     streets = ox.utils_graph.graph_to_gdfs(G, nodes = False)
@@ -703,13 +671,13 @@ def pedestrians_first(boundaries,
         patch_densities = gpd.GeoDataFrame(geometry = list(patches))
         patch_densities['block_count'] = block_counts
         patch_densities.crs = {'init':'epsg:4326'}
-        patch_densities_utm = patch_densities.to_crs(crs)
+        patch_densities_utm = patch_densities.to_crs(utm_crs)
         patch_densities_utm['density'] = patch_densities_utm.block_count / (patch_densities_utm.area /1000000)
         patch_densities_latlon = patch_densities_utm.to_crs(epsg=4326)
         patch_densities_latlon.to_file(folder_name+'patch_densities'+'latlon'+'.geojson', driver='GeoJSON')
         
         a = gpd.GeoDataFrame(geometry=[block[0] for block in outblocks])
-        a.crs = crs#{'init':'epsg:'+str(epsg)}
+        a.crs = utm_crs
         a['area'] = [block[1] for block in outblocks]
         a['perim'] = [block[2] for block in outblocks]
         a['lemgth'] = [block[3] for block in outblocks]
@@ -723,7 +691,7 @@ def pedestrians_first(boundaries,
                 if 1000 < block[1] < 1000000:
                     filtered_blocks.append(block)
         c = gpd.GeoDataFrame(geometry=[block[0] for block in outblocks])
-        c.crs = crs#{'init':'epsg:'+str(epsg)}
+        c.crs = utm_crs
         c['area'] = [block[1] for block in outblocks]
         c['perim'] = [block[2] for block in outblocks]
         c['lemgth'] = [block[3] for block in outblocks]
