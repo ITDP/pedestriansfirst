@@ -99,18 +99,18 @@ class ServiceHandler(osmium.SimpleHandler): #newer
 
     def node(self, n):
         if 'amenity' in n.tags and n.tags['amenity'] in ['library','bookcase']:
-            self.locationlist['libraries'].append((n.location.lat, n.location.lon))
+            self.locationlist['libraries'].append((n.location.lon, n.location.lat))
         
         if ( ('amenity' in n.tags and 
                n.tags['amenity'] in ['school','kindergarten']) or
              ('school' in n.tags) ):
-            self.locationlist['schools'].append((n.location.lat, n.location.lon))
+            self.locationlist['schools'].append((n.location.lon, n.location.lat))
             
         if ( ('amenity' in n.tags and 
                n.tags['amenity'] in ['hospital','doctors','clinic','pharmacy']) or
              ('healthcare' in n.tags and 
                n.tags['healthcare'] in ['alternative','birthing_center','centre','midwife','nurse','hospital','doctor','clinic','pharmacy','yes']) ):
-            self.locationlist['healthcare'].append((n.location.lat, n.location.lon))
+            self.locationlist['healthcare'].append((n.location.lon, n.location.lat))
 
     def area(self, a):
         try:
@@ -118,7 +118,7 @@ class ServiceHandler(osmium.SimpleHandler): #newer
                     wkb = wkbfab.create_multipolygon(a)
                     poly = shapely.wkb.loads(wkb, hex=True)
                     centroid = poly.representative_point()
-                    self.locationlist['libraries'].append((centroid.y, centroid.x))
+                    self.locationlist['libraries'].append((centroid.x, centroid.y))
                 
             if ( ('amenity' in a.tags and 
                    a.tags['amenity'] in ['school','kindergarten']) or
@@ -126,7 +126,7 @@ class ServiceHandler(osmium.SimpleHandler): #newer
                 wkb = wkbfab.create_multipolygon(a)
                 poly = shapely.wkb.loads(wkb, hex=True)
                 centroid = poly.representative_point()
-                self.locationlist['schools'].append((centroid.y, centroid.x))
+                self.locationlist['schools'].append((centroid.x, centroid.y))
                 
             if ( ('amenity' in a.tags and 
                    a.tags['amenity'] in ['hospital','doctors','clinic','pharmacy']) or
@@ -135,7 +135,7 @@ class ServiceHandler(osmium.SimpleHandler): #newer
                 wkb = wkbfab.create_multipolygon(a)
                 poly = shapely.wkb.loads(wkb, hex=True)
                 centroid = poly.representative_point()
-                self.locationlist['healthcare'].append((centroid.y, centroid.x))
+                self.locationlist['healthcare'].append((centroid.x, centroid.y))
                 
             carfree = False
             if 'leisure' in a.tags and a.tags['leisure'] in ['park', 'playground']:
@@ -180,28 +180,29 @@ class ServiceHandler(osmium.SimpleHandler): #newer
             print('RUNTIME ERROR while finding service way')
         
 
-def get_point_locations(poly, query):
-    #returns a dictionary
+#haven't used in ages! Need to make sure it returns x,y instead of lat,lon (y,x)
+# def get_point_locations(poly, query):
+#     #returns a dictionary
     
-    overpass_url = "http://overpass-api.de/api/interpreter" 
-    #check this is good before production
+#     overpass_url = "http://overpass-api.de/api/interpreter" 
+#     #check this is good before production
     
-    poly_str = ox.get_polygons_coordinates(poly)[0]
+#     poly_str = ox.get_polygons_coordinates(poly)[0]
     
-    services = []
+#     services = []
     
-    print ('Querying OSM for locations...')
-    data = ox.overpass_request(data={'data':query.format(poly=poly_str)}, timeout=900)
-    for element in data['elements']:
-        if element['type'] == 'node':
-            services.append(
-                    (element['lat'],element['lon'])
-                    )
-        elif 'center' in element:
-            services.append(
-                    (element['center']['lat'],
-                     element['center']['lon'])
-                    )
+#     print ('Querying OSM for locations...')
+#     data = ox.overpass_request(data={'data':query.format(poly=poly_str)}, timeout=900)
+#     for element in data['elements']:
+#         if element['type'] == 'node':
+#             services.append(
+#                     (element['lat'],element['lon'])
+#                     )
+#         elif 'center' in element:
+#             services.append(
+#                     (element['center']['lat'],
+#                      element['center']['lon'])
+#                     )
     
-    return services
+#     return services
     

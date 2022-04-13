@@ -39,6 +39,8 @@ def prep_from_poly(poly, folder_name, boundary_buffer = 500):
     #return True if overpass will be needed (planet.pbf unavailable), False otherwise
     if not os.path.isdir(str(folder_name)):
         os.mkdir(str(folder_name))
+    if not os.path.isdir(str(folder_name)+'/debug/'):
+        os.mkdir(str(folder_name)+'/debug/')
     bound_latlon = gpd.GeoDataFrame(geometry = [poly], crs=4326)
     if boundary_buffer > 0:
         longitude = round(numpy.mean(bound_latlon.geometry.centroid.x),10)
@@ -73,7 +75,7 @@ def prep_from_poly(poly, folder_name, boundary_buffer = 500):
     
 def from_id_hdc(hdc, folder_prefix = 'cities_out', boundary_buffer = 500, kwargs = {}):
     if folder_prefix:
-        folder_name = folder_prefix+'/'+str(hdc)
+        folder_name = folder_prefix+'/ghsl_'+str(hdc)
     else:
         folder_name = str(hdc)
     poly, name = poly_from_ghsl_hdc(hdc)
@@ -81,9 +83,9 @@ def from_id_hdc(hdc, folder_prefix = 'cities_out', boundary_buffer = 500, kwargs
     kwargs['overpass'] = overpass
     return pedestriansfirst.pedestrians_first(poly, hdc, name, folder_name, **kwargs)
     
-def from_osmid(osmid, folder_prefix = 'cities_out', boundary_buffer = 500, kwargs = {}):
+def from_id_osm(osmid, folder_prefix = 'cities_out', boundary_buffer = 500, kwargs = {}):
     if folder_prefix:
-        folder_name = folder_prefix+'/'+str(osmid)
+        folder_name = folder_prefix+'/osm_'+str(osmid)
     else:
         folder_name = str(osmid)
     poly, name = poly_from_osm_cityid(osmid)
@@ -120,20 +122,24 @@ def pnb_run():
     for osmid in osmids:
         osmid=str(int(osmid))
         print('pnb run',osmid)
-        if os.path.exists('pnb_results.json'):
-            with open('pnb_results.json','r') as in_file:
-                pnb_results = json.load(in_file)
+        if os.path.exists('pnb_results.csv'):
+            results = pd.read_csv('pnb_results.csv', index_col=0)
         else:
-            pnb_results = {}
-        if not str(osmid) in pnb_results.keys():
-            results = from_osmid(osmid, kwargs={'to_test':['pnpb','pnab','density'], 'debug':True})
-            pnb_results.update({osmid:results})
-            with open('pnb_results.json','w') as out_file:
-                json.dump(pnb_results, out_file)
+            pnb_results = pd.DataFrame()
+        if not str(osmid) in pnb_results.columns:
+            results = from_id_osm(osmid, kwargs={'to_test':['pnpb','pnab','density'], 'debug':True})
+            pnb_results[osmid]=results
+            pnb_results.to_csv('pnb_results.csv')
                 
 if __name__ == '__main__':
-    #pnb_run()
-    from_id_hdc(4427)
+    results_bigmax = from_id_osm(2220789, kwargs={'to_test':['pnpb','pnab','density','h+s',], 'max_edge_length':10000, 'debug':True})
+    results_lilmax = from_id_osm(2220789, kwargs={'to_test':['pnpb','pnab','density','h+s',], 'max_edge_length':100, 'debug':True})
+    print('big',results_bigmax)
+    print('lil',results_lilmax)
+    #results_kampala = from_id_hdc(4427, kwargs={'to_test':['pnpb','pnab','density','h+s','special'], 'debug':True})
+    #print('big',results_bigmax)
+    #print('lil',results_lilmax)
+    #print(results_kampala)
 
 #hdcs = { #test
 #'Mexico City': 154,

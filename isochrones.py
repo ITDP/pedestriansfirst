@@ -10,7 +10,7 @@ import networkx as nx # Pacote de redes do Python
 import osmnx as ox # Pacote OSM Network X
 import geopandas as gpd # Pacote Pandas Georreferenciado
 from shapely.geometry import Point, LineString, Polygon, mapping # Pacote Shapely (apenas partes do pacote)
-from shapely.ops import cascaded_union
+from shapely.ops import unary_union
 ox.config(log_console=True, use_cache=True)
 
 from copy import deepcopy # duplicar memória do Pyhton
@@ -53,39 +53,35 @@ def make_iso_polys(G, center_nodes, distance=500,
     failures = 0
     polygons = []
     
-    for i, center_node in enumerate(center_nodes):
+    for center_node in tqdm(center_nodes):
         subgraph = nx.ego_graph(G, center_node, radius=distance, 
                                 distance='length')
         
         node_points = [Point((data['x'], data['y'])) 
                        for node, data in subgraph.nodes(data=True)]
-        
-        try:
-            nodes_gdf = gpd.GeoDataFrame({'id': subgraph.nodes()},
-                                         geometry=node_points)
-        
-            nodes_gdf = nodes_gdf.set_index('id')
+        #I used to try and except and keyerror here
+        nodes_gdf = gpd.GeoDataFrame({'id': subgraph.nodes()},
+                                     geometry=node_points)
+    
+        nodes_gdf = nodes_gdf.set_index('id')
 
-            edge_lines = []
-            for n_fr, n_to in subgraph.edges():
-                f = nodes_gdf.loc[n_fr].geometry ##.geometry
-                t = nodes_gdf.loc[n_to].geometry
-                edge_lines.append(LineString([f,t]))
+        edge_lines = []
+        for n_fr, n_to in subgraph.edges():
+            f = nodes_gdf.loc[n_fr].geometry
+            t = nodes_gdf.loc[n_to].geometry
+            edge_lines.append(LineString([f,t]))
 
-            n = nodes_gdf.buffer(node_buff).geometry
-            e = gpd.GeoSeries(edge_lines).buffer(edge_buff).geometry
-            all_gs = list(n) + list(e)
-            new_iso = gpd.GeoSeries(all_gs).unary_union 
-            
-            if infill:
-                try:# try to fill in surrounded areas so shapes will appear solid
-                    new_iso = Polygon(new_iso.exterior)
-                except AttributeError: #empty geometrycollection?
-                    pass
-            polygons.append(new_iso)
-        except KeyError:
-            print ("FAILURE AT",i,center_node)
-            failures += 1
+        n = nodes_gdf.buffer(node_buff).geometry
+        e = gpd.GeoSeries(edge_lines).buffer(edge_buff).geometry
+        all_gs = list(n) + list(e)
+        new_iso = gpd.GeoSeries(all_gs).unary_union 
+        
+        if infill:
+            try:# try to fill in surrounded areas so shapes will appear solid
+                new_iso = Polygon(new_iso.exterior)
+            except AttributeError: #empty geometrycollection?
+                pass
+        polygons.append(new_iso)
         
     isochrone_polys = unary_union(polygons) 
     # junta todos os poligonos no entorno das coordenadas 

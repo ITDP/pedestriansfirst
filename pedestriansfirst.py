@@ -13,8 +13,8 @@ import subprocess
 import json
 import traceback
 import shutil
+from tqdm import tqdm
 #import utm_zone
-
 import numpy as np
 import osmnx as ox
 import networkx as nx
@@ -78,6 +78,7 @@ def make_patches(bound_latlon, crs_utm, patch_length = 10000, buffer = 500): #pa
         buffered_patches.append(buffered_patch)
     patches_utm = gpd.GeoDataFrame(geometry=buffered_patches, crs=crs_utm)
     patches_latlon = patches_utm.to_crs(4326)
+    patches_latlon['patch_id'] = patches_latlon.index
     
     print(f"cut {len(patches)} patches")
     
@@ -106,39 +107,42 @@ def add_intermediate_nodes(G, maxdist):
     start_time = datetime.datetime.now()
     print(f'adding nodes to a max edge length of {maxdist}')
     nodes, edges = ox.graph_to_gdfs(G)
-    newnode_baseid = nodes.index.max()
+    newnode_baseid = nodes.index.max()+1
     nodes_added = 0
-    # tags_to_copy = list(edges.columns)
-    # tags_to_copy.remove('length')
-    # tags_to_copy.remove('geometry')
-    while len(edges[edges.geometry.length>maxdist]) > 0:
-        to_shorten = edges[edges.geometry.length>maxdist].iloc[0]
-        
+    # new_nodes = gpd.GeoDataFrame(crs=nodes.crs, geometry=[])
+    # new_edges = gpd.GeoDataFrame(crs=nodes.crs, geometry=[])
+    # new_edges.index.astype(edges.index.dtype, copy=False)
+    too_long = edges[edges.geometry.length>maxdist]
+    for to_shorten in tqdm(too_long.iterrows(), total = len(too_long)):
+        to_shorten = to_shorten[1]
         old_leg = to_shorten.geometry
         
-        new_legs, new_node = cut(old_leg, old_leg.length/2)
+        while old_leg.length > maxdist:
+            new_legs, new_node = cut(old_leg, maxdist/2)
         
-        new_node_id = newnode_baseid + nodes_added
-        nodes_added += 1
-        nodes.loc[new_node_id, 'y'] = new_node.y
-        nodes.loc[new_node_id, 'x'] = new_node.x
-        nodes.loc[new_node_id, 'geometry'] = new_node
-        
-        first_leg_id = (to_shorten.name[0], new_node_id, to_shorten.name[2])
-        edges.loc[first_leg_id,'geometry'] = new_legs[0]
-        edges.loc[first_leg_id,'length'] = new_legs[0].length
+            new_node_id = newnode_baseid + nodes_added
+            nodes_added += 1
+            nodes.loc[new_node_id, 'y'] = new_node.y
+            nodes.loc[new_node_id, 'x'] = new_node.x
+            nodes.loc[new_node_id, 'geometry'] = new_node
+            
+            first_leg_id = (to_shorten.name[0], new_node_id, to_shorten.name[2])
+            edges.loc[first_leg_id,'length'] = new_legs[0].length
+            edges.loc[first_leg_id,'geometry'] = new_legs[0]
+            
+            old_leg = new_legs[1]
+            
         second_leg_id = (new_node_id, to_shorten.name[1], to_shorten.name[2])
         edges.loc[second_leg_id,'geometry'] = new_legs[1]
         edges.loc[second_leg_id,'length'] = new_legs[1].length
         
-        # for tag in tags_to_copy:
-        #     edges.loc[first_leg_id, tag] = to_shorten.loc[tag]
-        #     edges.loc[second_leg_id, tag] = to_shorten.loc[tag]
-        
         edges = edges.drop(to_shorten.name)
+        
+
     end_time = datetime.datetime.now()
     print(f"added {nodes_added} nodes in {end_time - start_time}")
     return ox.graph_from_gdfs(nodes, edges)
+
         
 
 def weighted_pop_density(array):
@@ -173,7 +177,7 @@ def pedestrians_first(boundaries,
                             'libraries': 1000,
                             'bikeshare': 500,
                             'transit': 500,
-                            'special': 500,
+                            'special': 250,
                             'pnpb': 250,
                             'pnab': 250,
                             },
@@ -182,6 +186,7 @@ def pedestrians_first(boundaries,
                       boundary_buffer = 500, #m
                       blocks_simplification = 15, #m
                       gtfs_files = [],
+                      max_edge_length = 100,
                       debug = False,
                       ):   
     
@@ -210,10 +215,16 @@ def pedestrians_first(boundaries,
     bbox = boundaries.bounds
     
     
-    patches = make_patches(bound_latlon, utm_crs, patch_length=patch_length)
     
     print('Evaluating Pedestrians First indicators in',name)
     print('Measuring',str(to_test))
+    
+    
+    if 'h+s' in to_test:
+        for part in ['healthcare', 'schools']:
+            if not part in to_test:
+                to_test.append(part)
+                
     
     quilt_isochrone_polys = {}
     for service in to_test:
@@ -221,18 +232,17 @@ def pedestrians_first(boundaries,
         if 'pnab' in to_test or 'pnpb' in to_test:
             quilt_isochrone_polys['pnab'] = False
             quilt_isochrone_polys['pnpb'] = False
+            quilt_allbike = gpd.GeoDataFrame(geometry=[], crs=4326)
+            quilt_protectedbike = gpd.GeoDataFrame(geometry=[], crs=4326)
             
-    
-    patch_times = []
-    
-    all_coords={}
-    
     testing_services = []
     for service in ['healthcare', 'schools', 'libraries', 'bikeshare']:
         if service in to_test:
             testing_services.append(service)
             #all_coords[service] = get_point_locations(boundaries, queries[service])
     
+            
+    all_coords={}
     if len(testing_services) > 0:
         if overpass:
             raise RuntimeError
@@ -260,10 +270,23 @@ def pedestrians_first(boundaries,
     #     #need to switch back to latlon and put in all_coords['highway']
         
     if 'special' in to_test:
-        if os.path.isfile(folder_name+'special.shp'):
-            testing_services.append('special')
-            special = gpd.read_file(folder_name+'special.shp')
-            all_coords['special'] = [(pt.y, pt.x) for pt in special.geometry]
+        special = gpd.read_file(f'{folder_name}special.geojson')
+        if special.geometry[0].type == LineString:
+            special.crs = 4326
+            special_utm = special.to_crs(utm_crs)
+            points=[]
+            for line in special_utm.geometry:
+                while line.length > 50:
+                    cutlines, point = cut(line, 50)
+                    points.append(point)
+                    line=cutlines[1]
+            points_utm = gpd.GeoDataFrame(geometry=points, crs=utm_crs)
+            points_latlon = points_utm.to_crs(4326)
+            all_coords['special'] = [(pt.x, pt.y) for pt in points_latlon.geometry]
+        elif special.geometry[0].type == Point:
+            all_coords['special'] = [(pt.x, pt.y) for pt in special.geometry]
+    
+    all_points = {}
 
     if 'transit' in to_test:
         testing_services.append('transit')
@@ -282,27 +305,36 @@ def pedestrians_first(boundaries,
     if 'pnab' in to_test or 'pnpb' in to_test:
         testing_services.append('pnpb')
         testing_services.append('pnab')
-        
+    
+    
+    
+    patches = make_patches(bound_latlon, utm_crs, patch_length=patch_length)
+    
+    if debug:
+        patches.to_file(folder_name+'debug/patches.geojson', driver='GeoJSON')
+    
+    patch_times = []
     if len(to_test) > 0 and to_test != ["blocks"]:
-        for p_idx, patch in enumerate(patches.geometry):
+        for p_idx in patches.index:
+            patch = patches.loc[p_idx, 'geometry']
             try:
                 patch_start = datetime.datetime.now()
                 
                 patchgdf = gpd.GeoDataFrame(geometry=[patch], crs=4326)
                 
-                if os.path.exists('pathbounds.geojson'):
-                    os.remove('patchbounds.geojson')
-                if os.path.exists('pathbounds.poly'):
-                    os.remove('patchbounds.poly')
-                if os.path.exists('patch.osm'):
-                    os.remove('patch.osm')
-                if os.path.exists('allhwyspatch.osm'):
-                    os.remove('allhwyspatch.osm')
+                for cleanupfile in ['pathbounds.geojson',
+                                    'pathbounds.poly',
+                                    'patch.osm', 
+                                    'allhwyspatch.osm']:
+                    if os.path.exists('temp/'+cleanupfile):
+                        os.remove('temp/'+cleanupfile)
                 
-                patchgdf.to_file('patchbounds.geojson', driver='GeoJSON')
+                patchgdf.to_file('temp/patchbounds.geojson', driver='GeoJSON')
                 
-                shutil.copy('patchbounds.geojson', f'{str(folder_name)}/patchbounds{str(p_idx)}.geojson')
-                subprocess.run('python ogr2poly/ogr2poly.py patchbounds.geojson > patchbounds.poly', shell=True, check=True)
+                if debug:
+                    shutil.copy('temp/patchbounds.geojson', f'{str(folder_name)}/patchbounds{str(p_idx)}.geojson')
+                
+                subprocess.run('python ogr2poly/ogr2poly.py temp/patchbounds.geojson > temp/patchbounds.poly', shell=True, check=True)
                 
                 walk_filter = ('["area"!~"yes"]["highway"!~"link|motor'
                                '|proposed|construction|abandoned'
@@ -314,24 +346,18 @@ def pedestrians_first(boundaries,
                 if overpass:
                     G = ox.graph_from_polygon(patch, 
                                               custom_filter=walk_filter, 
-                                              simplify=False, 
+                                              simplify=True, 
                                               retain_all=True)
                 else:
                     try:
-                        boundingarg = '-b='
-                        boundingarg += str(patch.bounds[0])+','
-                        boundingarg += str(patch.bounds[1])+','
-                        boundingarg += str(patch.bounds[2])+','
-                        boundingarg += str(patch.bounds[3])
                         subprocess.check_call(['osmconvert',
                                                str(folder_name)+'citywalk.o5m',
-                                               #boundingarg, #OR
-                                               "-B=patchbounds.poly",
+                                               "-B=temp/patchbounds.poly",
                                                #'--complete-ways',  #was commented
                                                '--drop-broken-refs',  #was uncommented
-                                               '-o=patch.osm'])
-                        G = ox.graph_from_xml('patch.osm', simplify=False, retain_all=False)
-                        os.remove('patch.osm')
+                                               '-o=temp/patch.osm'])
+                        G = ox.graph_from_xml('temp/patch.osm', simplify=True, retain_all=True)
+                        os.remove('temp/patch.osm')
                     except TypeError: #something to do with clipping, seems to happen once in a while
                         #pdb.set_trace()
                         #this is a very stupid band-aid, but it works for now
@@ -340,25 +366,24 @@ def pedestrians_first(boundaries,
                             patcherrorlog.write('TYPEERROR FROM CLIPPING PATCH '+str(p_idx))
                         G = ox.graph_from_polygon(patch, 
                                               custom_filter=walk_filter, 
-                                              simplify=False, 
+                                              simplify=True, 
                                               retain_all=True)
-                os.remove('patchbounds.poly')
+                os.remove('temp/patchbounds.poly')
                         
                 
                 G.remove_nodes_from(list(nx.isolates(G)))
                 
-                simple_G = ox.simplify_graph(G)
-                
                 center_nodes = {}
                 for service in all_coords.keys():
                     if service in ['healthcare','schools','libraries','bikeshare','special']:
-                        center_nodes[service] = []
-                        for coord in all_coords[service]:
-                            lat = coord[0]
-                            lon = coord[1]
-                            nearest = ox.get_nearest_node(simple_G, coord)
-                            if not nearest in center_nodes[service]:    
-                                center_nodes[service].append(nearest)
+                        #if this were in a projected coordinate system, I could use return_dist=True to check whether the nearest node was unexpectedly far away
+                        x_vals = [coord[0] for coord in all_coords[service]]
+                        y_vals = [coord[1] for coord in all_coords[service]]
+                        center_nodes[service]  = ox.distance.nearest_nodes(G, 
+                                                                           x_vals, 
+                                                                           y_vals,
+                                                                           return_dist=False)
+                        
                 
                 if 'pnab' in to_test or 'pnpb' in to_test:
                     ways_gdf = ox.graph_to_gdfs(G, nodes=False)
@@ -381,17 +406,21 @@ def pedestrians_first(boundaries,
                     total_protectedbike = pd.concat([tagged_cycleways, cycle_paths, on_street_tracks])
                     total_allbike = pd.concat([total_protectedbike, on_street_lanes])
                     
+                    quilt_allbike = pd.concat([quilt_allbike, total_allbike])
+                    quilt_protectedbike = pd.concat([quilt_protectedbike, total_protectedbike])
+                    
+                    
                     center_nodes['pnpb'] = set()
                     center_nodes['pnab'] = set()
                     for edge in total_protectedbike.index:
-                        if edge[0] in simple_G.nodes:
+                        if edge[0] in G.nodes:
                             center_nodes['pnpb'].add(edge[0])
-                        if edge[1] in simple_G.nodes:
+                        if edge[1] in G.nodes:
                             center_nodes['pnpb'].add(edge[1])
                     for edge in total_allbike.index:
-                        if edge[0] in simple_G.nodes:
+                        if edge[0] in G.nodes:
                             center_nodes['pnab'].add(edge[0])
-                        if edge[1] in simple_G.nodes:
+                        if edge[1] in G.nodes:
                             center_nodes['pnab'].add(edge[1])
                            
                 if 'transit' in to_test:
@@ -402,7 +431,7 @@ def pedestrians_first(boundaries,
                             lat = float(service[stop_id][1])
                             lon = float(service[stop_id][2])
                             headway = float(service[stop_id][0])
-                            center_node = ox.get_nearest_node(simple_G, (lat, lon))
+                            center_node = ox.get_nearest_node(G, (lat, lon))
                             if center_node not in transit_centers:
                                 transit_centers[center_node] = {service_idx : headway} #store the headway value
                             elif service_idx not in transit_centers[center_node].keys():
@@ -422,8 +451,8 @@ def pedestrians_first(boundaries,
                                 center_nodes['transit'].append(center_node)
                 
                 
-                G = ox.project_graph(simple_G, to_crs=utm_crs)
-                G = add_intermediate_nodes(G, 100)
+                G = ox.project_graph(G, to_crs=utm_crs)
+                G = add_intermediate_nodes(G, max_edge_length)
                 
                 isochrone_polys = {}
                 failures = {}
@@ -466,10 +495,11 @@ def pedestrians_first(boundaries,
             #         traceback.print_exc(limit=3,file=errout)
             #     print('saved to error'+now+'.txt') 
     
-    results = {'name':name,'id_code':id_code}
+    if debug:
+        patches.times = patch_times
+        patches.to_file(folder_name+'debug/patches_with_times.geojson', driver='GeoJSON')
     
-    if not os.path.exists(folder_name):
-        os.makedirs(folder_name)
+    results = {'name':name,'id_code':id_code}
      
     boundaries_latlon = gpd.GeoDataFrame(geometry=[boundaries])
     boundaries_latlon.crs = {'init':'epsg:4326'}
@@ -502,14 +532,14 @@ def pedestrians_first(boundaries,
         unprotected_km = 0
         if not os.path.exists(folder_name+'bikeways/'):
             os.makedirs(folder_name+'bikeways/')
-        if not total_protectedbike.empty:
-            merged_protectedbike = gpd.GeoDataFrame(geometry = [total_protectedbike.geometry.unary_union], crs=4326)
+        if not quilt_protectedbike.empty:
+            merged_protectedbike = gpd.GeoDataFrame(geometry = [quilt_protectedbike.geometry.unary_union], crs=4326)
             merged_protectedbike = gpd.clip(merged_protectedbike, boundaries)
             merged_protectedbike.crs = 4326
             merged_protectedbike.to_file(folder_name+'bikeways/protectedbike.geojson',driver='GeoJSON')
             protected_km += sum(merged_protectedbike.to_crs(utm_crs).geometry.length)
-        if not total_allbike.empty:
-            merged_allbike = gpd.GeoDataFrame(geometry = [total_allbike.geometry.unary_union], crs=4326)
+        if not quilt_allbike.empty:
+            merged_allbike = gpd.GeoDataFrame(geometry = [quilt_allbike.geometry.unary_union], crs=4326)
             merged_allbike = gpd.clip(merged_allbike, boundaries)
             merged_allbike.crs = 4326
             merged_allbike.to_file(folder_name+'bikeways/allbike.geojson',driver='GeoJSON')
@@ -550,7 +580,7 @@ def pedestrians_first(boundaries,
     if 'h+s' in to_test:
         if quilt_isochrone_polys['healthcare'] and quilt_isochrone_polys['schools']:
             service = 'h+s'
-            intersect = quilt_isochrone_polys['healthcare'].intersection(quilt_isochrone_polys['schools'])
+            intersect = shapely.ops.unary_union([quilt_isochrone_polys['healthcare'].intersection(quilt_isochrone_polys['schools'])])
             if type(intersect) == shapely.geometry.collection.GeometryCollection:
                 intersect = [obj for obj in intersect if type(obj) == shapely.geometry.polygon.Polygon]
                 intersect = shapely.geometry.MultiPolygon(intersect)
@@ -619,7 +649,7 @@ def pedestrians_first(boundaries,
             
            
             if overpass:
-                G = ox.graph_from_polygon(patch, custom_filter=walk_filter, simplify=False, retain_all=True)
+                G = ox.graph_from_polygon(patch, custom_filter=walk_filter, simplify=True, retain_all=True)
             else:
                 boundingarg = '-b='
                 boundingarg += str(patch.bounds[0])+','
@@ -633,7 +663,7 @@ def pedestrians_first(boundaries,
                                        '--drop-broken-refs',
                                        '-o=patch.osm'])
                 try:
-                    G = ox.graph_from_xml('patch.osm', simplify=False, retain_all=True)
+                    G = ox.graph_from_xml('patch.osm', simplify=True, retain_all=True)
                 except:
                     G = False
             
