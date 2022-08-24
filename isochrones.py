@@ -9,11 +9,12 @@ https://colab.research.google.com/drive/1xpzFkH7MPwmtFiIfBP2Lg2yqtvzhiF23
 import networkx as nx # Pacote de redes do Python
 import osmnx as ox # Pacote OSM Network X
 import geopandas as gpd # Pacote Pandas Georreferenciado
-from shapely.geometry import Point, LineString, Polygon, mapping # Pacote Shapely (apenas partes do pacote)
+import shapely
+from shapely.geometry import Point, LineString, MultiLineString, Polygon, MultiPolygon, mapping # Pacote Shapely (apenas partes do pacote)
 from shapely.ops import unary_union
 ox.config(log_console=True, use_cache=True)
 
-from copy import deepcopy # duplicar memória do Pyhton
+from copy import deepcopy # duplicar memória do Python
 from tqdm import tqdm # Pacote para visualizar downloads
 import pandas as pd 
 
@@ -44,6 +45,88 @@ def network_buffer(G, distance=100):
     all_gs = gpd.GeoDataFrame(ox.graph_to_gdfs(G,nodes=False,node_geometry=False,fill_edge_geometry=True)).buffer(100)
     new_iso = gpd.GeoSeries(all_gs).unary_union # junção de pontos e edges, mas com buracos nas quadras
     return new_iso
+
+def cut(line, distance):
+    # Cuts a line in two at a distance from its starting point, 
+    # returns the line up to that distance
+    if distance <= 0.0 or distance >= line.length:
+        return 
+    coords = list(line.coords)
+    for i, p in enumerate(coords):
+        dist_to_point = line.project(Point(p))
+        if dist_to_point == distance:
+            return LineString(coords[:i+1])
+        if dist_to_point > distance:
+            cp = line.interpolate(distance)
+            return LineString(coords[:i] + [(cp.x, cp.y)])
+
+def proper_iso_polys(G, center_nodes, distance=500,
+                     buffer=100, infill=2500): #infill is the max size that will be infilled
+    """
+    Returns Shapely geometry representing network buffer from a list of nodes.
+    Includes buffering part-way along edges.
+    """
+    failures = 0
+    polygons = []
+    complete_nodepairs = set()
+    complete_edge_linestrings = []
+    partial_edge_linestrings = []
+    
+    for center_node in tqdm(center_nodes):
+        distances, routes = nx.single_source_dijkstra(
+            G, 
+            center_node, 
+            target = None, 
+            cutoff = distance, 
+            weight = 'length')
+        # intermediate_nodes = set()
+        intermediate_nodes = list(distances.keys())
+        for route in routes.values():
+            # intermediate_nodes.update(route[1:-1])
+            complete_nodepairs.update([(route[i],route[i+1]) for i in range(0,len(route)-1)])
+        for origin_node in routes.keys():
+            remaining_distance = distance - distances[origin_node]
+            for target_node in G[origin_node]:
+                if target_node not in intermediate_nodes:
+                    for edge_id in G[origin_node][target_node]:
+                        edge = G[origin_node][target_node][edge_id]
+                        if 'geometry' in edge:
+                            linestring = edge['geometry']
+                        else:
+                            n_fr = G.nodes[origin_node]
+                            n_to = G.nodes[target_node]
+                            linestring = LineString([(n_fr.x,n_fr.y),(n_to.x,n_to.y)])
+                        cut_line = cut(linestring, remaining_distance)
+                        if cut_line is not None:
+                            partial_edge_linestrings.append(cut_line)
+    for nodepair in complete_nodepairs:
+        for edge_id in G[nodepair[0]][nodepair[1]]:
+            edge = G[nodepair[0]][nodepair[1]][edge_id]
+            if 'geometry' in edge:
+                linestring = edge['geometry']
+            else:
+                n_fr = G.nodes[nodepair[0]]
+                n_to = G.nodes[nodepair[1]]
+                linestring = LineString([(n_fr.x,n_fr.y),(n_to.x,n_to.y)])
+            complete_edge_linestrings.append(linestring)
+    
+    all_linestrings = gpd.GeoSeries(complete_edge_linestrings + partial_edge_linestrings)
+    total_area = all_linestrings.buffer(buffer).unary_union 
+    if type(total_area) == shapely.geometry.MultiPolygon:
+        polys = list(total_area)
+    elif type(total_area) == shapely.geometry.Polygon:
+        polys = [total_area]
+    else:
+        polys = []
+    infills = []
+    for poly in polys:
+        for hole in poly.interiors:
+            hole_poly = Polygon(hole)
+            if hole_poly.area <= infill:
+                infills.append(hole_poly)
+    total_area = gpd.GeoSeries(polys+infills).unary_union
+    return total_area
+    
 
 def make_iso_polys(G, center_nodes, distance=500,
                    edge_buff=100, node_buff=0, infill=True):
