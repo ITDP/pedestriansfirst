@@ -1,5 +1,4 @@
 import warnings
-import fiona
 import datetime
 import os
 import os.path
@@ -28,9 +27,9 @@ import topojson
 import isochrones
 import get_service_locations
 import gtfs_parser
-import prep_bike_osm
-import prep_pop_ghsl
-import summarize_ttm
+#import prep_bike_osm
+#import prep_pop_ghsl
+#import summarize_ttm
 
 import pdb
 
@@ -38,6 +37,7 @@ import pdb
 def make_patches(boundaries_latlon, crs_utm, patch_length = 10000, buffer = 500): #patch_length and buffer in m
     ''' 
     'tile' the boundaries of a city into patches, like a patchwork quilt, including a buffer
+    buffer should be half the length of the longest PNX distance
     '''
     bounds_utm_poly = boundaries_latlon.to_crs(crs_utm).geometry.unary_union
     bbox_utm = bounds_utm_poly.bounds
@@ -167,27 +167,27 @@ def spatial_analysis(boundaries,
                       buffer_dist=100,#buffer out from nodes, m
                       headway_threshold=10,#min
                       to_test = [
-                           #'healthcare',
-                           #'schools',
-                           #'h+s',
+                           'healthcare',
+                           'schools',
+                           'h+s',
                            #'libraries',
-                           #'bikeshare',
-                           #'carfree',
+                           'bikeshare',
+                           'carfree',
                            'blocks',
                            'density',
-                           #'pnft',
-                           #'pnrt',
+                           'pnft',
+                           'pnrt',
                            'pnpb', #protected bikeways
                            'pnab', #all bikeways
                            #'access',
                            #'transport_performance',
-                           'special',
+                           #'special',
                            ],
                       distances = { #network buffers, in meters
                             'healthcare': 1000,
                             'schools': 1000,
                             'libraries': 1000,
-                            'bikeshare': 500,
+                            'bikeshare': 300,
                             'pnft': 500,
                             'pnrt': 1000,
                             'special': 250,
@@ -197,7 +197,7 @@ def spatial_analysis(boundaries,
                       years = range(1975,2031), #for PNRT and pop_dens. remember range(1,3) = [1,2]
                       current_year = 2022,
                       overpass = False,
-                      patch_length = 10000, #m
+                      patch_length = 8000, #m
                       block_patch_length = 8000, #m
                       boundary_buffer = 500, #m
                       blocks_simplification = 0.0001, #topo-simplification
@@ -211,6 +211,8 @@ def spatial_analysis(boundaries,
                           },
                       transport_performance_times = [30,45,60], #mins
                       gtfs_files = [],
+                      ghsl_projection = 'mw', #TODO make this do something
+                      ghsl_resolution = '1000',
                       #max_edge_length = , #should not be bigger than 2xbuffer_dist
                       debug = True,
                       ):   
@@ -223,7 +225,7 @@ def spatial_analysis(boundaries,
     
     useful_tags = ox.settings.useful_tags_way + ['cycleway', 'cycleway:left', 'cycleway:right', 'cycleway:both', 'bicycle']
     ox.config(use_cache=True, log_console=True, useful_tags_way=useful_tags)
-    walk_filter = ('["area"!~"yes"]["highway"!~"link|motor'
+    walk_filter = ('["area"!~"yes"]["highway"]["highway"!~"link|motor'
                    '|proposed|construction|abandoned'
                    '|platform|raceway"]'
                    '["service"!~"parking_aisle|driveway"]'
@@ -255,9 +257,9 @@ def spatial_analysis(boundaries,
     for year in years:
         if year % 5 == 0:
             if year < current_year:
-                in_file = f'input_data/ghsl/GHS_POP_E{year}_GLOBE_R2022A_54009_100_V1_0/GHS_POP_E{year}_GLOBE_R2022A_54009_100_V1_0.tif'
+                in_file = f'input_data/ghsl/GHS_POP_E{year}_GLOBE_R2022A_54009_{ghsl_resolution}/GHS_POP_E{year}_GLOBE_R2022A_54009_{ghsl_resolution}_V1_0.tif'
             else:
-                in_file = f'input_data/ghsl/GHS_POP_P{year}_GLOBE_R2022A_54009_100_V1_0/GHS_POP_P{year}_GLOBE_R2022A_54009_100_V1_0.tif'
+                in_file = f'input_data/ghsl/GHS_POP_P{year}_GLOBE_R2022A_54009_{ghsl_resolution}/GHS_POP_P{year}_GLOBE_R2022A_54009_{ghsl_resolution}_V1_0.tif'
             with rasterio.open(in_file) as dataset:
                 out_image, out_transform = rasterio.mask.mask(dataset, [boundaries_mw.unary_union], crop=True)
                 out_meta = dataset.meta
@@ -275,7 +277,7 @@ def spatial_analysis(boundaries,
         if service in to_test:
             testing_services.append(service)
             
-    all_points={}
+    service_point_locations={}
     if len(testing_services) > 0:
         if overpass:
             raise RuntimeError
@@ -285,7 +287,7 @@ def spatial_analysis(boundaries,
             handler.apply_file(folder_name+'temp/city.o5m', locations=True)
             for service in testing_services:
                 coords = handler.locationlist[service]
-                all_points[service] = gpd.GeoDataFrame(
+                service_point_locations[service] = gpd.GeoDataFrame(
                     geometry = [Point(coord) for coord in coords],
                     crs=4326)
             citywide_carfree = handler.carfreelist
@@ -323,7 +325,7 @@ def spatial_analysis(boundaries,
                     line=cutlines[1]
             points_utm = gpd.GeoDataFrame(geometry=points, crs=utm_crs)
             points_latlon = points_utm.to_crs(4326)
-            all_points['special'] = points_latlon
+            service_point_locations['special'] = points_latlon
         
         elif special.geometry[0].type == 'LineString':
             special.crs = 4326
@@ -337,9 +339,9 @@ def spatial_analysis(boundaries,
                     line=cutlines[1]
             points_utm = gpd.GeoDataFrame(geometry=points, crs=utm_crs)
             points_latlon = points_utm.to_crs(4326)
-            all_points['special'] = points_latlon
+            service_point_locations['special'] = points_latlon
         elif special.geometry[0].type == 'Point':
-            all_points['special'] = special
+            service_point_locations['special'] = special
         else:
             import pdb; pdb.set_trace()
             raise RuntimeError
@@ -347,16 +349,11 @@ def spatial_analysis(boundaries,
 
     if 'pnft' in to_test:
         testing_services.append('pnft')
-        #this approach does not let us combine OpenMobilityData files with local files.
-        if len(gtfs_files) == 0:
-            sources = gtfs_parser.get_feed_infos(gtfs_parser.get_relevant_locs(boundaries.bounds))
-            pnft_stop_sets = gtfs_parser.count_all_sources(sources, 
-                                                              source_type = 'openmobilitydata',
-                                                              headwaylim = headway_threshold * 2)
-        else:
-            pnft_stop_sets = gtfs_parser.count_all_sources(gtfs_files, 
-                                                              source_type = 'local_files',
-                                                              headwaylim = headway_threshold * 2)
+        freq_stops = gtfs_parser.get_frequent_stops(
+            boundaries, 
+            folder_name, 
+            headway_threshold)
+        service_point_locations['pnft'] = freq_stops
             
     if 'pnrt' in to_test:
         mode_classifications = {
@@ -502,6 +499,8 @@ def spatial_analysis(boundaries,
                     except TypeError: #something to do with clipping, seems to happen once in a while
                         #pdb.set_trace()
                         #this is a very stupid band-aid, but it works for now
+                        #TODO either figure this out or make the patch more efficient somehow? idk
+                        #I think right now it's getting EVERYTHING, not just highways. Except not highways that are abandoned :)
                         print ('TYPEERROR FROM CLIPPING PATCH', p_idx)
                         with open(str(folder_name)+"patcherrorlog.txt", "a") as patcherrorlog:
                             patcherrorlog.write('TYPEERROR FROM CLIPPING PATCH '+str(p_idx))
@@ -562,12 +561,13 @@ def spatial_analysis(boundaries,
                     #             data['osmid_original'] = data.pop('osmid')
                     #     ox.io.save_graph_geopackage(G, f'{folder_name}debug/{p_idx}_graph.gpkg')
                         
-                    for service in all_points.keys():
-                        if service in ['healthcare','schools','libraries','bikeshare','special']:
-                            
-                            patch_points = all_points[service].intersection(patch)
+                    for service in service_point_locations.keys():
+                        if service in ['healthcare','schools','libraries','bikeshare','pnft','special']:
+                            patch_points = service_point_locations[service].intersection(patch)
+                            patch_points.crs=4326
                             patch_points_utm = patch_points.to_crs(utm_crs)
-                            patch_points_utm = patch_points_utm[~patch_points_utm.is_empty]  
+                            patch_points_utm = patch_points_utm[(~patch_points_utm.is_empty)
+                                                                &(patch_points_utm.geometry!=None)]
                             if len(patch_points) > 0:
                                 center_nodes[service]  = ox.distance.nearest_nodes(
                                     G, 
@@ -577,34 +577,6 @@ def spatial_analysis(boundaries,
                     # if debug:
                     #     with open(f'{folder_name}debug/{p_idx}_centernodes.json', "w") as i :
                     #         json.dump(center_nodes, i)
-                            
-                    #when fixing this, remember, G is now projected
-                    if 'pnft' in to_test:
-                        center_nodes['pnft'] = []
-                        pnft_centers = {}
-                        for service_idx, service in enumerate(pnft_stop_sets):
-                            for stop_id in service.keys():
-                                lat = float(service[stop_id][1])
-                                lon = float(service[stop_id][2])
-                                headway = float(service[stop_id][0])
-                                center_node = ox.get_nearest_node(G, (lat, lon))
-                                if center_node not in pnft_centers:
-                                    pnft_centers[center_node] = {service_idx : headway} #store the headway value
-                                elif service_idx not in pnft_centers[center_node].keys():
-                                    pnft_centers[center_node][service_idx] = headway
-                                elif headway < pnft_centers[center_node][service_idx]:
-                                    pnft_centers[center_node][service_idx] = headway
-                        for center_node in pnft_centers.keys():
-                            if len(pnft_centers[center_node]) > 0:
-                                inv_headway = 0
-                                min_hw = 100
-                                for service_idx in pnft_centers[center_node].keys():
-                                    inv_headway += 1 / pnft_centers[center_node][service_idx]
-                                    if pnft_centers[center_node][service_idx] < min_hw:
-                                        min_hw = pnft_centers[center_node][service_idx]
-                                headway = 1 / inv_headway
-                                if headway <= headway_threshold:
-                                    center_nodes['pnft'].append(center_node)
                     
                     
                     isochrone_polys = {}
@@ -686,6 +658,9 @@ def spatial_analysis(boundaries,
             service_latlon = service_utm.to_crs(epsg=4326)
             #service_utm.to_file(folder_name+service+'utm'+'.geojson', driver='GeoJSON')
             service_latlon.to_file(folder_name+'geodata/'+service+'latlon'+'.geojson', driver='GeoJSON')
+        if service in service_point_locations.keys():
+            service_point_locations[service].to_file(folder_name+'geodata/'+service+'_points_latlon'+'.geojson', driver='GeoJSON')
+            
             
     if 'pnpb' in to_test or 'pnab' in to_test:
         protected_km = 0
@@ -920,11 +895,11 @@ def calculate_indicators(boundaries,
                            'schools',
                            'h+s',
                            #'libraries',
-                           #'bikeshare',
+                           'bikeshare',
                            'carfree',
                            'blocks',
                            'density',
-                           #'pnft',
+                           'pnft',
                            'pnrt',
                            'pnpb', #protected bikeways
                            'pnab', #all bikeways
@@ -1012,7 +987,14 @@ def calculate_indicators(boundaries,
             geodata_path = f'{folder_name}geodata/{service}latlon.geojson'
             total_PNS = people_near_x(folder_name, geodata_path, boundaries, current_year, utm_crs)
             print('Total People Near Service for', service, ":", total_PNS, 100*total_PNS/total_pops[current_year],"%")
-            results[service] = total_PNS / total_pops[current_year]
+            results[f'{service}_{current_year}'] = total_PNS / total_pops[current_year]
+            
+    for service_with_points in ['healthcare', 'schools', 'libraries', 'bikeshare', 'special','pnft']:
+        if service_with_points in to_test:
+            geodata_path = folder_name+'geodata/'+service+'_points_latlon'+'.geojson'
+            total_services = gpd.read_file(geodata_path).intersection(boundaries)
+            results[f'n_points_{service}_{current_year}'] = len(total_services)
+        
             
     if 'pnab' in to_test:
         if os.path.exists(folder_name+'geodata/allbike_latlon.geojson'):
@@ -1078,6 +1060,12 @@ def calculate_indicators(boundaries,
                         results[f'stns_{mode}_{year}'] = 0
                         results[f'rtr_{mode}_{year}'] = 0
                         
+    if 'blocks' in to_test:
+        geodata_path = folder_name+'geodata/'+'blocks'+'latlon'+'.geojson'
+        if os.path.exists(geodata_path):
+            blocks = gpd.read_file(geodata_path)
+            selection = blocks.intersection(boundaries)
+            
             
     if 'transport_performance' in to_test:
         # any_gtfs = False

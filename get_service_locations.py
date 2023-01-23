@@ -93,6 +93,7 @@ class ServiceHandler(osmium.SimpleHandler): #newer
                 'healthcare':[],
                 'libraries':[],
                 'schools':[],
+                'bikeshare':[],
                 }
         self.carfreelist = []
         
@@ -112,6 +113,16 @@ class ServiceHandler(osmium.SimpleHandler): #newer
                n.tags['healthcare'] in ['alternative','birthing_center','centre','midwife','nurse','hospital','doctor','clinic','pharmacy','yes']) ):
             self.locationlist['healthcare'].append((n.location.lon, n.location.lat))
 
+        if ( ('amenity' in n.tags and 
+               n.tags['amenity'] in ['bicycle_rental']) or
+             ('bicycle_rental' in n.tags) ):
+            if 'bicycle_rental' in n.tags:
+                if not n.tags['bicycle_rental'] in ['shop']:
+                    self.locationlist['bikeshare'].append((n.location.lon, n.location.lat))
+            else:
+                self.locationlist['bikeshare'].append((n.location.lon, n.location.lat))
+                
+
     def area(self, a):
         try:
             if 'amenity' in a.tags and a.tags['amenity'] in ['library','bookcase']:
@@ -119,6 +130,19 @@ class ServiceHandler(osmium.SimpleHandler): #newer
                     poly = shapely.wkb.loads(wkb, hex=True)
                     centroid = poly.representative_point()
                     self.locationlist['libraries'].append((centroid.x, centroid.y))
+                
+            if 'amenity' in a.tags and a.tags['amenity'] in ['bicycle_rental']:
+                    if 'bicycle_rental' in a.tags:
+                        if a.tags['bicycle_rental'] in ['shop']:
+                            wkb = wkbfab.create_multipolygon(a)
+                            poly = shapely.wkb.loads(wkb, hex=True)
+                            centroid = poly.representative_point()
+                            self.locationlist['bikeshare'].append((centroid.x, centroid.y))
+                    else:
+                        wkb = wkbfab.create_multipolygon(a)
+                        poly = shapely.wkb.loads(wkb, hex=True)
+                        centroid = poly.representative_point()
+                        self.locationlist['bikeshare'].append((centroid.x, centroid.y))
                 
             if ( ('amenity' in a.tags and 
                    a.tags['amenity'] in ['school','kindergarten']) or

@@ -1,5 +1,4 @@
 import subprocess
-import fiona
 import os
 import os.path
 import json
@@ -11,10 +10,13 @@ from shapely.ops import unary_union
 import geopandas as gpd
 import topojson
 import pandas as pd
-import numpy
+import numpy as np
 import math
 import osmnx as ox
 import warnings
+import urllib
+import zipfile
+from tqdm import tqdm
 
 import pdb
 
@@ -29,7 +31,7 @@ def poly_from_osm_cityid(osmid):
 
 def poly_from_ghsl_hdc(hdc):
     #select city from ID number, return shapely polygon
-    ucdb = gpd.read_file('input_data/old_ghsl/GHS_STAT_UCDB2015MT_GLOBE_R2019A_V1_0.shp')
+    ucdb = gpd.read_file('input_data/old_ghsl/GHS_STAT_UCDB2015MT_GLOBE_R2019A_V1_2.gpkg')
     ucdb.index =  ucdb['ID_HDC_G0']
     boundaries = ucdb.loc[hdc,'geometry']
     name = ucdb.loc[hdc,'UC_NM_MN']
@@ -48,7 +50,7 @@ def prep_from_poly(poly, folder_name, boundary_buffer = 500):
     
     bound_latlon = gpd.GeoDataFrame(geometry = [poly], crs=4326)
     if boundary_buffer > 0:
-        longitude = round(numpy.mean(bound_latlon.geometry.centroid.x),10)
+        longitude = round(np.mean(bound_latlon.geometry.centroid.x),10)
         utm_zone = int(math.floor((longitude + 180) / 6) + 1)
         utm_crs = '+proj=utm +zone={} +ellps=WGS84 +datum=WGS84 +units=m +no_defs'.format(utm_zone)
         bound_utm = bound_latlon.to_crs(utm_crs)
@@ -76,6 +78,26 @@ def prep_from_poly(poly, folder_name, boundary_buffer = 500):
         return False
     else:
         return True
+    
+    
+    
+def download_ghsl(proj='mw', resolution='1000'):
+    if not os.path.exists('input_data/'):
+        os.mkdir('input_data/')
+    if not os.path.exists('input_data/ghsl/'):
+        os.mkdir('input_data/ghsl/')
+    for year in tqdm(range(1975, 2031, 5)): 
+        if year <= 2020:
+            letter='E'
+        else:
+            letter='P'
+        if proj == 'mw':
+            name = f'GHS_POP_{letter}{year}_GLOBE_R2022A_54009_{resolution}'
+        else:
+            raise ValueError
+        zippath, _ = urllib.request.urlretrieve(f'https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL/GHS_POP_GLOBE_R2022A/{name}/V1-0/{name}_V1_0.zip')
+        with zipfile.ZipFile(zippath, "r") as f:
+            f.extractall(f'input_data/ghsl/{name}')
     
     
 def from_id_hdc(hdc, folder_prefix = 'cities_out', boundary_buffer = 500, kwargs = {}):
@@ -165,6 +187,11 @@ def regional_analysis(hdc,
                       summarize=True,
                       simplification=0.001 #toposimplification factor
                       ):
+    
+    if not os.path.isdir('temp/'):
+        os.mkdir('temp/')
+    if not os.path.isdir('cities_out/'):
+        os.mkdir('cities_out/')
     if folder_prefix:
         folder_name = folder_prefix+'/ghsl_region_'+str(hdc)+'/'
     else:
@@ -180,13 +207,13 @@ def regional_analysis(hdc,
         ghsl_boundaries, 
         minimum_portion=minimum_portion
         )
-    total_poly_latlon=jurisdictions_latlon.unary_union
     
     analysis_areas = gpd.GeoDataFrame()
     new_id = 0
     analysis_areas.loc[new_id,'name'] = name
     analysis_areas.loc[new_id, 'geometry'] = ghsl_boundaries
     analysis_areas.loc[new_id, 'hdc'] = hdc
+    analysis_areas.loc[new_id, 'osmid'] = None
     analysis_areas.crs=4326
     new_id += 1
     for osmid in jurisdictions_latlon.index:
@@ -195,7 +222,17 @@ def regional_analysis(hdc,
         #the above hack is necessary because sometimes geometry is a multipolygon
         for attr in ['name','admin_level']:
             analysis_areas.loc[new_id,attr] = jurisdictions_latlon.loc[osmid,attr]
+            analysis_areas.loc[new_id, 'hdc'] = hdc
         new_id += 1
+    
+    natural_earth = gpd.read_file('input_data/naturalearth_countries/ne_10m_admin_0_countries.shp')
+    country_overlaps = natural_earth.overlay(gpd.GeoDataFrame(geometry=[ghsl_boundaries], crs=4326))
+    for idx in country_overlaps.index:
+        analysis_areas.loc[new_id,'country'] = country_overlaps.loc[idx,'ISO_A3']
+        analysis_areas.loc[:,'geometry'].loc[new_id] = country_overlaps.loc[idx,'geometry']
+        new_id += 1
+    
+    total_poly_latlon=analysis_areas.unary_union
     
     analysis_areas.to_file(f'{folder_name}/debug/analysis_areas.gpkg', driver='GPKG')
     
@@ -214,13 +251,13 @@ def regional_analysis(hdc,
     
     if summarize == True:
         all_results = pd.DataFrame()
-        print('getting Urban Centre results')
-        agglomeration_results = pedestriansfirst.calculate_indicators(
-            ghsl_boundaries,
-            folder_name=folder_name)
-        for result in agglomeration_results.keys():
-            all_results.loc['agglomeration', result] = agglomeration_results[result] 
-        all_results.loc['agglomeration', 'geospatial_calctime'] = calctime
+        # print('getting Urban Centre results')
+        # agglomeration_results = pedestriansfirst.calculate_indicators(
+        #     ghsl_boundaries,
+        #     folder_name=folder_name)
+        # for result in agglomeration_results.keys():
+        #     all_results.loc['agglomeration', result] = agglomeration_results[result] 
+        # all_results.loc['agglomeration', 'geospatial_calctime'] = calctime
         for area_id in analysis_areas.index:
             print(f'getting results for {analysis_areas.loc[area_id,"name"]}')
             juri_results = pedestriansfirst.calculate_indicators(
@@ -229,6 +266,7 @@ def regional_analysis(hdc,
             all_results.loc[area_id, 'name'] = analysis_areas.loc[area_id,'name']
             all_results.loc[area_id, 'osmid'] = analysis_areas.loc[area_id,'osmid']
             all_results.loc[area_id, 'hdc'] = analysis_areas.loc[area_id,'hdc']
+            all_results.loc[area_id, 'country'] = analysis_areas.loc[area_id,'country']
             for result in juri_results.keys():
                 analysis_areas.loc[area_id, result] = juri_results[result] 
                 all_results.loc[area_id, result] = juri_results[result] 
@@ -245,81 +283,139 @@ def regional_analysis(hdc,
         
 
 #all cities in descending order
-def all_cities():
-    with fiona.open('GHS_STAT_UCDB2015MT_GLOBE_R2019A_V1_0.shp','r') as ucdb:
-        cities = list(ucdb)
-    cities.sort(key=get_pop_ghsl, reverse = True)
-    for city in cities:
-        if os.path.exists('all_results.json'):
-            with open('all_results.json','r') as in_file:
-                all_results = json.load(in_file)
-        else:
-            all_results = {}
-        if not str(city['properties']['ID_HDC_G0']) in all_results.keys():
-            if not str(city['properties']['ID_HDC_G0']) == '4541': #there's one city in south sudan that doesn't work right.
-                results = from_id_hdc(city['properties']['ID_HDC_G0'])
-                all_results.update({city['properties']['ID_HDC_G0']:results})
-                with open('all_results.json','w') as out_file:
-                    json.dump(all_results, out_file)
+#TODO: make use gpd instead of fiona lol
+# def all_cities():
+#     with fiona.open('GHS_STAT_UCDB2015MT_GLOBE_R2019A_V1_0.shp','r') as ucdb:
+#         cities = list(ucdb)
+#     cities.sort(key=get_pop_ghsl, reverse = True)
+#     for city in cities:
+#         if os.path.exists('all_results.json'):
+#             with open('all_results.json','r') as in_file:
+#                 all_results = json.load(in_file)
+#         else:
+#             all_results = {}
+#         if not str(city['properties']['ID_HDC_G0']) in all_results.keys():
+#             if not str(city['properties']['ID_HDC_G0']) == '4541': #there's one city in south sudan that doesn't work right.
+#                 results = from_id_hdc(city['properties']['ID_HDC_G0'])
+#                 all_results.update({city['properties']['ID_HDC_G0']:results})
+#                 with open('all_results.json','w') as out_file:
+#                     json.dump(all_results, out_file)
+            
+def calculate_country_indicators(current_year=2022):
+    natural_earth = gpd.read_file('input_data/naturalearth_countries/ne_10m_admin_0_countries.shp')
+    countries_ISO = list(natural_earth.ISO_A3.unique())
+    
+    #list indicators
+    current_indicators = [
+        'h+s_',
+        'bikeshare_',
+        'pnab_',
+        'pnpb_',
+        'pnft_',
+        'carfree_',
+        ]
+    year_indicators = [
+        'density_',
+        'PNrT_all_',
+        'PNrT_brt_',
+        'PNrT_mrt_',
+        'PNrT_lrt_', #TODO: add new indicators here as I develop them
+        ]
+    indicators = current_indicators + year_indicators
+    full_indicator_names = []
+    for indicator in current_indicators:
+        full_indicator_names.append(indicator+str(current_year))
+    for year in range(1975, current_year+1):
+        full_indicator_names.append('total_pop_'+str(year))
+        for indicator in year_indicators:
+            full_indicator_names.append(indicator+str(year))
+            
+            
+    #set up dataframes for results
+    country_totals = pd.DataFrame(index=countries_ISO, columns=full_indicator_names)
+    country_totals = country_totals.replace(np.nan,0)
+    country_weighted_avgs = country_totals.copy()
+    
+    #get data from city-level output
+    print('iterating through cities_out/')
+    for city_folder in tqdm(os.listdir('cities_out/')):
+        if os.path.exists(f'cities_out/{city_folder}/indicator_values.csv'):
+            city_results = pd.read_csv(f'cities_out/{city_folder}/indicator_values.csv')
+            for country in city_results.country.unique():
+                if type(country) == type('this is a string, which means it is not np.nan'):
+                    for year in range(1975, current_year+1):
+                        total_pop_year = city_results[city_results.country == country][f'total_pop_{year}'].sum()
+                        country_totals.loc[country, f'total_pop_{year}'] += total_pop_year
+                        for indicator in indicators:
+                            if indicator+str(year) in city_results.columns:
+                                value = city_results[city_results.country == country][indicator+str(year)].sum() * total_pop_year
+                                country_totals.loc[country, indicator+str(year)] += value
+    
+    #get weighted averages
+    print('iterating through countries')
+    for country in tqdm(countries_ISO):
+        for indicator in indicators:
+            for year in range(1975, current_year+1):
+                if indicator+str(year) in country_totals.columns:
+                    weighted_avg = country_totals.loc[country, indicator+str(year)] / country_totals.loc[country, f'total_pop_{year}']
+                    #import pdb; pdb.set_trace()
+                    country_weighted_avgs.loc[country, indicator+str(year)] = weighted_avg
+    
+    #save output
+    if not os.path.exists('country_results/'):
+        os.mkdir('country_results')
+    country_weighted_avgs.to_csv('country_results/country_results.csv')
+    country_geometries = []
+    for country in country_weighted_avgs.index:
+        country_geometries.append(natural_earth[natural_earth.ISO_A3 == country].unary_union)
+    country_gdf = gpd.GeoDataFrame(country_weighted_avgs, geometry=country_geometries, crs=4326)
+    country_gdf.to_file('country_results/country_results.geojson', driver='GeoJSON')
+    
+            
 
-def pnb_run():
-    osmids = list(pd.read_csv('cities_for_pnb.csv')['OSM ID'])
-
-    for osmid in osmids:
-        osmid=str(int(osmid))
-        print('pnb run',osmid)
-        if os.path.exists('pnb_results.csv'):
-            results = pd.read_csv('pnb_results.csv', index_col=0)
-        else:
-            pnb_results = pd.DataFrame()
-        if not str(osmid) in pnb_results.columns:
-            results = from_id_osm(osmid, kwargs={'to_test':['pnpb','pnab','density'], 'debug':True})
-            pnb_results[osmid]=results
-            pnb_results.to_csv('pnb_results.csv')
-                
+    
 if __name__ == '__main__':
     warnings.simplefilter(action='ignore', category=FutureWarning)
     warnings.simplefilter(action='ignore', category=pd.errors.PerformanceWarning)
     ox.utils.config(log_console = False)
     
-    #test PNRT in DC
-    regional_analysis(12080)
-    
     
     test_cities = [
-        #154,
-        #621,
-        #5134,
-        #8050,
-        #855,
-        #14,
-        1105,
-        634,
-        3902,
-        1406,
-        1709,
-        88,
-        3562,
-        11862,
-        4427,
-        4172,
-        4608,
-        10076,
-        350,
-        200,
-        9691,
-        1372,
-        7041,
-        6522,
-        1445,
-        1361,
-        931,
-        13039,
+        # 2051	,
+        # 3541	,
+        # 1361	,
+        # 1445	,
+        # 1406	,
+        # 154	,
+        # 200	,
+        # 21	,
+        # 855	,
+        # 350	,
+        # 621	,
+        # 1105	,
+        # 931	,
+        # 5134	,
+        # 4172	,
+        # 3902	,
+        # 4427	,
+        # 4608	,
+        # 9691	,
+        7041	,
+        10076	,
+        8050	,
+        6522	,
+        11862	,
+        14	,
+        1709	,
+        13039	,
+        3562	,
+        1372	,
+        945,
         ]
     
     for cityid in test_cities:
         regional_analysis(cityid)
 
-    pass
+    #calculate_country_indicators()
 
 

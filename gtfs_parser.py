@@ -10,76 +10,50 @@ import io
 import subprocess
 import datetime
 import shutil
+import string
+import os
 
 import pdb
 import pandas
+import geopandas as gpd
+import shapely
+from shapely.geometry import Point
 
-
-api_key = "0b073186-cfc0-47e2-959a-a2be054025ff"
-overpass_url = "https://api.transitfeeds.com/v1/" 
-
-def get_all_locations():
-    query = overpass_url+"getLocations"
-    resp = requests.get(query, params={'key':api_key}, headers={'Accept-Encoding':'identity'})
-    data = resp.json()
-    
-    return data['results']['locations']
-
-def get_relevant_locs(bbox):
-    gtfs_locs = get_all_locations()
-    out_locs = []
-    for i, loc in enumerate(gtfs_locs):
-        if bbox[0] < loc['lat'] < bbox[2] and bbox[1] < loc['lng'] < bbox[3]:
-            out_locs.append(loc)
-    return out_locs
-
-def get_feed_infos(locations):
-    feeds = []
-    for loc in locations:
-        query = overpass_url+"getFeeds"
-        params = {'key': api_key,
-                  'location':str(loc['id']),
-                  'type': 'gtfs'}
-        resp = requests.get(query, params=params, headers={'Accept-Encoding':'identity'})
-        results = resp.json()['results']
-        if 'feeds' in results.keys():
-            feeds = feeds + results['feeds']
-    return feeds
-
-def feed_from_id(feed_id):
-    if os.path.exists('temp_gtfs.zip'):
-        os.remove('temp_gtfs.zip')
-    query = overpass_url+"getLatestFeedVersion?key="+api_key+"&feed="+feed_id
-    print('QUERY',query)
-    try:
-        wget.download(query, 'temp_gtfs.zip')
-        command = 'unzip temp_gtfs.zip -d temp_gtfs_dir/'
-        print(command)
-        subprocess.check_call(command, shell=True)
-    except:
-        if os.path.exists('temp_gtfs.zip'):
-            os.remove('temp_gtfs.zip')
-        if os.path.exists('temp_gtfs_dir'):
-            shutil.rmtree('temp_gtfs_dir')
-        return False
-    if os.path.exists('temp_gtfs_dir/calendar.txt'):
-        #this fixes a bug that was happening because San Francisco, of all places, ended text lines with whitespace
-        with open('temp_gtfs_dir/calendar.txt','r') as calfile:
-            out = ''
-            for line in calfile:
-                out += line.strip()
-                out += '\n'
-        with open('temp_gtfs_dir/calendar.txt','w') as calfile:
-            calfile.write(out)
-    try:
-        feed = gk.read_gtfs('temp_gtfs_dir/', dist_units = 'km')
-    except pandas.errors.ParserError:
-        return False
-    if os.path.exists('temp_gtfs.zip'):
-        os.remove('temp_gtfs.zip')
-    if os.path.exists('temp_gtfs_dir'):
-        shutil.rmtree('temp_gtfs_dir')
-    return feed
+def get_GTFS_from_mobility_database(poly, gtfs_data_dir, sources_loc='input_data/sources.csv'):
+    if not os.path.exists(sources_loc):
+        url = 'https://bit.ly/catalogs-csv'
+        r = requests.get(url, allow_redirects=True)  # to get content after redirection
+        with open(sources_loc, 'wb') as f:
+            f.write(r.content)
+    if not os.path.exists(gtfs_data_dir):
+        os.mkdir(gtfs_data_dir)
+    sources = gpd.read_file(sources_loc)
+    filenames = []
+    for idx in list(sources.index):
+        if not sources.loc[idx,'location.bounding_box.minimum_longitude'] == '':
+            sources.loc[idx,'geometry'] = shapely.geometry.box(
+                float(sources.loc[idx,'location.bounding_box.minimum_longitude']),
+                float(sources.loc[idx,'location.bounding_box.minimum_latitude']),
+                float(sources.loc[idx,'location.bounding_box.maximum_longitude']),
+                float(sources.loc[idx,'location.bounding_box.maximum_latitude']),
+                )
+            if sources.loc[idx,'geometry'].intersects(poly):
+                overlap = sources.loc[idx,'geometry'].intersection(poly)
+                if overlap.area * 1000 > sources.loc[idx,'geometry'].area:
+                    url = sources.loc[idx,'urls.latest']
+                    name = sources.loc[idx,'provider']
+                    if sources.loc[idx,'name'] != '':
+                        name = name+'_'+ sources.loc[idx,'name']
+                    name = name.translate(str.maketrans('', '', string.punctuation))
+                    name = name[:50]
+                    name = name.replace(' ','_')
+                    if name != '' and url != '':
+                        filename=gtfs_data_dir+name+'.zip'
+                        filenames.append(filename)
+                        r = requests.get(url, allow_redirects=True)  # to get content after redirection
+                        with open(filename, 'wb') as f:
+                            f.write(r.content)
+    return filenames
 
 def feed_from_filename(filename):
     try:
@@ -100,29 +74,24 @@ def feed_from_filename(filename):
         with open('temp_gtfs_dir/calendar.txt','w') as calfile:
             calfile.write(out)
     try:
-        feed = gk.read_gtfs('temp_gtfs_dir/', dist_units = 'km')
+        feed = gk.read_feed('temp_gtfs_dir/', dist_units = 'km')
     except pandas.errors.ParserError:
         return False
     if os.path.exists('temp_gtfs_dir'):
         shutil.rmtree('temp_gtfs_dir')
     return feed
 
-def get_freq_stops(feed, headwaylim = 20):
+def get_stop_frequencies(feed, headwaylim):
     try:
         days = feed.get_first_week()[0:5]
     except:
         return {}
-    counts = {}
+    counts = gpd.GeoDataFrame(geometry=[], crs=4326)
     try:
         stopstats = gk.stops.compute_stop_stats(feed, days, 
-                                          headway_start_time= '05:00:00', 
-                                          headway_end_time= '21:00:00', 
-                                          split_directions = True)
-    except ValueError:
-        stopstats = gk.stops.compute_stop_stats(feed, days, 
-                                          headway_start_time= '05:00:00', 
-                                          headway_end_time= '21:00:00', 
-                                          split_directions = False)
+                                      headway_start_time= '07:00:00', 
+                                      headway_end_time= '21:00:00', 
+                                      split_directions = False)
     except TypeError:
         return {}
     if stopstats.empty:
@@ -134,42 +103,22 @@ def get_freq_stops(feed, headwaylim = 20):
                 row = feed.stops.loc[feed.stops['stop_id']==stop_id].iloc[0]
                 lat = row['stop_lat']
                 lon = row['stop_lon']
-                counts[stop_id] = [headway, lat, lon]
+                counts.loc[stop_id,'headway'] = headway
+                counts.loc[stop_id,'geometry'] = Point(lon, lat)
             except IndexError:
                 print("IndexError")
-    if counts:
+    if not counts.empty:
         print ("got counts!")
     else:
         print("did not get counts")
     return counts
     
-def count_all_sources(sources, source_type, headwaylim = 20):
-    stop_sets = []
-    if source_type == "openmobilitydata":
-        for source in sources:
-            if 'id' in source.keys():
-                feed_id = source['id']
-                feed = feed_from_id(feed_id)
-                if feed:
-                    counts = get_freq_stops(feed, headwaylim = headwaylim)
-                    if counts:
-                        stop_sets.append(counts)
-                        print ("succeded (i hope) for", feed_id)
-                    else:
-                        print ("failed for", feed_id, 'no frequent service')
-                else:
-                    print ("failed for", feed_id, 'no feed')
-    elif source_type == "local_files":
-        for source in sources:
-            feed = feed_from_filename(source)
-            if feed:
-                counts = get_freq_stops(feed, headwaylim = headwaylim)
-                if counts:
-                    stop_sets.append(counts)
-                    print ("succeded (i hope) for", source)
-                else:
-                    print ("failed for", source, 'no frequent service')
-            else:
-                print ("failed for", source, 'no feed')
-        
-    return stop_sets
+def get_frequent_stops(poly, folder_name, headwaylim = 20):
+    filenames = get_GTFS_from_mobility_database(poly, folder_name+'temp/gtfs/')
+    all_freq_stops = gpd.GeoDataFrame(geometry=[], crs=4326)
+    for filename in filenames:
+        feed = feed_from_filename(filename)
+        counts = get_stop_frequencies(feed, headwaylim)
+        all_freq_stops = all_freq_stops.append(counts, ignore_index=True)
+    return all_freq_stops
+    
