@@ -500,7 +500,6 @@ def spatial_analysis(boundaries,
                                                '--drop-broken-refs',  #was uncommented
                                                '-o=temp/patch_allroads.osm'])
                         G_allroads = ox.graph_from_xml('temp/patch_allroads.osm', simplify=True, retain_all=True)
-                        os.remove('temp/patch.osm')
                         subprocess.check_call(['osmconvert',
                                                str(folder_name)+'temp/citywalk.o5m',
                                                "-B=temp/patchbounds.poly",
