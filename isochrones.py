@@ -113,7 +113,7 @@ def proper_iso_polys(G, center_nodes, distance=500,
     all_linestrings = gpd.GeoSeries(complete_edge_linestrings + partial_edge_linestrings)
     total_area = all_linestrings.buffer(buffer).unary_union 
     if type(total_area) == shapely.geometry.MultiPolygon:
-        polys = list(total_area)
+        polys = list(total_area.geoms)
     elif type(total_area) == shapely.geometry.Polygon:
         polys = [total_area]
     else:
