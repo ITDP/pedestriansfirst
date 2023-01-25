@@ -2,10 +2,68 @@ import requests
 import json
 import fiona
 import osmnx as ox
+import numpy as np
+import geopandas as gpd
+import shapely
 
 import osmium
 import shapely.wkb
 
+def get_highways(simple_projected_G,
+                 min_length = 1000, #meters
+                 ):
+    #get the car-only network and the links of major (divided) roads
+    nodes, edges = ox.graph_to_gdfs(simple_projected_G)
+    car_tags = ['motorway','trunk','primary','secondary','tertiary','unclassified',
+                'residential','living_street','service','road']
+    for tag in car_tags.copy():
+        car_tags.append(tag+'_link')
+    major_tags = ['motorway','trunk','primary','secondary']
+    car_roads = edges[edges.highway.isin(car_tags)]
+    multi_car_G = ox.graph_from_gdfs(nodes, car_roads)
+    major_roads = edges[(edges.highway.isin(major_tags)) & (edges.oneway == True)].copy()
+    #only include major roads with at least 2 lanes per direction
+    for idx in major_roads.index:
+        lanes = major_roads.loc[idx, 'lanes']
+        if type(lanes) == type([]):
+            lanes = min(lanes)
+        lanes = float(lanes)
+        if np.isnan(lanes):
+            lanes = 3 #if the number of lanes isn't given, we assume it's more than 2 per direction
+        if lanes < 2:
+            major_roads.drop(idx, inplace=True)
+    # Identify all the nodes with no more than three neighbors 
+    # ie, exclude four-way intersections
+    major_nodes = set()
+    for idx in major_roads.index:
+        major_nodes.add(idx[0])
+        major_nodes.add(idx[1])
+    grade_separated_nodes = []
+    at_grade_nodes = []
+    for center_node in major_nodes:
+        neighbors = set()
+        for edge in list(multi_car_G.out_edges(center_node)):
+            for neighbor in edge:
+                neighbors.add(neighbor)
+        for edge in list(multi_car_G.in_edges(center_node)):
+            for neighbor in edge:
+                neighbors.add(neighbor)
+        if center_node in neighbors:
+            neighbors.remove(center_node)
+        if len(neighbors) > 3:
+            at_grade_nodes.append(center_node)
+        else:
+            grade_separated_nodes.append(center_node)
+    # find all the places with at least 1km between 4-way intersections
+    separation_breakers = nodes.loc[at_grade_nodes]
+    separation_break_poly = separation_breakers.buffer(10).unary_union
+    #major_roads_multiline = major_roads.unary_union
+    roads_poly = major_roads.buffer(0.5).unary_union
+    roads_poly_diff = roads_poly.difference(separation_break_poly)
+    roads_poly_gdf = gpd.GeoDataFrame(crs = edges.crs, geometry = list(roads_poly_diff.geoms))
+    long_separated_polys = roads_poly_gdf[roads_poly_gdf.geometry.length/2 > min_length]
+    return long_separated_polys
+    
 def bbox_from_shp(file_loc):
     with fiona.open(file_loc,'r') as source: 
         bbox = (source[0]['properties']['BBX_LATMN'],

@@ -109,7 +109,7 @@ def cut(line, distance):
                 LineString([(cp.x, cp.y)] + coords[i:])],
                 cp]
 
-def add_intermediate_nodes(G, maxdist, exceptionsize=1000, debug=False, folder_name=''):
+def add_intermediate_nodes(G, maxdist, exceptionsize=1000, debug=False, folder_name=''): #TODO CUT?
     start_time = datetime.datetime.now()
     print(f'adding nodes to a max edge length of {maxdist}')
     nodes, edges = ox.graph_to_gdfs(G)
@@ -179,6 +179,7 @@ def spatial_analysis(boundaries,
                            'pnrt',
                            'pnpb', #protected bikeways
                            'pnab', #all bikeways
+                           'highways',
                            #'access',
                            #'transport_performance',
                            #'special',
@@ -193,6 +194,7 @@ def spatial_analysis(boundaries,
                             'special': 250,
                             'pnpb': 250,
                             'pnab': 250,
+                            'highways':500,
                             },
                       years = range(1975,2031), #for PNRT and pop_dens. remember range(1,3) = [1,2]
                       current_year = 2022,
@@ -295,6 +297,9 @@ def spatial_analysis(boundaries,
     if 'pnab' in to_test or 'pnpb' in to_test:
         testing_services.append('pnpb')
         testing_services.append('pnab')
+        
+    if 'highways' in to_test:
+        all_highway_polys = []
             
     #should I finish this?
     # if 'highways' in to_test:     
@@ -376,76 +381,76 @@ def spatial_analysis(boundaries,
         rt_stns_utm = rt_stns.to_crs(utm_crs)
         rt_isochrones_utm = rt_isochrones.to_crs(utm_crs)
     
-    if 'access' in to_test or 'transport_performance' in to_test:
+    # if 'access' in to_test or 'transport_performance' in to_test:
         
-        for file in [folder_name+'temp/access/grid_pop.geojson',
-                     folder_name+'temp/access/city_ltstagged.pbf']:
-            if os.path.exists(file):
-                os.remove(file)
+        # for file in [folder_name+'temp/access/grid_pop.geojson',
+        #              folder_name+'temp/access/city_ltstagged.pbf']:
+        #     if os.path.exists(file):
+        #         os.remove(file)
         
-        #prep osm (add LTS values)
-        original_filename = folder_name+"temp/city.pbf"
-        prep_bike_osm.add_lts_tags(original_filename,folder_name+"temp/access/city_ltstagged.pbf")
+        # #prep osm (add LTS values)
+        # original_filename = folder_name+"temp/city.pbf"
+        # prep_bike_osm.add_lts_tags(original_filename,folder_name+"temp/access/city_ltstagged.pbf")
         
-        #prep pop
-        prep_pop_ghsl.setup_grid(
-            utm_crs, 
-            boundaries_utm.unary_union, 
-            access_resolution, 
-            folder_name+"geodata/pop_dens.tif", 
-            adjust_pop = True,
-            save_loc = (folder_name+'temp/access/pop_points.csv',
-                        folder_name+'temp/access/grid_pop.geojson')
-            )
-        grid_pop = gpd.read_file(folder_name+'temp/access/grid_pop.geojson')
+        # #prep pop
+        # prep_pop_ghsl.setup_grid(
+        #     utm_crs, 
+        #     boundaries_utm.unary_union, 
+        #     access_resolution, 
+        #     folder_name+"geodata/pop_dens.tif", 
+        #     adjust_pop = True,
+        #     save_loc = (folder_name+'temp/access/pop_points.csv',
+        #                 folder_name+'temp/access/grid_pop.geojson')
+        #     )
+        # grid_pop = gpd.read_file(folder_name+'temp/access/grid_pop.geojson')
         
-        #cp over script
-        shutil.copy('access/two_step_access/calcttm_simple.r', folder_name+'temp/access/calcttm_simple.r')
+        # #cp over script
+        # shutil.copy('access/two_step_access/calcttm_simple.r', folder_name+'temp/access/calcttm_simple.r')
         
-        #run script
-        command = f"Rscript calcttm_simple.r {folder_name}temp/access/"
-        subprocess.check_call(command.split(' '))
+        # #run script
+        # command = f"Rscript calcttm_simple.r {folder_name}temp/access/"
+        # subprocess.check_call(command.split(' '))
         
-        #
-        all_modes = ['walk','car','pnft','bike_lts1','bike_lts2','bike_lts4']
+        # #
+        # all_modes = ['walk','car','pnft','bike_lts1','bike_lts2','bike_lts4']
         
-        mode_ttms = {}
-        actual_modes = []
-        for mode in all_modes:
-            if os.path.exists(f'{folder_name}temp/access/{mode}_wide.csv'):
-                mode_ttms[mode] = summarize_ttm.load_wide_ttm(f'{folder_name}temp/access/{mode}_wide.csv')
-                actual_modes.append(mode)
+        # mode_ttms = {}
+        # actual_modes = []
+        # for mode in all_modes:
+        #     if os.path.exists(f'{folder_name}temp/access/{mode}_wide.csv'):
+        #         mode_ttms[mode] = summarize_ttm.load_wide_ttm(f'{folder_name}temp/access/{mode}_wide.csv')
+        #         actual_modes.append(mode)
         
         
-        total_value, cxn_df_latlon = summarize_ttm.evaluation(grid_pop, 
-                                                       mode_ttms, 
-                                                       cumulative_time_lims = transport_performance_times, 
-                                                       ec_modes = [], 
-                                                       ec_ttms = None)
+        # total_value, cxn_df_latlon = summarize_ttm.evaluation(grid_pop, 
+        #                                                mode_ttms, 
+        #                                                cumulative_time_lims = transport_performance_times, 
+        #                                                ec_modes = [], 
+        #                                                ec_ttms = None)
         
-        if 'transport_performance' in to_test:
-            cxn_df_utm = ox.project_gdf(cxn_df_latlon)
-            for mode in transport_performance_speeds.keys():
-                for lim in transport_performance_times:
-                    tp_buffer_dist = transport_performance_speeds[mode] * (1000/60) * lim
-                    cxn_df_utm[f'buffer_{mode}_{lim}'] = cxn_df_utm.centroid.buffer(tp_buffer_dist)
-            for point_id in cxn_df_utm.index:
-                for mode in transport_performance_speeds.keys():
-                    for lim in transport_performance_times:
-                        actual_sum = cxn_df_utm.loc[point_id, f'cumsum_{mode}_{lim}']
-                        circle = cxn_df_utm.loc[point_id, f'buffer_{mode}_{lim}']
-                        circ_gdf = gpd.GeoDataFrame(geometry = [circle], crs = cxn_df_utm.crs)
-                        potential_sum = cxn_df_utm.overlay(circ_gdf, how='intersection').population.sum()
-                        cxn_df_utm.loc[point_id, f'potentialsum_{mode}_{lim}'] = potential_sum
-                        cxn_df_utm.loc[point_id, f'performance_{mode}_{lim}'] = actual_sum / potential_sum
-            # before saving the file convert geometry to wkt
-            cxn_df_latlon = cxn_df_utm.to_crs(4326)
-            for mode in transport_performance_speeds.keys():
-                for lim in transport_performance_times:
-                    cxn_df_latlon[f'buffer_{mode}_{lim}'] = cxn_df_utm[f'buffer_{mode}_{lim}'].to_crs(4326).to_wkt()
+        # if 'transport_performance' in to_test:
+        #     cxn_df_utm = ox.project_gdf(cxn_df_latlon)
+        #     for mode in transport_performance_speeds.keys():
+        #         for lim in transport_performance_times:
+        #             tp_buffer_dist = transport_performance_speeds[mode] * (1000/60) * lim
+        #             cxn_df_utm[f'buffer_{mode}_{lim}'] = cxn_df_utm.centroid.buffer(tp_buffer_dist)
+        #     for point_id in cxn_df_utm.index:
+        #         for mode in transport_performance_speeds.keys():
+        #             for lim in transport_performance_times:
+        #                 actual_sum = cxn_df_utm.loc[point_id, f'cumsum_{mode}_{lim}']
+        #                 circle = cxn_df_utm.loc[point_id, f'buffer_{mode}_{lim}']
+        #                 circ_gdf = gpd.GeoDataFrame(geometry = [circle], crs = cxn_df_utm.crs)
+        #                 potential_sum = cxn_df_utm.overlay(circ_gdf, how='intersection').population.sum()
+        #                 cxn_df_utm.loc[point_id, f'potentialsum_{mode}_{lim}'] = potential_sum
+        #                 cxn_df_utm.loc[point_id, f'performance_{mode}_{lim}'] = actual_sum / potential_sum
+        #     # before saving the file convert geometry to wkt
+        #     cxn_df_latlon = cxn_df_utm.to_crs(4326)
+        #     for mode in transport_performance_speeds.keys():
+        #         for lim in transport_performance_times:
+        #             cxn_df_latlon[f'buffer_{mode}_{lim}'] = cxn_df_utm[f'buffer_{mode}_{lim}'].to_crs(4326).to_wkt()
             
-        #save connections_df
-        cxn_df_latlon.to_file(f'{folder_name}geodata/connections.gpkg', driver='GPKG')
+        # #save connections_df
+        # cxn_df_latlon.to_file(f'{folder_name}geodata/connections.gpkg', driver='GPKG')
     
     
     quilt_isochrone_polys = {}
@@ -489,6 +494,14 @@ def spatial_analysis(boundaries,
                 else:
                     try:
                         subprocess.check_call(['osmconvert',
+                                               str(folder_name)+'temp/cityhighway.o5m',
+                                               "-B=temp/patchbounds.poly",
+                                               #'--complete-ways',  #was commented
+                                               '--drop-broken-refs',  #was uncommented
+                                               '-o=temp/patch_allroads.osm'])
+                        G_allroads = ox.graph_from_xml('temp/patch_allroads.osm', simplify=True, retain_all=True)
+                        os.remove('temp/patch.osm')
+                        subprocess.check_call(['osmconvert',
                                                str(folder_name)+'temp/citywalk.o5m',
                                                "-B=temp/patchbounds.poly",
                                                #'--complete-ways',  #was commented
@@ -505,7 +518,7 @@ def spatial_analysis(boundaries,
                         with open(str(folder_name)+"patcherrorlog.txt", "a") as patcherrorlog:
                             patcherrorlog.write('TYPEERROR FROM CLIPPING PATCH '+str(p_idx))
                         G = ox.graph_from_polygon(patch, 
-                                              custom_filter=walk_filter, 
+                                              #custom_filter=walk_filter, 
                                               simplify=True, 
                                               retain_all=True)
                 os.remove('temp/patchbounds.poly')
@@ -514,10 +527,11 @@ def spatial_analysis(boundaries,
                 
                 if len(G.edges) > 0 and len(G.nodes) > 0:
                     G = ox.project_graph(G, to_crs=utm_crs)
+                    G_allroads = ox.project_graph(G_allroads, to_crs=utm_crs)
                     
                     center_nodes = {}
                     if 'pnab' in to_test or 'pnpb' in to_test:
-                        ways_gdf = ox.graph_to_gdfs(G, nodes=False)
+                        ways_gdf = ox.graph_to_gdfs(G_allroads, nodes=False)
                         
                         for col in ['highway','cycleway','bicycle','cycleway:left','cycleway:right','cycleway:both']:
                             if not col in ways_gdf.columns:
@@ -550,11 +564,9 @@ def spatial_analysis(boundaries,
                             center_nodes['pnab'].add(edge[1])
                     
                     
-                    
-                    #this needs to happen AFTER looking for bikelanes, 
-                    # but BEFORE finding closest nodes for services
-                    #G = add_intermediate_nodes(G, max_edge_length)
-                    
+                    if 'highways' in to_test:
+                        all_highway_polys.append(get_service_locations.get_highways(G_allroads))
+                        
                     # if debug:
                     #     for node, data in G.nodes(data=True):
                     #         if 'osmid' in data:
@@ -661,23 +673,28 @@ def spatial_analysis(boundaries,
         if service in service_point_locations.keys():
             service_point_locations[service].to_file(folder_name+'geodata/'+service+'_points_latlon'+'.geojson', driver='GeoJSON')
             
-            
     if 'pnpb' in to_test or 'pnab' in to_test:
-        protected_km = 0
-        unprotected_km = 0
         if not quilt_protectedbike.empty:
             quilt_protectedbike = quilt_protectedbike.to_crs(4326)
             merged_protectedbike = quilt_protectedbike.intersection(boundaries)
             merged_protectedbike = gpd.GeoDataFrame(geometry = [merged_protectedbike.unary_union], crs=4326)
             merged_protectedbike.to_file(folder_name+'geodata/protectedbike_latlon.geojson',driver='GeoJSON')
-            protected_km += sum(merged_protectedbike.to_crs(utm_crs).geometry.length)
         if not quilt_allbike.empty:
             quilt_allbike = quilt_allbike.to_crs(4326)
             merged_allbike = quilt_allbike.intersection(boundaries)
             merged_allbike = gpd.GeoDataFrame(geometry = [merged_allbike.unary_union], crs=4326)
             merged_allbike.to_file(folder_name+'geodata/allbike_latlon.geojson',driver='GeoJSON')
-            unprotected_km += sum(merged_allbike.to_crs(utm_crs).geometry.length)
     
+    if 'highways' in to_test:
+        all_hwys_poly = shapely.ops.unary_union(all_highway_polys)
+        all_hwys_gdf = gpd.GeoDataFrame(geometry=[all_hwys_poly], crs=utm_crs)
+        all_hwys_latlon = all_hwys_gdf.to_crs(4326)
+        all_hwys_latlon.to_file(folder_name+'geodata/allhwys_latlon.geojson',driver='GeoJSON')
+        buffered_hwys = all_hwys_gdf.buffer(distances['highways'])
+        buffered_hwys_latlon = buffered_hwys.to_crs(4326)
+        buffered_hwys_latlon.to_file(folder_name+'geodata/buffered_hwys_latlon.geojson',driver='GeoJSON')
+        
+        
     if 'carfree' in to_test:
         carfree_latlon = gpd.GeoDataFrame(geometry = citywide_carfree)
         #just a latlon list of points
@@ -903,6 +920,7 @@ def calculate_indicators(boundaries,
                            'pnrt',
                            'pnpb', #protected bikeways
                            'pnab', #all bikeways
+                           'highways',
                            #'special',
                            #'transport_performance',
                            #'connectome'
@@ -1013,6 +1031,21 @@ def calculate_indicators(boundaries,
         else:
             protected_m = 0
         results['protected_bikeways_km'] = protected_m / 1000
+        
+    if 'highways' in to_test:
+        geodata_path = f'{folder_name}geodata/buffered_hwys_latlon.geojson'
+        near_hwys = people_near_x(folder_name, geodata_path, boundaries, current_year, utm_crs)
+        not_near_hwys = total_pops[current_year] - near_hwys
+        print('Total People Safe From Highways:', not_near_hwys, 100*total_PNS/total_pops[current_year],"%")
+        results[f'people_not_near_highways'] = not_near_hwys / total_pops[current_year]
+        
+        if os.path.exists(folder_name+'geodata/allhwys_latlon.geojson'):
+            hwypoly_latlon = gpd.read_file(f'{folder_name}geodata/protectedbike_latlon.geojson')
+            hwypoly_latlon = hwypoly_latlon.intersection(boundaries)
+            hwy_m = sum(protected_bikeways_latlon.to_crs(utm_crs).geometry.length) / 4 #divide by 4 because we're looking at divided highway polys, not lines :)
+        else:
+            hwy_m = 0
+        results['highway_km'] = hwy_m / 1000
     
     if 'pnrt' in to_test: 
         geodata_path = f'{folder_name}geodata/rapid_transit/{current_year}/all_isochrones_ll.geojson'
