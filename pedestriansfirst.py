@@ -500,6 +500,7 @@ def spatial_analysis(boundaries,
                                                '--drop-broken-refs',  #was uncommented
                                                '-o=temp/patch_allroads.osm'])
                         G_allroads = ox.graph_from_xml('temp/patch_allroads.osm', simplify=True, retain_all=True)
+                        os.remove('temp/patch_allroads.osm')
                         
                         # TESTING using the same graph for everything. 
                         # A little more efficient, avoids some problems with cycleways
@@ -516,7 +517,7 @@ def spatial_analysis(boundaries,
                         #                        '--drop-broken-refs',  #was uncommented
                         #                        '-o=temp/patch.osm'])
                         # G = ox.graph_from_xml('temp/patch.osm', simplify=True, retain_all=True)
-                        os.remove('temp/patch.osm')
+                        # os.remove('temp/patch.osm')
                     except TypeError: #something to do with clipping, seems to happen once in a while
                         #pdb.set_trace()
                         #this is a very stupid band-aid, but it works for now
