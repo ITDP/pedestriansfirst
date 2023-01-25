@@ -32,6 +32,9 @@ def get_highways(simple_projected_G,
             lanes = 3 #if the number of lanes isn't given, we assume it's more than 2 per direction
         if lanes < 2:
             major_roads.drop(idx, inplace=True)
+    if len(major_roads) == 0:
+        return None
+            
     # Identify all the nodes with no more than three neighbors 
     # ie, exclude four-way intersections
     major_nodes = set()

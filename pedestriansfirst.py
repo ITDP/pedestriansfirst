@@ -574,7 +574,9 @@ def spatial_analysis(boundaries,
                     
                     
                     if 'highways' in to_test:
-                        all_highway_polys.append(get_service_locations.get_highways(G_allroads))
+                        highway_polys = get_service_locations.get_highways(G_allroads)
+                        if highway_polys is not None:
+                            all_highway_polys.append(highway_polys)
                         
                     # if debug:
                     #     for node, data in G.nodes(data=True):
