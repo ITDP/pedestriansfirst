@@ -107,6 +107,7 @@ def proper_iso_polys(G, center_nodes, distance=500,
             else:
                 n_fr = G.nodes[nodepair[0]]
                 n_to = G.nodes[nodepair[1]]
+                import pdb; pdb.set_trace()
                 linestring = LineString([(n_fr.x,n_fr.y),(n_to.x,n_to.y)])
             complete_edge_linestrings.append(linestring)
     
