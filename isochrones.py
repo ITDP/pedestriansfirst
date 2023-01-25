@@ -95,7 +95,7 @@ def proper_iso_polys(G, center_nodes, distance=500,
                         else:
                             n_fr = G.nodes[origin_node]
                             n_to = G.nodes[target_node]
-                            linestring = LineString([(n_fr.x,n_fr.y),(n_to.x,n_to.y)])
+                            linestring = LineString([(n_fr['x'],n_fr['y']),(n_to['x'],n_to['y'])])
                         cut_line = cut(linestring, remaining_distance)
                         if cut_line is not None:
                             partial_edge_linestrings.append(cut_line)
@@ -107,8 +107,7 @@ def proper_iso_polys(G, center_nodes, distance=500,
             else:
                 n_fr = G.nodes[nodepair[0]]
                 n_to = G.nodes[nodepair[1]]
-                import pdb; pdb.set_trace()
-                linestring = LineString([(n_fr.x,n_fr.y),(n_to.x,n_to.y)])
+                linestring = LineString([(n_fr['x'],n_fr['y']),(n_to['x'],n_to['y'])])
             complete_edge_linestrings.append(linestring)
     
     all_linestrings = gpd.GeoSeries(complete_edge_linestrings + partial_edge_linestrings)
