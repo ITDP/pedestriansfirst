@@ -500,13 +500,22 @@ def spatial_analysis(boundaries,
                                                '--drop-broken-refs',  #was uncommented
                                                '-o=temp/patch_allroads.osm'])
                         G_allroads = ox.graph_from_xml('temp/patch_allroads.osm', simplify=True, retain_all=True)
-                        subprocess.check_call(['osmconvert',
-                                               str(folder_name)+'temp/citywalk.o5m',
-                                               "-B=temp/patchbounds.poly",
-                                               #'--complete-ways',  #was commented
-                                               '--drop-broken-refs',  #was uncommented
-                                               '-o=temp/patch.osm'])
-                        G = ox.graph_from_xml('temp/patch.osm', simplify=True, retain_all=True)
+                        
+                        # TESTING using the same graph for everything. 
+                        # A little more efficient, avoids some problems with cycleways
+                        # But implies that people can walk along motorways.
+                        # Hopefully not a problem since those are usually divided.
+                        # If I wanted to get really fancy I could take them out 
+                        # entirely, before doing isochrones, I guess
+                        G = G_allroads
+                        
+                        # subprocess.check_call(['osmconvert',
+                        #                        str(folder_name)+'temp/citywalk.o5m',
+                        #                        "-B=temp/patchbounds.poly",
+                        #                        #'--complete-ways',  #was commented
+                        #                        '--drop-broken-refs',  #was uncommented
+                        #                        '-o=temp/patch.osm'])
+                        # G = ox.graph_from_xml('temp/patch.osm', simplify=True, retain_all=True)
                         os.remove('temp/patch.osm')
                     except TypeError: #something to do with clipping, seems to happen once in a while
                         #pdb.set_trace()
