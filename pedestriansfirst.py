@@ -483,8 +483,6 @@ def spatial_analysis(boundaries,
                 
                 patchgdf = gpd.GeoDataFrame(geometry=[patch], crs=4326)
                 
-                import pdb; pdb.set_trace()
-                
                 patchgdf.to_file('temp/patchbounds.geojson', driver='GeoJSON')
                 subprocess.run('python ogr2poly/ogr2poly.py temp/patchbounds.geojson > temp/patchbounds.poly', shell=True, check=True)
                 
