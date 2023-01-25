@@ -496,7 +496,7 @@ def spatial_analysis(boundaries,
                 else:
                     try:
                         subprocess.check_call(['osmconvert',
-                                               str(folder_name)+'temp/cityhighway.o5m',
+                                               str(folder_name)+'temp/cityhighways.o5m',
                                                "-B=temp/patchbounds.poly",
                                                #'--complete-ways',  #was commented
                                                '--drop-broken-refs',  #was uncommented
