@@ -63,6 +63,8 @@ def get_highways(simple_projected_G,
     #major_roads_multiline = major_roads.unary_union
     roads_poly = major_roads.buffer(0.5).unary_union
     roads_poly_diff = roads_poly.difference(separation_break_poly)
+    if roads_poly_diff is None:
+        return None
     roads_poly_gdf = gpd.GeoDataFrame(crs = edges.crs, geometry = list(roads_poly_diff.geoms))
     long_separated_polys = roads_poly_gdf[roads_poly_gdf.geometry.length/2 > min_length]
     return long_separated_polys.unary_union
