@@ -697,7 +697,6 @@ def spatial_analysis(boundaries,
             merged_allbike.to_file(folder_name+'geodata/allbike_latlon.geojson',driver='GeoJSON')
     
     if 'highways' in to_test:
-        import pdb; pdb.set_trace()
         all_hwys_poly = shapely.ops.unary_union(all_highway_polys)
         all_hwys_gdf = gpd.GeoDataFrame(geometry=[all_hwys_poly], crs=utm_crs)
         all_hwys_latlon = all_hwys_gdf.to_crs(4326)
@@ -1005,7 +1004,6 @@ def calculate_indicators(boundaries,
             else:
                 earlier = year - modulo
                 later = year + (5 - modulo)
-                earlier_dens = densities[earlier] 
                 later_dens = densities[later] 
                 peryear_diff = (later_dens - earlier_dens) / 5
                 results[f'density_{year}'] = earlier_dens + (modulo * peryear_diff)
