@@ -938,6 +938,7 @@ def calculate_indicators(boundaries,
                            ],
                       years = range(1975,2031),
                       current_year = 2022,
+                      ghsl_resolution = '1000',
                       debug = True,
                       ):   
 
@@ -953,6 +954,7 @@ def calculate_indicators(boundaries,
     utm_crs = '+proj=utm +zone={} +ellps=WGS84 +datum=WGS84 +units=m +no_defs'.format(utm_zone)
     boundaries_utm = boundaries_latlon.to_crs(utm_crs)
     boundaries_mw = boundaries_utm.to_crs("ESRI:54009")
+    sqkm_per_pixel = (ghsl_resolution / 1000) ** 2
         
     total_pops = {}
     for year in years:
@@ -963,7 +965,7 @@ def calculate_indicators(boundaries,
                 stats=['mean'], 
                 all_touched=True
                 ) 
-            mean_density_per_km2 = pop_stats[0]['mean'] / 0.01 #km^2 / pixel
+            mean_density_per_km2 = pop_stats[0]['mean'] / sqkm_per_pixel #km^2 / pixel
             mean_density_per_m2 = mean_density_per_km2 / 1000000
             total_pop = mean_density_per_m2 * boundaries_utm.area.sum()
             print(f'Total pop {year}:', total_pop)
@@ -995,7 +997,7 @@ def calculate_indicators(boundaries,
                                         stats = [],
                                         add_stats={'weighted': weighted_pop_density}
                                         )[0]['weighted']
-                densities[year] = density / 0.01 #km^2 / pixel
+                densities[year] = density / 0.01 #km^2 / pixel -- THIS VARIES BASED ON PIXEL SIZE
                 print('weighted pop density', year, density / 0.01)
         for year in years:
             modulo = year % 5
@@ -1004,6 +1006,7 @@ def calculate_indicators(boundaries,
             else:
                 earlier = year - modulo
                 later = year + (5 - modulo)
+                earlier_dens = densities[earlier]
                 later_dens = densities[later] 
                 peryear_diff = (later_dens - earlier_dens) / 5
                 results[f'density_{year}'] = earlier_dens + (modulo * peryear_diff)
@@ -1047,7 +1050,7 @@ def calculate_indicators(boundaries,
         near_hwys = people_near_x(folder_name, geodata_path, boundaries, current_year, utm_crs)
         not_near_hwys = total_pops[current_year] - near_hwys
         print('Total People Safe From Highways:', not_near_hwys, 100*total_PNS/total_pops[current_year],"%")
-        results[f'people_not_near_highways'] = not_near_hwys / total_pops[current_year]
+        results['people_not_near_highways'] = not_near_hwys / total_pops[current_year]
         
         if os.path.exists(folder_name+'geodata/allhwys_latlon.geojson'):
             hwypoly_latlon = gpd.read_file(f'{folder_name}geodata/protectedbike_latlon.geojson')
