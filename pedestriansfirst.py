@@ -1049,7 +1049,7 @@ def calculate_indicators(boundaries,
         geodata_path = f'{folder_name}geodata/buffered_hwys_latlon.geojson'
         near_hwys = people_near_x(folder_name, geodata_path, boundaries, current_year, utm_crs, sqkm_per_pixel)
         not_near_hwys = total_pops[current_year] - near_hwys
-        print('Total People Safe From Highways:', not_near_hwys, 100*total_PNS/total_pops[current_year],"%")
+        print('Total People Safe From Highways:', not_near_hwys, 100*not_near_hwys/total_pops[current_year],"%")
         results['people_not_near_highways'] = not_near_hwys / total_pops[current_year]
         
         if os.path.exists(folder_name+'geodata/allhwys_latlon.geojson'):
@@ -1063,7 +1063,9 @@ def calculate_indicators(boundaries,
     if 'pnrt' in to_test: 
         geodata_path = f'{folder_name}geodata/rapid_transit/{current_year}/all_isochrones_ll.geojson'
         if os.path.exists(geodata_path):
-            if gpd.read_file(geodata_path).intersection(boundaries).unary_union.area > 0:
+            rt_gdf = gpd.read_file(geodata_path)
+            rt_in_bounds = rt_gdf.intersection(boundaries)
+            if len(rt_in_bounds) > 0 and rt_in_bounds.unary_union.area > 0:
                 for year in years:
                     if year <= current_year:
                         for mode in ['all','mrt','lrt','brt']:
