@@ -65,7 +65,7 @@ def get_highways(simple_projected_G,
     roads_poly_diff = roads_poly.difference(separation_break_poly)
     roads_poly_gdf = gpd.GeoDataFrame(crs = edges.crs, geometry = list(roads_poly_diff.geoms))
     long_separated_polys = roads_poly_gdf[roads_poly_gdf.geometry.length/2 > min_length]
-    return long_separated_polys
+    return long_separated_polys.unary_union
     
 def bbox_from_shp(file_loc):
     with fiona.open(file_loc,'r') as source: 

@@ -1011,7 +1011,7 @@ def calculate_indicators(boundaries,
                 results[f'density_{year}'] = earlier_dens + (modulo * peryear_diff)
     
     services = ['healthcare','schools','h+s','libraries','bikeshare','pnab','pnpb',
-                'pnft','carfree','special']
+                'pnft','carfree',]#'special']
     for service in services:
         if service in to_test:
             geodata_path = f'{folder_name}geodata/{service}latlon.geojson'
