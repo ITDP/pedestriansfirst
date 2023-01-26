@@ -954,7 +954,7 @@ def calculate_indicators(boundaries,
     utm_crs = '+proj=utm +zone={} +ellps=WGS84 +datum=WGS84 +units=m +no_defs'.format(utm_zone)
     boundaries_utm = boundaries_latlon.to_crs(utm_crs)
     boundaries_mw = boundaries_utm.to_crs("ESRI:54009")
-    sqkm_per_pixel = (ghsl_resolution / 1000) ** 2
+    sqkm_per_pixel = (float(ghsl_resolution) / 1000) ** 2
         
     total_pops = {}
     for year in years:
