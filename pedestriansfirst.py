@@ -1019,7 +1019,7 @@ def calculate_indicators(boundaries,
             print('Total People Near Service for', service, ":", total_PNS, 100*total_PNS/total_pops[current_year],"%")
             results[f'{service}_{current_year}'] = total_PNS / total_pops[current_year]
             
-    for service_with_points in ['healthcare', 'schools', 'libraries', 'bikeshare', 'special','pnft']:
+    for service_with_points in ['healthcare', 'schools', 'libraries', 'bikeshare', 'pnft',]:#'special',]:
         if service_with_points in to_test:
             geodata_path = folder_name+'geodata/'+service+'_points_latlon'+'.geojson'
             total_services = gpd.read_file(geodata_path).intersection(boundaries)
