@@ -882,7 +882,7 @@ def spatial_analysis(boundaries,
     return ft-dt
     
 
-def people_near_x(folder_name, geodata_path, boundaries, year, utm_crs):
+def people_near_x(folder_name, geodata_path, boundaries, year, utm_crs, sqkm_per_pixel):
     if os.path.exists(geodata_path):
         service_latlon = gpd.read_file(geodata_path)
         service_latlon = service_latlon.intersection(boundaries)
@@ -900,16 +900,16 @@ def people_near_x(folder_name, geodata_path, boundaries, year, utm_crs):
                 stats=['mean'], 
                 all_touched=True
                 ) 
-            earlier_dens = earlier_stats[0]['mean'] / 0.01 
+            earlier_dens = earlier_stats[0]['mean'] / sqkm_per_pixel 
             later_stats = rasterstats.zonal_stats(
                 service_mw,
                 f"{folder_name}geodata/population/pop_{later}.tif", 
                 stats=['mean'], 
                 all_touched=True
                 ) 
-            later_dens = later_stats[0]['mean'] / 0.01 
+            later_dens = later_stats[0]['mean'] / sqkm_per_pixel 
             peryear_diff = (later_dens - earlier_dens) / 5
-            mean_dens_per_m2 = (earlier_dens + (modulo * peryear_diff)) / 1000000
+            mean_dens_per_m2 = (earlier_dens + (modulo * peryear_diff)) / 1000000 #km to m
             total_PNS = mean_dens_per_m2 * service_area
     else:
         total_PNS = 0 
@@ -965,7 +965,7 @@ def calculate_indicators(boundaries,
                 stats=['mean'], 
                 all_touched=True
                 ) 
-            mean_density_per_km2 = pop_stats[0]['mean'] / sqkm_per_pixel #km^2 / pixel
+            mean_density_per_km2 = pop_stats[0]['mean'] / sqkm_per_pixel
             mean_density_per_m2 = mean_density_per_km2 / 1000000
             total_pop = mean_density_per_m2 * boundaries_utm.area.sum()
             print(f'Total pop {year}:', total_pop)
@@ -997,8 +997,8 @@ def calculate_indicators(boundaries,
                                         stats = [],
                                         add_stats={'weighted': weighted_pop_density}
                                         )[0]['weighted']
-                densities[year] = density / 0.01 #km^2 / pixel -- THIS VARIES BASED ON PIXEL SIZE
-                print('weighted pop density', year, density / 0.01)
+                densities[year] = density / sqkm_per_pixel 
+                print('weighted pop density', year, density / sqkm_per_pixel)
         for year in years:
             modulo = year % 5
             if modulo == 0:
