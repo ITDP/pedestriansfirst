@@ -23,15 +23,16 @@ def get_highways(simple_projected_G,
     multi_car_G = ox.graph_from_gdfs(nodes, car_roads)
     major_roads = edges[(edges.highway.isin(major_tags)) & (edges.oneway == True)].copy()
     #only include major roads with at least 2 lanes per direction
-    for idx in major_roads.index:
-        lanes = major_roads.loc[idx, 'lanes']
-        if type(lanes) == type([]):
-            lanes = min(lanes)
-        lanes = float(lanes)
-        if np.isnan(lanes):
-            lanes = 3 #if the number of lanes isn't given, we assume it's more than 2 per direction
-        if lanes < 2:
-            major_roads.drop(idx, inplace=True)
+    if 'lanes' in major_roads.columns:
+        for idx in major_roads.index:
+            lanes = major_roads.loc[idx, 'lanes']
+            if type(lanes) == type([]):
+                lanes = min(lanes)
+            lanes = float(lanes)
+            if np.isnan(lanes):
+                lanes = 3 #if the number of lanes isn't given, we assume it's more than 2 per direction
+            if lanes < 2:
+                major_roads.drop(idx, inplace=True)
     if len(major_roads) == 0:
         return None
             
