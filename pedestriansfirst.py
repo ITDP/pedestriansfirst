@@ -1012,7 +1012,7 @@ def calculate_indicators(boundaries,
                 results[f'density_{year}'] = earlier_dens + (modulo * peryear_diff)
     
     services = ['healthcare','schools','h+s','libraries','bikeshare','pnab','pnpb',
-                'pnft','carfree',]#'special']
+                'pnft','carfree','special']
     for service in services:
         if service in to_test:
             geodata_path = f'{folder_name}geodata/{service}latlon.geojson'
@@ -1020,9 +1020,9 @@ def calculate_indicators(boundaries,
             print('Total People Near Service for', service, ":", total_PNS, 100*total_PNS/total_pops[current_year],"%")
             results[f'{service}_{current_year}'] = total_PNS / total_pops[current_year]
             
-    for service_with_points in ['healthcare', 'schools', 'libraries', 'bikeshare', 'pnft',]:#'special',]:
+    for service_with_points in ['healthcare', 'schools', 'libraries', 'bikeshare', 'pnft','special',]:
         if service_with_points in to_test:
-            geodata_path = folder_name+'geodata/'+service+'_points_latlon'+'.geojson'
+            geodata_path = folder_name+'geodata/'+service_with_points+'_points_latlon'+'.geojson'
             total_services = gpd.read_file(geodata_path).intersection(boundaries)
             results[f'n_points_{service}_{current_year}'] = len(total_services)
         
