@@ -1016,7 +1016,7 @@ def calculate_indicators(boundaries,
     for service in services:
         if service in to_test:
             geodata_path = f'{folder_name}geodata/{service}latlon.geojson'
-            total_PNS = people_near_x(folder_name, geodata_path, boundaries, current_year, utm_crs)
+            total_PNS = people_near_x(folder_name, geodata_path, boundaries, current_year, utm_crs, sqkm_per_pixel)
             print('Total People Near Service for', service, ":", total_PNS, 100*total_PNS/total_pops[current_year],"%")
             results[f'{service}_{current_year}'] = total_PNS / total_pops[current_year]
             
@@ -1047,7 +1047,7 @@ def calculate_indicators(boundaries,
         
     if 'highways' in to_test:
         geodata_path = f'{folder_name}geodata/buffered_hwys_latlon.geojson'
-        near_hwys = people_near_x(folder_name, geodata_path, boundaries, current_year, utm_crs)
+        near_hwys = people_near_x(folder_name, geodata_path, boundaries, current_year, utm_crs, sqkm_per_pixel)
         not_near_hwys = total_pops[current_year] - near_hwys
         print('Total People Safe From Highways:', not_near_hwys, 100*total_PNS/total_pops[current_year],"%")
         results['people_not_near_highways'] = not_near_hwys / total_pops[current_year]
@@ -1069,7 +1069,7 @@ def calculate_indicators(boundaries,
                         for mode in ['all','mrt','lrt','brt']:
                             #PNRT
                             geodata_path = f'{folder_name}geodata/rapid_transit/{year}/{mode}_isochrones_ll.geojson'
-                            total_pnrt = people_near_x(folder_name, geodata_path, boundaries, year, utm_crs)
+                            total_pnrt = people_near_x(folder_name, geodata_path, boundaries, year, utm_crs, sqkm_per_pixel)
                             if mode == "all" and year % 5 == 0:
                                 print (f"all-modes PNrT {year}: {100*total_pnrt/total_pops[year]}")
                             results[f'PNrT_{mode}_{year}'] = total_pnrt/total_pops[year]
