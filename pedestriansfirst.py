@@ -200,7 +200,7 @@ def spatial_analysis(boundaries,
                       current_year = 2022,
                       overpass = False,
                       patch_length = 8000, #m
-                      block_patch_length = 8000, #m
+                      block_patch_length = 2000, #m
                       boundary_buffer = 500, #m
                       blocks_simplification = 0.0001, #topo-simplification
                       services_simplification = 10, #m TODO replace with gpd simplification?
