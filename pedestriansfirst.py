@@ -1065,7 +1065,7 @@ def calculate_indicators(boundaries,
         if os.path.exists(geodata_path):
             rt_gdf = gpd.read_file(geodata_path)
             rt_in_bounds = rt_gdf.intersection(boundaries)
-            if len(rt_in_bounds) > 0 and rt_in_bounds.unary_union.area > 0:
+            if rt_in_bounds.unary_union is not None:
                 for year in years:
                     if year <= current_year:
                         for mode in ['all','mrt','lrt','brt']:
