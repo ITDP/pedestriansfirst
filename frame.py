@@ -171,6 +171,7 @@ def get_jurisdictions(poly_latlon,
     selected_levels = []
     for admin_level in select_jurisdictions_utm.admin_level.unique():
         selection = select_jurisdictions_utm[select_jurisdictions_utm.admin_level==admin_level]
+        import pdb; pdb.set_trace()
         if selection.area.mean() >= level_min_mean_area*1000000:
             if selection.unary_union.area >= (level_min_coverage * poly_utm.area):
                 selected_levels.append(admin_level)

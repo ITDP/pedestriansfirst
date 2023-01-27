@@ -1053,7 +1053,7 @@ def calculate_indicators(boundaries,
         results['people_not_near_highways'] = not_near_hwys / total_pops[current_year]
         
         if os.path.exists(folder_name+'geodata/allhwys_latlon.geojson'):
-            hwypoly_latlon = gpd.read_file(f'{folder_name}geodata/protectedbike_latlon.geojson')
+            hwypoly_latlon = gpd.read_file(f'{folder_name}geodata/allhwys_latlon.geojson')
             hwypoly_latlon = hwypoly_latlon.intersection(boundaries)
             hwy_m = sum(protected_bikeways_latlon.to_crs(utm_crs).geometry.length) / 4 #divide by 4 because we're looking at divided highway polys, not lines :)
         else:
@@ -1067,7 +1067,7 @@ def calculate_indicators(boundaries,
             rt_in_bounds = rt_gdf.intersection(boundaries)
             if rt_in_bounds.unary_union is not None:
                 for year in years:
-                    if year <= current_year:
+                    if year <= current_year: #TODO efficiency - intersections BEFORE mode loop
                         for mode in ['all','mrt','lrt','brt']:
                             #PNRT
                             geodata_path = f'{folder_name}geodata/rapid_transit/{year}/{mode}_isochrones_ll.geojson'
