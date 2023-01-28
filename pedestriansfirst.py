@@ -1114,8 +1114,8 @@ def calculate_indicators(boundaries,
         if os.path.exists(geodata_path):
             blocks = gpd.read_file(geodata_path)
             selection = blocks.intersection(boundaries)
-            av_size = selection.area_utm.mean()
             import pdb; pdb.set_trace()
+            av_size = selection.area_utm.mean()
             block_density = 1000000 / av_size
         else:
             block_density = 'NA'
