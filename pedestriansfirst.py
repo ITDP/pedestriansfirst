@@ -1113,7 +1113,7 @@ def calculate_indicators(boundaries,
         geodata_path = folder_name+'geodata/'+'blocks'+'latlon'+'.geojson'
         if os.path.exists(geodata_path):
             blocks = gpd.read_file(geodata_path)
-            selection = blocks.intersection(boundaries)
+            selection = blocks[blocks.intersects(boundaries)]
             import pdb; pdb.set_trace()
             av_size = selection.area_utm.mean()
             block_density = 1000000 / av_size
