@@ -937,7 +937,7 @@ def calculate_indicators(boundaries,
                            #'connectome'
                            ],
                       #years = range(1975,2031),
-                      years = [1975, 1980, 1985, 1990, 1995, 2000, 2005, 2010, 2015, 2020, 2022],
+                      years = [1975, 1980, 1985, 1990, 1995, 2000, 2005, 2010, 2015, 2020, 2022, 2025],
                       current_year = 2022,
                       ghsl_resolution = '1000',
                       debug = True,
