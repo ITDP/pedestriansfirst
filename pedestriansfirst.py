@@ -855,17 +855,17 @@ def spatial_analysis(boundaries,
         patch_densities_utm = patch_densities.to_crs(utm_crs)
         patch_densities_utm['density'] = patch_densities_utm.block_count / (patch_densities_utm.area /1000000)
         patch_densities_latlon = patch_densities_utm.to_crs(epsg=4326)
-        patch_densities_latlon.to_file(f'{folder_name}geodata/patch_densities_latlon.geojson', driver='GeoJSON')
+        patch_densities_latlon.to_file(f'{folder_name}geodata/block_densities_latlon.geojson', driver='GeoJSON')
         blocks_utm = gpd.GeoDataFrame(geometry=[block[0] for block in outblocks], crs=utm_crs)
-        blocks_utm['area'] = [block[1] for block in outblocks]
+        blocks_utm['area_utm'] = [block[1] for block in outblocks]
         blocks_utm['perim'] = [block[2] for block in outblocks]
         blocks_utm['oblongness'] = [block[3] for block in outblocks]
         blocks_utm['density'] = [1000000/block[1] for block in outblocks]
         
         filtered_blocks_utm = blocks_utm[
             (blocks_utm.oblongness < 50) &
-            (blocks_utm.area > 1000) &
-            (blocks_utm.area < 1000000)]
+            (blocks_utm.area_utm > 1000) &
+            (blocks_utm.area_utm < 1000000)]
         
         
         
@@ -936,7 +936,8 @@ def calculate_indicators(boundaries,
                            #'transport_performance',
                            #'connectome'
                            ],
-                      years = range(1975,2031),
+                      #years = range(1975,2031),
+                      years = [1975, 1980, 1985, 1990, 1995, 2000, 2005, 2010, 2015, 2020, 2022],
                       current_year = 2022,
                       ghsl_resolution = '1000',
                       debug = True,
@@ -1113,6 +1114,12 @@ def calculate_indicators(boundaries,
         if os.path.exists(geodata_path):
             blocks = gpd.read_file(geodata_path)
             selection = blocks.intersection(boundaries)
+            av_size = selection.area_utm.mean()
+            block_density = 1000000 / av_size
+        else:
+            block_density = 'NA'
+        results['block_density'] = block_density
+            
             
             
     if 'transport_performance' in to_test:
