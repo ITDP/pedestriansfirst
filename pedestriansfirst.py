@@ -1056,7 +1056,7 @@ def calculate_indicators(boundaries,
         if os.path.exists(folder_name+'geodata/allhwys_latlon.geojson'):
             hwypoly_latlon = gpd.read_file(f'{folder_name}geodata/allhwys_latlon.geojson')
             hwypoly_latlon = hwypoly_latlon.intersection(boundaries)
-            hwy_m = sum(protected_bikeways_latlon.to_crs(utm_crs).geometry.length) / 4 #divide by 4 because we're looking at divided highway polys, not lines :)
+            hwy_m = sum(hwypoly_latlon.to_crs(utm_crs).geometry.length) / 4 #divide by 4 because we're looking at divided highway polys, not lines :)
         else:
             hwy_m = 0
         results['highway_km'] = hwy_m / 1000
