@@ -72,7 +72,10 @@ def get_highways(simple_projected_G,
     roads_poly_diff = roads_poly.difference(separation_break_poly)
     if roads_poly_diff is None:
         return None
-    roads_poly_gdf = gpd.GeoDataFrame(crs = edges.crs, geometry = list(roads_poly_diff.geoms))
+    try:
+        roads_poly_gdf = gpd.GeoDataFrame(crs = edges.crs, geometry = list(roads_poly_diff.geoms))
+    except:
+        return None
     
     #cut out polys that are too short
     for idx in roads_poly_gdf.index:
