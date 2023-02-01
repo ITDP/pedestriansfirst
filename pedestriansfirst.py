@@ -652,7 +652,7 @@ def spatial_analysis(boundaries,
                     #import pdb;pdb.set_trace()
                     patch_time = datetime.datetime.now() - patch_start
                         
-                    print(f"finished patch #{p_idx+1} out of {len(patches)} in {patch_time}")
+                    print(f"finished patch #{p_idx+1} out of {len(patches)} for {name} {id_code} in {patch_time}")
                     patch_times.append(patch_time)
             except ox._errors.EmptyOverpassResponse:
                 print('EmptyOverpassResponse')
@@ -1113,9 +1113,12 @@ def calculate_indicators(boundaries,
         geodata_path = folder_name+'geodata/'+'blocks'+'latlon'+'.geojson'
         if os.path.exists(geodata_path):
             blocks = gpd.read_file(geodata_path)
-            selection = blocks[blocks.intersects(boundaries)]
-            av_size = selection.area_utm.mean()
-            block_density = 1000000 / av_size
+            try:
+                selection = blocks[blocks.intersects(boundaries)]
+                av_size = selection.area_utm.mean()
+                block_density = 1000000 / av_size
+            except: 
+                block_density = 'ERROR'
         else:
             block_density = 'NA'
         results['block_density'] = block_density
