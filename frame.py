@@ -133,7 +133,7 @@ def get_pop_ghsl(city):
 #TODO -- consider customizing this for the USA? an extra buffer or something?
 def get_jurisdictions(poly_latlon,
                       minimum_portion = 0.6, #portion of a jurisdiction that has to be within the poly
-                      level_min_mean_area = 2,# min size in km2 for the mean area of a unit at an admin_level
+                      level_min_mean_area = 5,# min size in km2 for the mean area of a unit at an admin_level
                       level_min_coverage = .2, #min coverage of an admin_level of the poly_latlon
                       buffer = 1000, #in m
                       ): 
@@ -392,11 +392,11 @@ if __name__ == '__main__':
 # 12080	,
 # 2051	,
 # 3541	,
-1361	,
-1445	,
-1406	,
-154	,
-200	,
+#1361	,
+#1445	,
+#1406	,
+#154	,
+#200	,
 21	,
 855	,
 350	,

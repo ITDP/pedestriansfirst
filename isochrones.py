@@ -73,32 +73,35 @@ def proper_iso_polys(G, center_nodes, distance=500,
     partial_edge_linestrings = []
     
     for center_node in tqdm(center_nodes):
-        distances, routes = nx.single_source_dijkstra(
-            G, 
-            center_node, 
-            target = None, 
-            cutoff = distance, 
-            weight = 'length')
-        # intermediate_nodes = set()
-        intermediate_nodes = list(distances.keys())
-        for route in routes.values():
-            # intermediate_nodes.update(route[1:-1])
-            complete_nodepairs.update([(route[i],route[i+1]) for i in range(0,len(route)-1)])
-        for origin_node in routes.keys():
-            remaining_distance = distance - distances[origin_node]
-            for target_node in G[origin_node]:
-                if target_node not in intermediate_nodes:
-                    for edge_id in G[origin_node][target_node]:
-                        edge = G[origin_node][target_node][edge_id]
-                        if 'geometry' in edge:
-                            linestring = edge['geometry']
-                        else:
-                            n_fr = G.nodes[origin_node]
-                            n_to = G.nodes[target_node]
-                            linestring = LineString([(n_fr['x'],n_fr['y']),(n_to['x'],n_to['y'])])
-                        cut_line = cut(linestring, remaining_distance)
-                        if cut_line is not None:
-                            partial_edge_linestrings.append(cut_line)
+        try:
+            distances, routes = nx.single_source_dijkstra(
+                G, 
+                center_node, 
+                target = None, 
+                cutoff = distance, 
+                weight = 'length')
+            # intermediate_nodes = set()
+            intermediate_nodes = list(distances.keys())
+            for route in routes.values():
+                # intermediate_nodes.update(route[1:-1])
+                complete_nodepairs.update([(route[i],route[i+1]) for i in range(0,len(route)-1)])
+            for origin_node in routes.keys():
+                remaining_distance = distance - distances[origin_node]
+                for target_node in G[origin_node]:
+                    if target_node not in intermediate_nodes:
+                        for edge_id in G[origin_node][target_node]:
+                            edge = G[origin_node][target_node][edge_id]
+                            if 'geometry' in edge:
+                                linestring = edge['geometry']
+                            else:
+                                n_fr = G.nodes[origin_node]
+                                n_to = G.nodes[target_node]
+                                linestring = LineString([(n_fr['x'],n_fr['y']),(n_to['x'],n_to['y'])])
+                            cut_line = cut(linestring, remaining_distance)
+                            if cut_line is not None:
+                                partial_edge_linestrings.append(cut_line)
+        except nx.exception.NodeNotFound:
+            pass
     for nodepair in complete_nodepairs:
         for edge_id in G[nodepair[0]][nodepair[1]]:
             edge = G[nodepair[0]][nodepair[1]][edge_id]
