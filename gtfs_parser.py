@@ -19,6 +19,8 @@ import geopandas as gpd
 import shapely
 from shapely.geometry import Point
 
+from zipfile import ZipFile
+
 def get_GTFS_from_mobility_database(poly, gtfs_data_dir, sources_loc='input_data/sources.csv'):
     if not os.path.exists(sources_loc):
         url = 'https://bit.ly/catalogs-csv'
@@ -57,9 +59,11 @@ def get_GTFS_from_mobility_database(poly, gtfs_data_dir, sources_loc='input_data
 
 def feed_from_filename(filename):
     try:
-        command = 'unzip '+filename+' -d temp_gtfs_dir/'
-        print(command)
-        subprocess.check_call(command, shell=True)
+        with ZipFile(filename, 'r') as zgtfs:
+            zgtfs.extractall('temp_gtfs_dir/')
+        # command = 'unzip '+filename+' -d temp_gtfs_dir/'
+        # print(command)
+        # subprocess.check_call(command, shell=True)
     except:
         if os.path.exists('temp_gtfs_dir'):
             shutil.rmtree('temp_gtfs_dir')
