@@ -59,6 +59,8 @@ def get_GTFS_from_mobility_database(poly, gtfs_data_dir, sources_loc='input_data
 
 def feed_from_filename(filename):
     try:
+        if not os.path.isdir('temp_gtfs_dir/'):
+            os.mkdir('temp_gtfs_dir/')
         with ZipFile(filename, 'r') as zgtfs:
             zgtfs.extractall('temp_gtfs_dir/')
         # command = 'unzip '+filename+' -d temp_gtfs_dir/'
