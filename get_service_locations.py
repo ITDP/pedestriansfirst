@@ -32,8 +32,15 @@ def get_highways(simple_projected_G,
             if type(lanes) == type([]):
                 all_lanes = []
                 for lane_ct in lanes:
-                    all_lanes += lane_ct.split(';')
-                lanes = min(lane_ct)
+                    if type(lane_ct) == type('string'):
+                        for lane_ct_2 in lane_ct.split(';'):
+                            try:
+                                all_lanes.append(float(lane_ct_2))
+                            except:
+                                pass
+                    else:
+                        all_lanes.append(lane_ct)
+                lanes = min(all_lanes)
             lanes = float(lanes)
             if np.isnan(lanes):
                 lanes = 3 #if the number of lanes isn't given, we assume it's more than 2 per direction

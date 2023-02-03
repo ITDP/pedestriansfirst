@@ -414,18 +414,18 @@ if __name__ == '__main__':
 # 8050	,
 # 6522	,
 # 11862	,
-1709	,
-2806	,
-2980	,
-2559	,
-13039	,
-3562	,
-1372	,
-8675	,
-7041	,
-6845	,
-12394	,
-12384	,
+# 1709	,
+# 2806	,
+# 2980	,
+# 2559	,
+# 13039	,
+# 3562	,
+# 1372	,
+# 8675	,
+# 7041	,
+# 6845	,
+# 12394	,
+# 12384	,
 1022	,
 1009	,
 828	,
@@ -437,6 +437,11 @@ if __name__ == '__main__':
     
     for cityid in test_cities:
         regional_analysis(cityid)
+
+    ucdb = gpd.read_file('input_data/old_ghsl/GHS_STAT_UCDB2015MT_GLOBE_R2019A_V1_2.gpkg')
+    for hdc in ucdb[(500000 < ucdb.P15) & (ucdb.P15 < 5000000)].sort_values('P15', ascending=False).ID_HDC_G0:
+        regional_analysis(hdc)
+
 
     #calculate_country_indicators()
 
