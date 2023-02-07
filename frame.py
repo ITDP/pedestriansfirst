@@ -308,6 +308,11 @@ def calculate_country_indicators(current_year=2022,
     countries_ISO = list(natural_earth.ISO_A3.unique())
     
     #list indicators
+    no_year = [
+        'block_density',
+        'people_not_near_highways',        
+        ]
+    
     current_indicators = [
         'h+s_',
         'bikeshare_',
@@ -315,6 +320,7 @@ def calculate_country_indicators(current_year=2022,
         'pnpb_',
         'pnft_',
         'carfree_',
+        
         ]
     year_indicators = [
         'density_',
@@ -325,6 +331,8 @@ def calculate_country_indicators(current_year=2022,
         ]
     indicators = current_indicators + year_indicators
     full_indicator_names = []
+    for indicator in no_year:
+        full_indicator_names.append(indicator)
     for indicator in current_indicators:
         full_indicator_names.append(indicator+str(current_year))
     for year in years:
@@ -383,10 +391,10 @@ if __name__ == '__main__':
     
     
     test_cities = [
-    855	,
-                11498	,
-57	,
-88	,
+#     855	,
+#                 11498	,
+# 57	,
+# 88	,
 561	,
 4351	,
 4309	,
