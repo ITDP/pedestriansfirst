@@ -355,13 +355,15 @@ def calculate_country_indicators(current_year=2022,
                 if type(country) == type('this is a string, which means it is not np.nan'):
                     for year in years:
                         total_pop_year = city_results[city_results.country == country][f'total_pop_{year}'].sum()
+                        if year == 2022:
+                            total_pop_now = total_pop_year
                         country_totals.loc[country, f'total_pop_{year}'] += total_pop_year
                         for indicator in indicators:
                             if indicator+str(year) in city_results.columns:
                                 value = city_results[city_results.country == country][indicator+str(year)].sum() * total_pop_year
                                 country_totals.loc[country, indicator+str(year)] += value
                     for indicator in no_year:
-                        value = city_results[city_results.country == country][indicator].sum() * total_pop_year
+                        value = city_results[city_results.country == country][indicator].sum() * total_pop_now
                         country_totals.loc[country, indicator] += value
                         
     
