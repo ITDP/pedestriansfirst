@@ -364,7 +364,6 @@ def calculate_country_indicators(current_year=2022,
                                 country_totals.loc[country, indicator+str(year)] += value
                     for indicator in no_year:
                         value = float(city_results[city_results.country == country][indicator].sum()) * total_pop_now
-                        import pdb; pdb.set_trace()
                         country_totals.loc[country, indicator] += value
                         
     
@@ -377,6 +376,11 @@ def calculate_country_indicators(current_year=2022,
                     weighted_avg = country_totals.loc[country, indicator+str(year)] / country_totals.loc[country, f'total_pop_{year}']
                     #import pdb; pdb.set_trace()
                     country_weighted_avgs.loc[country, indicator+str(year)] = weighted_avg
+        for indicator in no_year:
+            weighted_avg = country_totals.loc[country, indicator] / country_totals.loc[country, f'total_pop_{2022}']
+            #import pdb; pdb.set_trace()
+            country_weighted_avgs.loc[country, indicator] = weighted_avg
+            
     
     #save output
     if not os.path.exists('country_results/'):
