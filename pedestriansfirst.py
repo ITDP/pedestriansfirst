@@ -196,7 +196,7 @@ def spatial_analysis(boundaries,
                             'pnab': 250,
                             'highways':500,
                             },
-                      years = range(1975,2031), #for PNRT and pop_dens. remember range(1,3) = [1,2]
+                      years = [1975, 1980, 1985, 1990, 1995, 2000, 2005, 2010, 2015, 2020, 2022, 2025], #for PNRT and pop_dens. remember range(1,3) = [1,2]
                       current_year = 2022,
                       overpass = False,
                       patch_length = 8000, #m
@@ -526,10 +526,11 @@ def spatial_analysis(boundaries,
                         print ('TYPEERROR FROM CLIPPING PATCH', p_idx)
                         with open(str(folder_name)+"patcherrorlog.txt", "a") as patcherrorlog:
                             patcherrorlog.write('TYPEERROR FROM CLIPPING PATCH '+str(p_idx))
-                        G = ox.graph_from_polygon(patch, 
+                        G_allroads = ox.graph_from_polygon(patch, 
                                               #custom_filter=walk_filter, 
                                               simplify=True, 
                                               retain_all=True)
+                        G = G_allroads
                 os.remove('temp/patchbounds.poly')
                         
                 G.remove_nodes_from(list(nx.isolates(G)))

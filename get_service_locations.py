@@ -40,7 +40,10 @@ def get_highways(simple_projected_G,
                                 pass
                     else:
                         all_lanes.append(lane_ct)
-                lanes = min(all_lanes)
+                if len(all_lanes) > 0:
+                    lanes = min(all_lanes)
+                else:
+                    lanes = 3
             lanes = float(lanes)
             if np.isnan(lanes):
                 lanes = 3 #if the number of lanes isn't given, we assume it's more than 2 per direction

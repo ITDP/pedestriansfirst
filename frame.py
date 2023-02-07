@@ -301,7 +301,9 @@ def regional_analysis(hdc,
 #                 with open('all_results.json','w') as out_file:
 #                     json.dump(all_results, out_file)
             
-def calculate_country_indicators(current_year=2022):
+def calculate_country_indicators(current_year=2022,
+                                 years = [1975, 1980, 1985, 1990, 1995, 2000, 2005, 2010, 2015, 2020, 2022, 2025],
+                                 ):
     natural_earth = gpd.read_file('input_data/naturalearth_countries/ne_10m_admin_0_countries.shp')
     countries_ISO = list(natural_earth.ISO_A3.unique())
     
