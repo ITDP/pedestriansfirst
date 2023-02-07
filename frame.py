@@ -327,7 +327,7 @@ def calculate_country_indicators(current_year=2022,
     full_indicator_names = []
     for indicator in current_indicators:
         full_indicator_names.append(indicator+str(current_year))
-    for year in range(1975, current_year+1):
+    for year in years:
         full_indicator_names.append('total_pop_'+str(year))
         for indicator in year_indicators:
             full_indicator_names.append(indicator+str(year))
@@ -345,7 +345,7 @@ def calculate_country_indicators(current_year=2022,
             city_results = pd.read_csv(f'cities_out/{city_folder}/indicator_values.csv')
             for country in city_results.country.unique():
                 if type(country) == type('this is a string, which means it is not np.nan'):
-                    for year in range(1975, current_year+1):
+                    for year in years:
                         total_pop_year = city_results[city_results.country == country][f'total_pop_{year}'].sum()
                         country_totals.loc[country, f'total_pop_{year}'] += total_pop_year
                         for indicator in indicators:
@@ -357,7 +357,7 @@ def calculate_country_indicators(current_year=2022,
     print('iterating through countries')
     for country in tqdm(countries_ISO):
         for indicator in indicators:
-            for year in range(1975, current_year+1):
+            for year in years:
                 if indicator+str(year) in country_totals.columns:
                     weighted_avg = country_totals.loc[country, indicator+str(year)] / country_totals.loc[country, f'total_pop_{year}']
                     #import pdb; pdb.set_trace()
