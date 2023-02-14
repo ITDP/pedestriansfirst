@@ -144,14 +144,17 @@ def get_jurisdictions(poly_latlon,
     poly_latlon = poly_utm_gdf.to_crs(4326).unary_union
     admin_lvls = [str(x) for x in range(4,11)]
     jurisdictions_latlon = ox.geometries_from_polygon(poly_latlon, tags={'admin_level':admin_lvls})
-    jurisdictions_latlon = jurisdictions_latlon.loc[('relation',)]
-    print(f'found {len(jurisdictions_latlon)} on first pass')
-    jurisdictions_utm = ox.projection.project_gdf(jurisdictions_latlon)
-    jurisdictions_clipped_utm = jurisdictions_utm.intersection(poly_utm)
-    selection = (jurisdictions_clipped_utm.area / jurisdictions_utm.area) > minimum_portion
-    select_jurisdictions_utm = jurisdictions_utm[selection]
-    print(f'found {len(select_jurisdictions_utm)} with {minimum_portion} inside area')
-    select_jurisdictions_latlon = select_jurisdictions_utm.to_crs(4326)
+    if 'relation' in jurisdictions_latlon.columns:
+        jurisdictions_latlon = jurisdictions_latlon.loc[('relation',)]
+        print(f'found {len(jurisdictions_latlon)} on first pass')
+        jurisdictions_utm = ox.projection.project_gdf(jurisdictions_latlon)
+        jurisdictions_clipped_utm = jurisdictions_utm.intersection(poly_utm)
+        selection = (jurisdictions_clipped_utm.area / jurisdictions_utm.area) > minimum_portion
+        select_jurisdictions_utm = jurisdictions_utm[selection]
+        print(f'found {len(select_jurisdictions_utm)} with {minimum_portion} inside area')
+        select_jurisdictions_latlon = select_jurisdictions_utm.to_crs(4326)
+    else:
+        select_jurisdictions_latlon = []
     if len(select_jurisdictions_latlon) > 0:
         total_boundaries_latlon = unary_union([select_jurisdictions_latlon.unary_union, poly_latlon])
         total_boundaries_utm = unary_union([select_jurisdictions_utm.unary_union, poly_utm])
@@ -401,59 +404,60 @@ if __name__ == '__main__':
     ox.utils.config(log_console = False)
     
     
+    
     test_cities = [
 #     855	,
 #                 11498	,
 # 57	,
 # 88	,
-561	,
-4351	,
-4309	,
-4359	,
-12696	,
-12080	,
-2051	,
-3541	,
-1361	,
-1445	,
-1406	,
-154	,
-200	,
-21	,
-350	,
-621	,
-1105	,
-931	,
-5134	,
-4172	,
-3902	,
-4427	,
-4608	,
-9691	,
-7041	,
-10076	,
-8050	,
-6522	,
-11862	,
-1709	,
-2806	,
-2980	,
-2559	,
-13039	,
-3562	,
-1372	,
-8675	,
-7041	,
-6845	,
-12394	,
-12384	,
-1022	,
-1009	,
-828	,
-2749	,
-10687	,
-11223	,
-14	,
+# 561	,
+# 4351	,
+# 4309	,
+# 4359	,
+# 12696	,
+# 12080	,
+# 2051	,
+# 3541	,
+# 1361	,
+# 1445	,
+# 1406	,
+# 154	,
+# 200	,
+# 21	,
+# 350	,
+# 621	,
+# 1105	,
+# 931	,
+# 5134	,
+# 4172	,
+# 3902	,
+# 4427	,
+# 4608	,
+# 9691	,
+# 7041	,
+# 10076	,
+# 8050	,
+# 6522	,
+# 11862	,
+# 1709	,
+# 2806	,
+# 2980	,
+# 2559	,
+# 13039	,
+# 3562	,
+# 1372	,
+# 8675	,
+# 7041	,
+# 6845	,
+# 12394	,
+# 12384	,
+# 1022	,
+# 1009	,
+# 828	,
+# 2749	,
+# 10687	,
+# 11223	,
+# 14	,
         ]
     
     for cityid in test_cities:
@@ -461,7 +465,9 @@ if __name__ == '__main__':
 
     ucdb = gpd.read_file('input_data/old_ghsl/GHS_STAT_UCDB2015MT_GLOBE_R2019A_V1_2.gpkg')
     for hdc in ucdb[(500000 < ucdb.P15) & (ucdb.P15 < 5000000)].sort_values('P15', ascending=False).ID_HDC_G0:
-        regional_analysis(hdc)
+        hdc = int(hdc)
+        if not os.path.exists(f'ghsl_region_{hdc}/indicator_values.csv'):
+            regional_analysis(hdc)
 
 
     #calculate_country_indicators()
