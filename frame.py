@@ -165,7 +165,7 @@ def get_jurisdictions(poly_latlon,
     #now get all jurisdictions within total_boundaries
     jurisdictions_latlon = ox.geometries_from_polygon(total_boundaries_latlon, tags={'admin_level':admin_lvls})
     if not 'relation' in jurisdictions_latlon.columns:
-        return None
+        return []
     else:
         jurisdictions_latlon = jurisdictions_latlon.loc[('relation',)]
         print(f'found {len(jurisdictions_latlon)} on second pass')
