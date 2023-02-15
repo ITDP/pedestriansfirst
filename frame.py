@@ -164,24 +164,27 @@ def get_jurisdictions(poly_latlon,
         
     #now get all jurisdictions within total_boundaries
     jurisdictions_latlon = ox.geometries_from_polygon(total_boundaries_latlon, tags={'admin_level':admin_lvls})
-    jurisdictions_latlon = jurisdictions_latlon.loc[('relation',)]
-    print(f'found {len(jurisdictions_latlon)} on second pass')
-    jurisdictions_utm = ox.projection.project_gdf(jurisdictions_latlon)
-    jurisdictions_clipped_utm = jurisdictions_utm.intersection(total_boundaries_utm)
-    selection = (jurisdictions_clipped_utm.area / jurisdictions_utm.area) > 0.95
-    select_jurisdictions_utm = jurisdictions_utm[selection]
-    print(f'found {len(select_jurisdictions_utm)} with 0.95 inside total area')
-    selected_levels = []
-    for admin_level in select_jurisdictions_utm.admin_level.unique():
-        selection = select_jurisdictions_utm[select_jurisdictions_utm.admin_level==admin_level]
-        if selection.area.mean() >= level_min_mean_area*1000000:
-            if selection.unary_union.area >= (level_min_coverage * poly_utm.area):
-                selected_levels.append(admin_level)
-    final_jurisdictions_utm = select_jurisdictions_utm[select_jurisdictions_utm.admin_level.isin(selected_levels)]
-    final_jurisdictions_latlon = final_jurisdictions_utm.to_crs(4326)
-    print(f'found {len(final_jurisdictions_latlon)} in acceptable admin levels {selected_levels}')
+    if not 'relation' in jurisdictions_latlon.columns:
+        return None
+    else:
+        jurisdictions_latlon = jurisdictions_latlon.loc[('relation',)]
+        print(f'found {len(jurisdictions_latlon)} on second pass')
+        jurisdictions_utm = ox.projection.project_gdf(jurisdictions_latlon)
+        jurisdictions_clipped_utm = jurisdictions_utm.intersection(total_boundaries_utm)
+        selection = (jurisdictions_clipped_utm.area / jurisdictions_utm.area) > 0.95
+        select_jurisdictions_utm = jurisdictions_utm[selection]
+        print(f'found {len(select_jurisdictions_utm)} with 0.95 inside total area')
+        selected_levels = []
+        for admin_level in select_jurisdictions_utm.admin_level.unique():
+            selection = select_jurisdictions_utm[select_jurisdictions_utm.admin_level==admin_level]
+            if selection.area.mean() >= level_min_mean_area*1000000:
+                if selection.unary_union.area >= (level_min_coverage * poly_utm.area):
+                    selected_levels.append(admin_level)
+        final_jurisdictions_utm = select_jurisdictions_utm[select_jurisdictions_utm.admin_level.isin(selected_levels)]
+        final_jurisdictions_latlon = final_jurisdictions_utm.to_crs(4326)
+        print(f'found {len(final_jurisdictions_latlon)} in acceptable admin levels {selected_levels}')
 
-    return final_jurisdictions_latlon
+        return final_jurisdictions_latlon
 
 def regional_analysis(hdc, 
                       folder_prefix = 'cities_out', 
@@ -219,14 +222,15 @@ def regional_analysis(hdc,
     analysis_areas.loc[new_id, 'osmid'] = None
     analysis_areas.crs=4326
     new_id += 1
-    for osmid in jurisdictions_latlon.index:
-        analysis_areas.loc[new_id,'osmid'] = osmid
-        analysis_areas.loc[:,'geometry'].loc[new_id] = jurisdictions_latlon.loc[osmid,'geometry']
-        #the above hack is necessary because sometimes geometry is a multipolygon
-        for attr in ['name','admin_level']:
-            analysis_areas.loc[new_id,attr] = jurisdictions_latlon.loc[osmid,attr]
-            analysis_areas.loc[new_id, 'hdc'] = hdc
-        new_id += 1
+    if len(jurisdictions_latlon) > 0:
+        for osmid in jurisdictions_latlon.index:
+            analysis_areas.loc[new_id,'osmid'] = osmid
+            analysis_areas.loc[:,'geometry'].loc[new_id] = jurisdictions_latlon.loc[osmid,'geometry']
+            #the above hack is necessary because sometimes geometry is a multipolygon
+            for attr in ['name','admin_level']:
+                analysis_areas.loc[new_id,attr] = jurisdictions_latlon.loc[osmid,attr]
+                analysis_areas.loc[new_id, 'hdc'] = hdc
+            new_id += 1
     
     natural_earth = gpd.read_file('input_data/naturalearth_countries/ne_10m_admin_0_countries.shp')
     country_overlaps = natural_earth.overlay(gpd.GeoDataFrame(geometry=[ghsl_boundaries], crs=4326))

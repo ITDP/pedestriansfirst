@@ -797,7 +797,7 @@ def spatial_analysis(boundaries,
             patch_latlon = patches_latlon.loc[patch_idx, 'geometry']
             unbuf_patch_utm = unbuf_patches_utm.loc[patch_idx, 'geometry']
             
-            print("patch"+str(patch_idx)+" of "+str(len(patches_latlon)) )
+            print("patch"+str(patch_idx)+" of "+str(len(patches_latlon)), name )
             if overpass:
                 G = ox.graph_from_polygon(patch, custom_filter=walk_filter, simplify=True, retain_all=True)
             else:
