@@ -6,7 +6,6 @@ import numpy as np
 import shapely
 from shapely.geometry import Polygon
 import rasterstats
-import cenpy
 import maup
 #import utm
 
@@ -66,78 +65,6 @@ def build_grid_from_latlon(bounds_or_poly, low_resolution, exception_gdf_utm=Non
     city_crs = df_utm.crs
     return build_grid(city_crs, df_utm.unary_union, low_resolution, exception_gdf_utm, high_resolution)
         
-def get_tracts_usa(placetype,
-                   placenames,
-                    bounds_poly_latlon,
-                    cenpy_kwargs = {},
-                    ):
-    acs = cenpy.products.ACS(2019)    
-    tract_census_tables = [
-        'B01003',# Total Population
-        #'B08201',# Household Size by Vehicles Available
-            #TODO: use this to do a more sophisticated estimate of vehicle availability
-        'B25046',# Aggregate Number of Vehicles Available by Tenure
-        'B19081',# Mean Household Income of Quintiles
-        ]
-    
-    all_tracts = []
-    for placename in placenames:
-        if placetype == 'place':
-            all_tracts.append(acs.from_place(placename, level='tract', variables=tract_census_tables, strict_within=False))
-        if placetype == 'msa':
-            all_tracts.append(acs.from_msa(placename, level='tract', variables=tract_census_tables, strict_within=False))
-    tracts = pd.concat(all_tracts, ignore_index=True)
-    tracts_ll = tracts.to_crs(4326)
-    
-    tracts_clipped = tracts_ll.intersection(bounds_poly_latlon)
-    selection = ~tracts_clipped.geometry.is_empty
-    select_tracts = tracts_ll[selection]
-    select_tracts_utm = ox.project_gdf(select_tracts)
-    
-    select_tracts_utm['population'] = select_tracts_utm['B01003_001E']
-    select_tracts_utm['perc_w_cars'] = select_tracts_utm['B25046_001E'] / select_tracts_utm['population']
-    
-    for quint in range(1,6):
-        select_tracts_utm[f'quint_{quint}_income'] = select_tracts_utm[f'B19081_00{quint}E']
-    select_tracts_utm['population_per_sqm'] = select_tracts_utm['population'] / select_tracts_utm.area
-    
-    # drop unncessary columns (census cols)
-    for column in select_tracts_utm.columns:
-        if column[:6] in tract_census_tables:
-            select_tracts_utm.drop([column], axis=1) #TODO MAKE INPLACE
-    select_tracts_utm.drop(['NAME',
-                            'state',
-                            'county',
-                            'tract'], axis=1)
-    
-    select_tracts = select_tracts_utm.to_crs(4326)
-    select_tracts['id'] = select_tracts['GEOID']
-    for bike_lts in cyclist_distribution.keys():
-        select_tracts[bike_lts] = cyclist_distribution[bike_lts]
-    
-    return select_tracts
-    
-    
-    #TODO - use maup to allow for conversion to arbitrary geometry (eg grid)
-    #Requires higher-resolution source of population data than tracts - eg GHSL
-    #Because tracts and grid are both on about the same order of size, so all you do is lose resolution
-    # tract_pieces = maup.intersections(tracts, grid, area_cutoff=0)
-    # import pdb; pdb.set_trace()
-    # tract_pieces_weights = tracts['population']#.groupby(maup.assign(tracts_pieces, grid)).sum()
-    # tract_pieces_weights = maup.normalize(tract_pieces_weights, level=0)
-    # for variable in ['population',
-    #                  'perc_w_cars',
-    #                  'quint_1_income',
-    #                  'quint_2_income',
-    #                  'quint_3_income',
-    #                  'quint_4_income',
-    #                  'quint_5_income',
-    #                  ]:
-    #     grid[variable] = maup.prorate(
-    #         tract_pieces,
-    #         tracts[variable],
-    #         weights=tract_pieces_weights,
-    #         )
     
 
 def populate_grid_ghsl(grid, 
