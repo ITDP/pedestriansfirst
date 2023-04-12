@@ -23,16 +23,87 @@ from shapely.geometry import LineString, Point
 from shapely.ops import unary_union, transform
 import shapely.ops
 import topojson
+from r5py import TransportNetwork, TravelTimeMatrixComputer
+from r5py import TransitMode, LegMode
 
 import isochrones
 import get_service_locations
 import gtfs_parser
-#import prep_bike_osm
-#import prep_pop_ghsl
+import prep_bike_osm
+import prep_pop_ghsl
 #import summarize_ttm
 
 import pdb
 
+#for use of r5py in journey gap calculations
+def prepare_mode_settings(**kwargs):
+    mode_settings = {}
+    general_settings = {
+        'departure': datetime.datetime(2023,3,15,8,30),
+        #'departure_time_window': datetime.timedelta(hours=1), #this is the default
+        #'percentiles': [50], #this is the default
+        'max_time':datetime.timedelta(hours=2),
+        'max_time_walking':datetime.timedelta(hours=2),
+        'max_time_cycling':datetime.timedelta(hours=2),
+        'max_time_driving':datetime.timedelta(hours=2),
+        'speed_walking':3.6,
+        'speed_cycling':12.0,
+        'max_public_transport_rides':4,
+    }
+    general_settings.update(kwargs)
+    
+    walk_settings = general_settings.copy()
+    walk_settings.update({
+        'transport_modes':[LegMode.WALK],
+        'access_modes':[LegMode.WALK],
+        })
+    mode_settings['WALK'] = walk_settings
+    
+    transit_settings = general_settings.copy()
+    transit_settings.update({
+        'transport_modes':[TransitMode.TRANSIT],
+        'access_modes':[LegMode.WALK],
+         })
+    mode_settings['TRANSIT'] = transit_settings
+    
+    bike_lts1_settings = general_settings.copy()
+    bike_lts1_settings.update({
+        'transport_modes':[LegMode.WALK, LegMode.BICYCLE],
+        'access_modes':[LegMode.WALK, LegMode.BICYCLE],
+        'max_time_walking':datetime.timedelta(minutes=10),
+        'speed_walking':1.8,
+        'max_bicycle_traffic_stress':1
+        })
+    mode_settings['BIKE_LTS1'] = bike_lts1_settings
+    
+    bike_lts2_settings = general_settings.copy()
+    bike_lts2_settings.update({
+         'transport_modes':[LegMode.WALK, LegMode.BICYCLE],
+         'access_modes':[LegMode.WALK, LegMode.BICYCLE],
+         'max_time_walking':datetime.timedelta(minutes=10),
+         'speed_walking':1.8,
+         'max_bicycle_traffic_stress':2
+         })
+    mode_settings['BIKE_LTS2'] = bike_lts2_settings
+    
+    bike_lts4_settings = general_settings.copy()
+    bike_lts4_settings.update({
+        'transport_modes':[LegMode.WALK, LegMode.BICYCLE],
+        'access_modes':[LegMode.WALK, LegMode.BICYCLE],
+        'max_time_walking':datetime.timedelta(minutes=10),
+        'speed_walking':1.8,
+        'max_bicycle_traffic_stress':4
+        })
+    mode_settings['BIKE_LTS4'] = bike_lts4_settings
+    
+    car_settings = general_settings.copy()
+    car_settings.update({
+        'transport_modes':[LegMode.CAR],
+        'access_modes':[LegMode.CAR],
+        })
+    mode_settings['CAR'] = car_settings
+    
+    return mode_settings
 
 def make_patches(boundaries_latlon, crs_utm, patch_length = 10000, buffer = 500): #patch_length and buffer in m
     ''' 
@@ -180,6 +251,7 @@ def spatial_analysis(boundaries,
                            'pnpb', #protected bikeways
                            'pnab', #all bikeways
                            'highways',
+                           'journey_gap',
                            #'access',
                            #'transport_performance',
                            #'special',
@@ -273,6 +345,7 @@ def spatial_analysis(boundaries,
                 os.mkdir(f"{folder_name}geodata/population")
             with rasterio.open(f"{folder_name}geodata/population/pop_{year}.tif", "w", **out_meta) as dest:
                 dest.write(out_image)
+            #for current year, 
     
     testing_services = []
     for service in ['healthcare', 'schools', 'libraries', 'bikeshare']:
@@ -300,21 +373,7 @@ def spatial_analysis(boundaries,
         
     if 'highways' in to_test:
         all_highway_polys = []
-            
-    #should I finish this?
-    # if 'highways' in to_test:     
-    #     highway_filter = '["area"!~"yes"]["highway"~"motorway|trunk"]'
-    #     G_hwys = ox.graph_from_polygon(boundaries,
-    #                             custom_filter=highway_filter,
-    #                             retain_all=True)
-    #     G_hwys = ox.project_graph(G_hwys)
-    #     edges_hwys = ox.utils_graph.graph_to_gdfs(G_hwys, nodes=False)
-    #     edges_polyline = edges_hwys.geometry.unary_union
-    #     increment_dist = 25
-    #     distances = np.arange(0, edges_polyline.length, increment_dist)
-    #     points = [edges_polyline.interpolate(distance) for distance in distances] + [edges_polyline.boundary[1]]
-    #     multipoint = unary_union(points)
-    #     #need to switch back to latlon and put in all_coords['highway']
+
         
     if 'special' in to_test:
         special = gpd.read_file(f'{folder_name}special.geojson')
@@ -354,11 +413,13 @@ def spatial_analysis(boundaries,
 
     if 'pnft' in to_test:
         testing_services.append('pnft')
-        freq_stops = gtfs_parser.get_frequent_stops(
+        freq_stops, gtfs_wednesdays = gtfs_parser.get_frequent_stops(
             boundaries, 
             folder_name, 
             headway_threshold)
         service_point_locations['pnft'] = freq_stops
+        gtfs_filenames = os.listdir(folder_name+'temp/gtfs/')
+        
             
     if 'pnrt' in to_test:
         mode_classifications = {
@@ -381,29 +442,30 @@ def spatial_analysis(boundaries,
         rt_stns_utm = rt_stns.to_crs(utm_crs)
         rt_isochrones_utm = rt_isochrones.to_crs(utm_crs)
     
-    # if 'access' in to_test or 'transport_performance' in to_test:
+    if 'journey_gap' in to_test and len(gtfs_filenames) > 0: #ie, it has GTFS
+    
+        for file in [folder_name+'temp/access/grid_pop.geojson',
+                      folder_name+'temp/access/city_ltstagged.pbf']:
+            if os.path.exists(file):
+                os.remove(file)
         
-        # for file in [folder_name+'temp/access/grid_pop.geojson',
-        #              folder_name+'temp/access/city_ltstagged.pbf']:
-        #     if os.path.exists(file):
-        #         os.remove(file)
+        #prep osm (add LTS values)
+        original_filename = folder_name+"temp/city.pbf"
+        prep_bike_osm.add_lts_tags(original_filename,folder_name+"temp/access/city_ltstagged.pbf")
         
-        # #prep osm (add LTS values)
-        # original_filename = folder_name+"temp/city.pbf"
-        # prep_bike_osm.add_lts_tags(original_filename,folder_name+"temp/access/city_ltstagged.pbf")
+        #prep pop -- it would probably be better to do this straight from GHSL, ugh
+        prep_pop_ghsl.setup_grid(
+            utm_crs, 
+            boundaries_utm.unary_union, 
+            access_resolution, 
+            folder_name+"geodata/population/pop_2020.tif", 
+            adjust_pop = True,
+            save_loc = (folder_name+'temp/access/pop_points.csv',
+                        folder_name+'temp/access/grid_pop.geojson')
+            )
+        grid_pop = gpd.read_file(folder_name+'temp/access/grid_pop.geojson')
         
-        # #prep pop
-        # prep_pop_ghsl.setup_grid(
-        #     utm_crs, 
-        #     boundaries_utm.unary_union, 
-        #     access_resolution, 
-        #     folder_name+"geodata/pop_dens.tif", 
-        #     adjust_pop = True,
-        #     save_loc = (folder_name+'temp/access/pop_points.csv',
-        #                 folder_name+'temp/access/grid_pop.geojson')
-        #     )
-        # grid_pop = gpd.read_file(folder_name+'temp/access/grid_pop.geojson')
-        
+        import pdb; pdb.set_trace()
         # #cp over script
         # shutil.copy('access/two_step_access/calcttm_simple.r', folder_name+'temp/access/calcttm_simple.r')
         
