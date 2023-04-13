@@ -122,9 +122,12 @@ def get_stop_frequencies(feed, headwaylim):
 def get_frequent_stops(poly, folder_name, headwaylim = 20):
     filenames = get_GTFS_from_mobility_database(poly, folder_name+'temp/gtfs/')
     all_freq_stops = gpd.GeoDataFrame(geometry=[], crs=4326)
+    wednesdays = []
     for filename in filenames:
         feed = feed_from_filename(filename)
         counts = get_stop_frequencies(feed, headwaylim)
+        import pdb; pdb.set_trace()
         all_freq_stops = all_freq_stops.append(counts, ignore_index=True)
-    return all_freq_stops
+        wednesdays.append(feed.get_first_week()[2])
+    return all_freq_stops, wednesdays
     
