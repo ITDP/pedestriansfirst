@@ -14,7 +14,7 @@ import string
 import os
 
 import pdb
-import pandas
+import pandas as pd
 import geopandas as gpd
 import shapely
 from shapely.geometry import Point
@@ -81,7 +81,7 @@ def feed_from_filename(filename):
             calfile.write(out)
     try:
         feed = gk.read_feed('temp_gtfs_dir/', dist_units = 'km')
-    except pandas.errors.ParserError:
+    except pd.errors.ParserError:
         return False
     if os.path.exists('temp_gtfs_dir'):
         shutil.rmtree('temp_gtfs_dir')
@@ -126,8 +126,9 @@ def get_frequent_stops(poly, folder_name, headwaylim = 20):
     for filename in filenames:
         feed = feed_from_filename(filename)
         counts = get_stop_frequencies(feed, headwaylim)
-        import pdb; pdb.set_trace()
-        all_freq_stops = all_freq_stops.append(counts, ignore_index=True)
+        all_freq_stops = gpd.GeoDataFrame(
+            gpd.concat([all_freq_stops, counts], ignore_index=True),
+            crs = 4326)
         wednesdays.append(feed.get_first_week()[2])
     return all_freq_stops, wednesdays
     
