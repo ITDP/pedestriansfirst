@@ -449,9 +449,7 @@ def spatial_analysis(boundaries,
             if os.path.exists(file):
                 os.remove(file)
         
-        #prep osm (add LTS values)
-        original_filename = folder_name+"temp/city.pbf"
-        prep_bike_osm.add_lts_tags(original_filename,folder_name+"temp/access/city_ltstagged.pbf")
+        import pdb; pdb.set_trace()
         
         #prep pop -- it would probably be better to do this straight from GHSL, ugh
         grid_gdf_latlon = prep_pop_ghsl.setup_grid_ghsl(
@@ -463,7 +461,13 @@ def spatial_analysis(boundaries,
             )
         grid_gdf_latlon.to_file(folder_name+'temp/access/grid_pop.geojson')
         
-        import pdb; pdb.set_trace()
+        #prep osm (add LTS values)
+        original_filename = folder_name+"temp/city.pbf"
+        prep_bike_osm.add_lts_tags(original_filename,folder_name+"temp/access/city_ltstagged.pbf")
+        
+        
+        
+        
         # #cp over script
         # shutil.copy('access/two_step_access/calcttm_simple.r', folder_name+'temp/access/calcttm_simple.r')
         
