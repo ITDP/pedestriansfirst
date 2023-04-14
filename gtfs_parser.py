@@ -127,7 +127,7 @@ def get_frequent_stops(poly, folder_name, headwaylim = 20):
         feed = feed_from_filename(filename)
         counts = get_stop_frequencies(feed, headwaylim)
         all_freq_stops = gpd.GeoDataFrame(
-            gpd.concat([all_freq_stops, counts], ignore_index=True),
+            pd.concat([all_freq_stops, counts], ignore_index=True),
             crs = 4326)
         wednesdays.append(feed.get_first_week()[2])
     return all_freq_stops, wednesdays
