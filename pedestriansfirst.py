@@ -454,16 +454,14 @@ def spatial_analysis(boundaries,
         prep_bike_osm.add_lts_tags(original_filename,folder_name+"temp/access/city_ltstagged.pbf")
         
         #prep pop -- it would probably be better to do this straight from GHSL, ugh
-        prep_pop_ghsl.setup_grid_ghsl(
+        grid_gdf_latlon = prep_pop_ghsl.setup_grid_ghsl(
             boundaries_utm.unary_union, 
             access_resolution, 
             folder_name+"geodata/population/pop_2020.tif", 
             utm_crs, 
-            adjust_pop = True,
-            save_loc = (folder_name+'temp/access/pop_points.csv',
-                        folder_name+'temp/access/grid_pop.geojson')
+            adjust_pop = True
             )
-        grid_pop = gpd.read_file(folder_name+'temp/access/grid_pop.geojson')
+        grid_gdf_latlon.to_file(folder_name+'temp/access/grid_pop.geojson')
         
         import pdb; pdb.set_trace()
         # #cp over script
