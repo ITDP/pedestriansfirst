@@ -109,6 +109,7 @@ def adjust_population(grid_gdf_latlon, ghsl_crs, ghsl_fileloc):
                                             stats='sum')
     total_pop=pop_sum[0]['sum']
     df_sum = grid_gdf_latlon.population.sum()
+    print(total_pop, df_sum)
     ratio = total_pop / df_sum
     grid_gdf_latlon.population = grid_gdf_latlon.population * ratio
     return grid_gdf_latlon    
