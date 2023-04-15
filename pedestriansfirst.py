@@ -480,6 +480,7 @@ def spatial_analysis(boundaries,
         ttms = {}
         for mode in ['TRANSIT', 'BIKE_LTS1', 'CAR']:#mode_settings.keys():
             print(f'computing for {mode}')
+            import pdb; pdb.set_trace()
             ttm_computer = TravelTimeMatrixComputer(
                 transport_network, 
                 grid_gdf_latlon,
