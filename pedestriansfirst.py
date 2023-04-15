@@ -464,7 +464,8 @@ def spatial_analysis(boundaries,
         biketagged_filename = folder_name+"temp/access/city_ltstagged.pbf"
         prep_bike_osm.add_lts_tags(original_filename, biketagged_filename)
         
-        full_gtfs_filenames = [folder_name+'temp/access/'+name for name in gtfs_filenames]
+        full_gtfs_filenames = [folder_name+'temp/gtfs/'+name for name in gtfs_filenames]
+        print(full_gtfs_filenames)
         
         transport_network = TransportNetwork(
             biketagged_filename,
