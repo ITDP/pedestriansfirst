@@ -464,13 +464,17 @@ def spatial_analysis(boundaries,
         biketagged_filename = folder_name+"temp/access/city_ltstagged.pbf"
         prep_bike_osm.add_lts_tags(original_filename, biketagged_filename)
         
+        full_gtfs_filenames = [folder_name+'temp/access/'+name for name in gtfs_filenames]
+        
         transport_network = TransportNetwork(
             biketagged_filename,
-            gtfs_filenames
+            full_gtfs_filenames
             )
         
-        wednesday_morning = datetime.datetime.strptime(gtfs_wednesdays[0]+' 08:30:00', '%Y%m%d %H:%M:%S')
-        mode_settings=prepare_mode_settings(departure = wednesday_morning)
+        wednesday_mornings = [datetime.datetime.strptime(wed+' 08:30:00', '%Y%m%d %H:%M:%S') for wed in gtfs_wednesdays]
+        latest_wednesday = max(wednesday_mornings)
+    
+        mode_settings=prepare_mode_settings(departure = latest_wednesday)
         
         ttms = {}
         for mode in ['TRANSIT', 'BIKE_LTS1', 'CAR']:#mode_settings.keys():
