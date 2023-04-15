@@ -480,12 +480,7 @@ def spatial_analysis(boundaries,
         ttms = {}
         for mode in ['TRANSIT', 'BIKE_LTS1', 'CAR']:#mode_settings.keys():
             print(f'computing for {mode}')
-            import pdb; pdb.set_trace()
-            ttm_computer = TravelTimeMatrixComputer(
-                transport_network, 
-                grid_gdf_latlon,
-                **mode_settings[mode]
-                )
+            ttm_computer = TravelTimeMatrixComputer(transport_network, grid_gdf_latlon,**mode_settings[mode])
             ttm_long = ttm_computer.compute_travel_times()
             ttm_wide = pd.pivot(ttm_long, index='from_id', columns='to_id', values='travel_time')
             ttms[mode] = ttm_wide
@@ -503,7 +498,8 @@ def spatial_analysis(boundaries,
                 sustrans_time = min(ttms['TRANSIT'].loc[origin_id, dest_id],ttms['BIKE_LTS1'].loc[origin_id, dest_id])
                 dest_pop = grid_gdf_latlon.loc[dest_id, 'population']
                 time_val = (sustrans_time/car_time) * dest_pop
-                grid_gdf_latlon.loc[origin_id, 'time_total'] += time_val
+                if not np.isnan(time_val):
+                    grid_gdf_latlon.loc[origin_id, 'time_total'] += time_val
                 if car_time < 30:
                     grid_gdf_latlon.loc[origin_id, 'cumsum_car'] += dest_pop
                 if sustrans_time < 30:
