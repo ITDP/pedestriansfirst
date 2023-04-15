@@ -482,8 +482,10 @@ def spatial_analysis(boundaries,
         
         wednesday_mornings = [datetime.datetime.strptime(wed+' 08:30:00', '%Y%m%d %H:%M:%S') for wed in gtfs_wednesdays]
         latest_wednesday = max(wednesday_mornings)
-    
         mode_settings=prepare_mode_settings(departure = latest_wednesday)
+        
+        points_gdf_latlon = grid_gdf_latlon.copy()
+        points_gdf_latlon.geometry = grid_gdf_latlon.centroid
         
         ttms = {}
         for mode in ['TRANSIT', 'BIKE_LTS1', 'CAR']:#mode_settings.keys():
@@ -494,8 +496,6 @@ def spatial_analysis(boundaries,
             ttms[mode] = ttm_wide
             ttms[mode].to_csv(folder_name+'temp/access/'+mode+'_ttm.csv')
             
-        points_gdf_latlon = grid_gdf_latlon.copy()
-        points_gdf_latlon.geometry = grid_gdf_latlon.centroid
             
         #3 versions - cumsum, time, value
         print('calculating ttms for journey gaps')
@@ -1064,7 +1064,8 @@ def calculate_indicators(boundaries,
                            'highways',
                            #'special',
                            #'transport_performance',
-                           #'connectome'
+                           #'connectome',
+                           'journey_gap',
                            ],
                       #years = range(1975,2031),
                       years = [1975, 1980, 1985, 1990, 1995, 2000, 2005, 2010, 2015, 2020, 2022, 2025],
