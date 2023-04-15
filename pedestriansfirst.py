@@ -451,16 +451,13 @@ def spatial_analysis(boundaries,
         
         #prep pop -- it would probably be better to do this straight from GHSL, ugh
         grid_gdf_latlon = prep_pop_ghsl.setup_grid_ghsl(
-            boundaries_utm.unary_union, 
+            boundaries_latlon.unary_union, 
             access_resolution, 
             folder_name+"geodata/population/pop_2020.tif", 
             'ESRI:54009', 
             adjust_pop = True
             )
         grid_gdf_latlon.to_file(folder_name+'temp/access/grid_pop.geojson')
-        
-        
-        grid_gdf_latlon = prep_pop_ghsl.setup_grid_ghsl(boundaries_latlon.unary_union, access_resolution, folder_name+"geodata/population/pop_2020.tif", utm_crs, adjust_pop = True)
         
         #prep osm (add LTS values)
         original_filename = folder_name+"temp/city.pbf"
