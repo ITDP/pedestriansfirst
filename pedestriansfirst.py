@@ -490,7 +490,7 @@ def spatial_analysis(boundaries,
         ttms = {}
         for mode in ['TRANSIT', 'BIKE_LTS1', 'CAR']:#mode_settings.keys():
             print(f'computing for {mode}')
-            ttm_computer = TravelTimeMatrixComputer(transport_network, grid_gdf_latlon,**mode_settings[mode])
+            ttm_computer = TravelTimeMatrixComputer(transport_network, points_gdf_latlon,**mode_settings[mode])
             ttm_long = ttm_computer.compute_travel_times()
             ttm_wide = pd.pivot(ttm_long, index='from_id', columns='to_id', values='travel_time')
             ttms[mode] = ttm_wide
@@ -499,39 +499,42 @@ def spatial_analysis(boundaries,
             
         #3 versions - cumsum, time, value
         print('calculating ttms for journey gaps')
-        for origin_id in tqdm(list(points_gdf_latlon.index)):
-            points_gdf_latlon.loc[origin_id, 'time_total'] = 0
-            points_gdf_latlon.loc[origin_id, 'grav_sustrans_sum'] = 0
-            points_gdf_latlon.loc[origin_id, 'grav_car_sum'] = 0
-            points_gdf_latlon.loc[origin_id, 'cumsum_sustrans'] = 0
-            points_gdf_latlon.loc[origin_id, 'cumsum_car'] = 0
-            origin_pop = points_gdf_latlon.loc[origin_id, 'population']
+        for origin_id in tqdm(list(grid_gdf_latlon.index)):
+            grid_gdf_latlon.loc[origin_id, 'time_total'] = 0
+            grid_gdf_latlon.loc[origin_id, 'grav_sustrans_sum'] = 0
+            grid_gdf_latlon.loc[origin_id, 'grav_car_sum'] = 0
+            grid_gdf_latlon.loc[origin_id, 'cumsum_sustrans'] = 0
+            grid_gdf_latlon.loc[origin_id, 'cumsum_car'] = 0
+            origin_pop = grid_gdf_latlon.loc[origin_id, 'population']
             if origin_pop > 0:
-                for dest_id in points_gdf_latlon.index:
-                    dest_pop = points_gdf_latlon.loc[dest_id, 'population']
+                for dest_id in grid_gdf_latlon.index:
+                    dest_pop = grid_gdf_latlon.loc[dest_id, 'population']
                     if dest_pop > 0 and not origin_id == dest_id:
                         car_time = ttms['CAR'].loc[origin_id, dest_id]
                         sustrans_time = min(ttms['TRANSIT'].loc[origin_id, dest_id],ttms['BIKE_LTS1'].loc[origin_id, dest_id])
                         time_ratio = (sustrans_time/car_time) 
                         time_ratio_with_weighting = time_ratio * dest_pop
                         if not np.isnan(time_ratio_with_weighting):
-                            points_gdf_latlon.loc[origin_id, 'time_ratios_w_weighting'] += time_ratio_with_weighting
+                            grid_gdf_latlon.loc[origin_id, 'time_ratios_w_weighting'] += time_ratio_with_weighting
                             grav_sustrans_val = value_of_cxn(origin_pop, dest_pop, sustrans_time)
-                            points_gdf_latlon.loc[origin_id, 'grav_sustrans_sum'] += grav_sustrans_val
+                            grid_gdf_latlon.loc[origin_id, 'grav_sustrans_sum'] += grav_sustrans_val
                             grav_car_val = value_of_cxn(origin_pop, dest_pop, car_time)
-                            points_gdf_latlon.loc[origin_id, 'grav_car_sum'] += grav_car_val
+                            grid_gdf_latlon.loc[origin_id, 'grav_car_sum'] += grav_car_val
                         if car_time < 30:
-                            points_gdf_latlon.loc[origin_id, 'cumsum_car'] += dest_pop
+                            grid_gdf_latlon.loc[origin_id, 'cumsum_car'] += dest_pop
                         if sustrans_time < 30:
-                            points_gdf_latlon.loc[origin_id, 'cumsum_sustrans'] += dest_pop
-                cumsum_ratio = points_gdf_latlon.loc[origin_id, 'cumsum_sustrans'] / points_gdf_latlon.loc[origin_id, 'cumsum_car']
-                points_gdf_latlon.loc[origin_id, 'journey_gap_cumsum_ratio'] = cumsum_ratio
-                time_ratio = points_gdf_latlon.loc[origin_id, 'time_ratios_w_weighting'] / (points_gdf_latlon.population.sum() - origin_pop)
-                points_gdf_latlon.loc[origin_id, 'journey_gap_time_ratio'] = time_ratio
-                grav_ratio = points_gdf_latlon.loc[origin_id, 'grav_sustrans_sum'] / points_gdf_latlon.loc[origin_id, 'grav_car_sum']
-                points_gdf_latlon.loc[origin_id, 'journey_gap_grav_ratio'] = grav_ratio
+                            grid_gdf_latlon.loc[origin_id, 'cumsum_sustrans'] += dest_pop
+                cumsum_ratio = grid_gdf_latlon.loc[origin_id, 'cumsum_sustrans'] / grid_gdf_latlon.loc[origin_id, 'cumsum_car']
+                grid_gdf_latlon.loc[origin_id, 'journey_gap_cumsum_ratio'] = cumsum_ratio
+                grid_gdf_latlon.loc[origin_id, 'journey_gap_cumsum_ratio_weighted'] = cumsum_ratio * origin_pop
+                time_ratio = points_gdf_latlon.loc[origin_id, 'time_ratios_w_weighting'] / (grid_gdf_latlon.population.sum() - origin_pop)
+                grid_gdf_latlon.loc[origin_id, 'journey_gap_time_ratio'] = time_ratio
+                grid_gdf_latlon.loc[origin_id, 'journey_gap_time_ratio_weighted'] = time_ratio * origin_pop
+                grav_ratio = points_gdf_latlon.loc[origin_id, 'grav_sustrans_sum'] / grid_gdf_latlon.loc[origin_id, 'grav_car_sum']
+                grid_gdf_latlon.loc[origin_id, 'journey_gap_grav_ratio_weighted'] = grav_ratio
+                #grav ratio is already weighted because we added origin_pop in calling value_of_cxn
                 
-        points_gdf_latlon.to_file(folder_name+'temp/access/points_pop_evaluated.geojson')
+        grid_gdf_latlon.to_file(folder_name+'temp/access/grid_pop_evaluated.geojson')
         
         # #cp over script
         # shutil.copy('access/two_step_access/calcttm_simple.r', folder_name+'temp/access/calcttm_simple.r')
@@ -1254,7 +1257,30 @@ def calculate_indicators(boundaries,
             block_density = 'NA'
         results['block_density'] = block_density
             
+    if 'journey_gap' in to_test:
+        geodata_path = f'{folder_name}temp/access/grid_pop_evaluated.geojson'
+        if os.path.exists(geodata_path):
+            access_grid = gpd.read_file(geodata_path)
+            grid_overlap = access_grid.overlay(boundaries_latlon, how='intersection')
+            area_pop = grid_overlap.population.sum()
             
+            cumsum_ratio_weighted_total = grid_overlap.journey_gap_cumsum_ratio_weighted.sum()
+            cumsum_indicator = cumsum_ratio_weighted_total / area_pop
+            print('cumsum_indicator: ',cumsum_indicator)
+            results['cumsum_indicator'] = cumsum_indicator
+            
+            time_ratio_weighted_total = grid_overlap.journey_gap_time_ratio_weighted.sum()
+            time_indicator = time_ratio_weighted_total / area_pop
+            print('time_indicator: ',time_indicator)
+            results['time_indicator'] = cumsum_indicator
+            
+            grav_ratio_weighted_total = grid_overlap.journey_gap_grav_ratio_weighted.sum()
+            grav_indicator = grav_ratio_weighted_total / area_pop
+            print('grav_indicator: ',grav_indicator)
+            results['grav_indicator'] = cumsum_indicator
+        
+        
+        
             
     if 'transport_performance' in to_test:
         # any_gtfs = False
@@ -1276,3 +1302,11 @@ def calculate_indicators(boundaries,
         
     return results
 
+                cumsum_ratio = grid_gdf_latlon.loc[origin_id, 'cumsum_sustrans'] / grid_gdf_latlon.loc[origin_id, 'cumsum_car']
+                grid_gdf_latlon.loc[origin_id, 'journey_gap_cumsum_ratio'] = cumsum_ratio
+                grid_gdf_latlon.loc[origin_id, 'journey_gap_cumsum_ratio_weighted'] = cumsum_ratio * origin_pop
+                time_ratio = points_gdf_latlon.loc[origin_id, 'time_ratios_w_weighting'] / (grid_gdf_latlon.population.sum() - origin_pop)
+                grid_gdf_latlon.loc[origin_id, 'journey_gap_time_ratio'] = time_ratio
+                grid_gdf_latlon.loc[origin_id, 'journey_gap_time_ratio_weighted'] = time_ratio * origin_pop
+                grav_ratio = points_gdf_latlon.loc[origin_id, 'grav_sustrans_sum'] / grid_gdf_latlon.loc[origin_id, 'grav_car_sum']
+                grid_gdf_latlon.loc[origin_id, 'journey_gap_grav_ratio_weighted'] = grav_ratio
