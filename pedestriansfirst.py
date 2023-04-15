@@ -12,7 +12,6 @@ import json
 import traceback
 import shutil
 from tqdm import tqdm
-from datetime import datetime
 #import utm_zone
 import numpy as np
 import osmnx as ox
@@ -473,7 +472,7 @@ def spatial_analysis(boundaries,
             gtfs_filenames
             )
         
-        wednesday_morning = datetime.strptime(gtfs_wednesdays[0]+' 08:30:00', '%Y%m%d %H:%M:%S')
+        wednesday_morning = datetime.datetime.strptime(gtfs_wednesdays[0]+' 08:30:00', '%Y%m%d %H:%M:%S')
         mode_settings=prepare_mode_settings(departure = wednesday_morning)
         
         ttms = {}
