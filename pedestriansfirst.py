@@ -105,6 +105,13 @@ def prepare_mode_settings(**kwargs):
     
     return mode_settings
 
+def value_of_cxn(from_pop, to_dests, t_min):
+    #see SSTI's Measuring Accessibility, appendix (p.68)
+    #rough average of work and non-work
+    baseval = from_pop * to_dests
+    return baseval * 1.14 * np.e ** (-0.05 * t_min)
+
+
 def make_patches(boundaries_latlon, crs_utm, patch_length = 10000, buffer = 500): #patch_length and buffer in m
     ''' 
     'tile' the boundaries of a city into patches, like a patchwork quilt, including a buffer
@@ -457,6 +464,7 @@ def spatial_analysis(boundaries,
             'ESRI:54009', 
             adjust_pop = True
             )
+        grid_gdf_latlon.id = grid_gdf_latlon.index
         grid_gdf_latlon.to_file(folder_name+'temp/access/grid_pop.geojson')
         
         #prep osm (add LTS values)
@@ -484,28 +492,39 @@ def spatial_analysis(boundaries,
             ttm_long = ttm_computer.compute_travel_times()
             ttm_wide = pd.pivot(ttm_long, index='from_id', columns='to_id', values='travel_time')
             ttms[mode] = ttm_wide
+            ttms[mode].to_csv(folder_name+'temp/access/'+mode+'_ttm.csv')
             
+        points_gdf_latlon = grid_gdf_latlon.copy()
+        points_gdf_latlon.geometry = grid_gdf_latlon.centroid
             
         #3 versions - cumsum, time, value
         print('calculating ttms for journey gaps')
-        for origin_id in tqdm(list(grid_gdf_latlon.index)):
-            grid_gdf_latlon.loc[origin_id, 'time_total'] = 0
-            grid_gdf_latlon.loc[origin_id, 'value_total'] = 0
-            grid_gdf_latlon.loc[origin_id, 'cumsum_sustrans'] = 0
-            grid_gdf_latlon.loc[origin_id, 'cumsum_car'] = 0
-            for dest_id in grid_gdf_latlon.index:
-                car_time = ttms['CAR'].loc[origin_id, dest_id]
-                sustrans_time = min(ttms['TRANSIT'].loc[origin_id, dest_id],ttms['BIKE_LTS1'].loc[origin_id, dest_id])
-                dest_pop = grid_gdf_latlon.loc[dest_id, 'population']
-                time_val = (sustrans_time/car_time) * dest_pop
-                if not np.isnan(time_val):
-                    grid_gdf_latlon.loc[origin_id, 'time_total'] += time_val
-                if car_time < 30:
-                    grid_gdf_latlon.loc[origin_id, 'cumsum_car'] += dest_pop
-                if sustrans_time < 30:
-                    grid_gdf_latlon.loc[origin_id, 'cumsum_sustrans'] += dest_pop
+        for origin_id in tqdm(list(points_gdf_latlon.index)):
+            points_gdf_latlon.loc[origin_id, 'time_total'] = 0
+            points_gdf_latlon.loc[origin_id, 'grav_sustrans_sum'] = 0
+            points_gdf_latlon.loc[origin_id, 'grav_car_sum'] = 0
+            points_gdf_latlon.loc[origin_id, 'cumsum_sustrans'] = 0
+            points_gdf_latlon.loc[origin_id, 'cumsum_car'] = 0
+            origin_pop = points_gdf_latlon.loc[origin_id, 'population']
+            if origin_pop > 0:
+                for dest_id in points_gdf_latlon.index:
+                    dest_pop = points_gdf_latlon.loc[dest_id, 'population']
+                    if dest_pop > 0:
+                        car_time = ttms['CAR'].loc[origin_id, dest_id]
+                        sustrans_time = min(ttms['TRANSIT'].loc[origin_id, dest_id],ttms['BIKE_LTS1'].loc[origin_id, dest_id])
+                        time_val = (sustrans_time/car_time) * dest_pop
+                        if not np.isnan(time_val):
+                            points_gdf_latlon.loc[origin_id, 'time_total'] += time_val
+                            grav_sustrans_val = value_of_cxn(origin_pop, dest_pop, sustrans_time)
+                            points_gdf_latlon.loc[origin_id, 'time_total'] = grav_sustrans_val
+                            grav_car_val = value_of_cxn(origin_pop, dest_pop, car_time)
+                            points_gdf_latlon.loc[origin_id, 'time_total'] = grav_car_val
+                        if car_time < 30:
+                            points_gdf_latlon.loc[origin_id, 'cumsum_car'] += dest_pop
+                        if sustrans_time < 30:
+                            points_gdf_latlon.loc[origin_id, 'cumsum_sustrans'] += dest_pop
                     
-        grid_gdf_latlon.to_file(folder_name+'temp/access/grid_pop_evaluated.geojson')
+        points_gdf_latlon.to_file(folder_name+'temp/access/points_pop_evaluated.geojson')
         
         # #cp over script
         # shutil.copy('access/two_step_access/calcttm_simple.r', folder_name+'temp/access/calcttm_simple.r')
