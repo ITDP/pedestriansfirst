@@ -464,7 +464,7 @@ def spatial_analysis(boundaries,
             'ESRI:54009', 
             adjust_pop = True
             )
-        grid_gdf_latlon.id = grid_gdf_latlon.index
+        grid_gdf_latlon['id'] = grid_gdf_latlon.index
         grid_gdf_latlon.to_file(folder_name+'temp/access/grid_pop.geojson')
         
         #prep osm (add LTS values)
@@ -509,21 +509,28 @@ def spatial_analysis(boundaries,
             if origin_pop > 0:
                 for dest_id in points_gdf_latlon.index:
                     dest_pop = points_gdf_latlon.loc[dest_id, 'population']
-                    if dest_pop > 0:
+                    if dest_pop > 0 and not origin_id == dest_id:
                         car_time = ttms['CAR'].loc[origin_id, dest_id]
                         sustrans_time = min(ttms['TRANSIT'].loc[origin_id, dest_id],ttms['BIKE_LTS1'].loc[origin_id, dest_id])
-                        time_val = (sustrans_time/car_time) * dest_pop
-                        if not np.isnan(time_val):
-                            points_gdf_latlon.loc[origin_id, 'time_total'] += time_val
+                        time_ratio = (sustrans_time/car_time) 
+                        time_ratio_with_weighting = time_ratio * dest_pop
+                        if not np.isnan(time_ratio_with_weighting):
+                            points_gdf_latlon.loc[origin_id, 'time_ratios_w_weighting'] += time_ratio_with_weighting
                             grav_sustrans_val = value_of_cxn(origin_pop, dest_pop, sustrans_time)
-                            points_gdf_latlon.loc[origin_id, 'time_total'] = grav_sustrans_val
+                            points_gdf_latlon.loc[origin_id, 'grav_sustrans_sum'] += grav_sustrans_val
                             grav_car_val = value_of_cxn(origin_pop, dest_pop, car_time)
-                            points_gdf_latlon.loc[origin_id, 'time_total'] = grav_car_val
+                            points_gdf_latlon.loc[origin_id, 'grav_car_sum'] += grav_car_val
                         if car_time < 30:
                             points_gdf_latlon.loc[origin_id, 'cumsum_car'] += dest_pop
                         if sustrans_time < 30:
                             points_gdf_latlon.loc[origin_id, 'cumsum_sustrans'] += dest_pop
-                    
+                cumsum_ratio = points_gdf_latlon.loc[origin_id, 'cumsum_sustrans'] / points_gdf_latlon.loc[origin_id, 'cumsum_car']
+                points_gdf_latlon.loc[origin_id, 'journey_gap_cumsum_ratio'] = cumsum_ratio
+                time_ratio = points_gdf_latlon.loc[origin_id, 'time_ratios_w_weighting'] / (points_gdf_latlon.population.sum() - origin_pop)
+                points_gdf_latlon.loc[origin_id, 'journey_gap_time_ratio'] = time_ratio
+                grav_ratio = points_gdf_latlon.loc[origin_id, 'grav_sustrans_sum'] / points_gdf_latlon.loc[origin_id, 'grav_car_sum']
+                points_gdf_latlon.loc[origin_id, 'journey_gap_grav_ratio'] = grav_ratio
+                
         points_gdf_latlon.to_file(folder_name+'temp/access/points_pop_evaluated.geojson')
         
         # #cp over script
