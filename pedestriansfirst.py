@@ -12,6 +12,7 @@ import json
 import traceback
 import shutil
 from tqdm import tqdm
+from datetime import datetime
 #import utm_zone
 import numpy as np
 import osmnx as ox
@@ -276,7 +277,7 @@ def spatial_analysis(boundaries,
                       boundary_buffer = 500, #m
                       blocks_simplification = 0.0001, #topo-simplification
                       services_simplification = 10, #m TODO replace with gpd simplification?
-                      access_resolution = 1000, #m
+                      access_resolution = 2000, #m
                       transport_performance_speeds = { #make sure these align with the r script
                           'walk': 3.6, #km/h
                           'bike_lts1': 12,
@@ -449,24 +450,63 @@ def spatial_analysis(boundaries,
             if os.path.exists(file):
                 os.remove(file)
         
-        import pdb; pdb.set_trace()
-        
         #prep pop -- it would probably be better to do this straight from GHSL, ugh
         grid_gdf_latlon = prep_pop_ghsl.setup_grid_ghsl(
             boundaries_utm.unary_union, 
             access_resolution, 
             folder_name+"geodata/population/pop_2020.tif", 
-            utm_crs, 
+            'ESRI:54009', 
             adjust_pop = True
             )
         grid_gdf_latlon.to_file(folder_name+'temp/access/grid_pop.geojson')
         
+        
+        grid_gdf_latlon = prep_pop_ghsl.setup_grid_ghsl(boundaries_latlon.unary_union, access_resolution, folder_name+"geodata/population/pop_2020.tif", utm_crs, adjust_pop = True)
+        
         #prep osm (add LTS values)
         original_filename = folder_name+"temp/city.pbf"
-        prep_bike_osm.add_lts_tags(original_filename,folder_name+"temp/access/city_ltstagged.pbf")
+        biketagged_filename = folder_name+"temp/access/city_ltstagged.pbf"
+        prep_bike_osm.add_lts_tags(original_filename, biketagged_filename)
         
+        transport_network = TransportNetwork(
+            biketagged_filename,
+            gtfs_filenames
+            )
         
+        wednesday_morning = datetime.strptime(gtfs_wednesdays[0]+' 08:30:00', '%Y%m%d %H:%M:%S')
+        mode_settings=prepare_mode_settings(departure = wednesday_morning)
         
+        ttms = {}
+        for mode in ['TRANSIT', 'BIKE_LTS1', 'CAR']:#mode_settings.keys():
+            print(f'computing for {mode}')
+            ttm_computer = TravelTimeMatrixComputer(
+                transport_network, 
+                grid_gdf_latlon,
+                **mode_settings[mode]
+                )
+            ttm_long = ttm_computer.compute_travel_times()
+            ttm_wide = pd.pivot(ttm_long, index='from_id', columns='to_id', values='travel_time')
+            ttms[mode] = ttm_wide
+            
+            
+        #3 versions - cumsum, time, value
+        for origin_id in grid_gdf_latlon.index:
+            grid_gdf_latlon.loc[origin_id, 'time_total'] = 0
+            grid_gdf_latlon.loc[origin_id, 'value_total'] = 0
+            grid_gdf_latlon.loc[origin_id, 'cumsum_sustrans'] = 0
+            grid_gdf_latlon.loc[origin_id, 'cumsum_car'] = 0
+            for dest_id in grid_gdf_latlon.index:
+                car_time = ttms['CAR'].loc[origin_id, dest_id]
+                sustrans_time = min(ttms['TRANSIT'].loc[origin_id, dest_id],ttms['BIKE_LTS1'].loc[origin_id, dest_id])
+                dest_pop = grid_gdf_latlon.loc[dest_id, 'population']
+                time_val = (sustrans_time/car_time) * dest_pop
+                grid_gdf_latlon.loc[origin_id, 'time_total'] += time_val
+                if car_time < 30:
+                    grid_gdf_latlon.loc[origin_id, 'cumsum_car'] += dest_pop
+                if sustrans_time < 30:
+                    grid_gdf_latlon.loc[origin_id, 'cumsum_sustrans'] += dest_pop
+                    
+        grid_gdf_latlon.to_file(folder_name+'temp/access/grid_pop_evaluated.geojson')
         
         # #cp over script
         # shutil.copy('access/two_step_access/calcttm_simple.r', folder_name+'temp/access/calcttm_simple.r')
