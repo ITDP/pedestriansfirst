@@ -500,7 +500,7 @@ def spatial_analysis(boundaries,
         #3 versions - cumsum, time, value
         print('calculating ttms for journey gaps')
         for origin_id in tqdm(list(grid_gdf_latlon.index)):
-            grid_gdf_latlon.loc[origin_id, 'time_total'] = 0
+            grid_gdf_latlon.loc[origin_id, 'time_ratios_w_weighting'] = 0
             grid_gdf_latlon.loc[origin_id, 'grav_sustrans_sum'] = 0
             grid_gdf_latlon.loc[origin_id, 'grav_car_sum'] = 0
             grid_gdf_latlon.loc[origin_id, 'cumsum_sustrans'] = 0
