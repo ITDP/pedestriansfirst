@@ -527,10 +527,10 @@ def spatial_analysis(boundaries,
                 cumsum_ratio = grid_gdf_latlon.loc[origin_id, 'cumsum_sustrans'] / grid_gdf_latlon.loc[origin_id, 'cumsum_car']
                 grid_gdf_latlon.loc[origin_id, 'journey_gap_cumsum_ratio'] = cumsum_ratio
                 grid_gdf_latlon.loc[origin_id, 'journey_gap_cumsum_ratio_weighted'] = cumsum_ratio * origin_pop
-                time_ratio = points_gdf_latlon.loc[origin_id, 'time_ratios_w_weighting'] / (grid_gdf_latlon.population.sum() - origin_pop)
+                time_ratio = grid_gdf_latlon.loc[origin_id, 'time_ratios_w_weighting'] / (grid_gdf_latlon.population.sum() - origin_pop)
                 grid_gdf_latlon.loc[origin_id, 'journey_gap_time_ratio'] = time_ratio
                 grid_gdf_latlon.loc[origin_id, 'journey_gap_time_ratio_weighted'] = time_ratio * origin_pop
-                grav_ratio = points_gdf_latlon.loc[origin_id, 'grav_sustrans_sum'] / grid_gdf_latlon.loc[origin_id, 'grav_car_sum']
+                grav_ratio = grid_gdf_latlon.loc[origin_id, 'grav_sustrans_sum'] / grid_gdf_latlon.loc[origin_id, 'grav_car_sum']
                 grid_gdf_latlon.loc[origin_id, 'journey_gap_grav_ratio_weighted'] = grav_ratio
                 #grav ratio is already weighted because we added origin_pop in calling value_of_cxn
                 
