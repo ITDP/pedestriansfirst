@@ -23,6 +23,11 @@ from shapely.geometry import LineString, Point
 from shapely.ops import unary_union, transform
 import shapely.ops
 import topojson
+
+#do this before importing r5py
+import sys
+sys.argv.append(["--max-memory", "80%"])
+
 from r5py import TransportNetwork, TravelTimeMatrixComputer
 from r5py import TransitMode, LegMode
 
@@ -507,6 +512,7 @@ def spatial_analysis(boundaries,
             grid_gdf_latlon.loc[origin_id, 'cumsum_car'] = 0
             origin_pop = grid_gdf_latlon.loc[origin_id, 'population']
             if origin_pop > 0:
+                total_dest_pop = 0
                 for dest_id in grid_gdf_latlon.index:
                     dest_pop = grid_gdf_latlon.loc[dest_id, 'population']
                     if dest_pop > 0 and not origin_id == dest_id:
@@ -515,6 +521,7 @@ def spatial_analysis(boundaries,
                         time_ratio = (sustrans_time/car_time) 
                         time_ratio_with_weighting = time_ratio * dest_pop
                         if not np.isnan(time_ratio_with_weighting):
+                            total_dest_pop += dest_pop
                             grid_gdf_latlon.loc[origin_id, 'time_ratios_w_weighting'] += time_ratio_with_weighting
                             grav_sustrans_val = value_of_cxn(origin_pop, dest_pop, sustrans_time)
                             grid_gdf_latlon.loc[origin_id, 'grav_sustrans_sum'] += grav_sustrans_val
@@ -527,7 +534,7 @@ def spatial_analysis(boundaries,
                 cumsum_ratio = grid_gdf_latlon.loc[origin_id, 'cumsum_sustrans'] / grid_gdf_latlon.loc[origin_id, 'cumsum_car']
                 grid_gdf_latlon.loc[origin_id, 'journey_gap_cumsum_ratio'] = cumsum_ratio
                 grid_gdf_latlon.loc[origin_id, 'journey_gap_cumsum_ratio_weighted'] = cumsum_ratio * origin_pop
-                time_ratio = grid_gdf_latlon.loc[origin_id, 'time_ratios_w_weighting'] / (grid_gdf_latlon.population.sum() - origin_pop)
+                time_ratio = grid_gdf_latlon.loc[origin_id, 'time_ratios_w_weighting'] / total_dest_pop
                 grid_gdf_latlon.loc[origin_id, 'journey_gap_time_ratio'] = time_ratio
                 grid_gdf_latlon.loc[origin_id, 'journey_gap_time_ratio_weighted'] = time_ratio * origin_pop
                 grav_ratio = grid_gdf_latlon.loc[origin_id, 'grav_sustrans_sum'] / grid_gdf_latlon.loc[origin_id, 'grav_car_sum']
@@ -1272,12 +1279,12 @@ def calculate_indicators(boundaries,
             time_ratio_weighted_total = grid_overlap.journey_gap_time_ratio_weighted.sum()
             time_indicator = time_ratio_weighted_total / area_pop
             print('time_indicator: ',time_indicator)
-            results['time_indicator'] = cumsum_indicator
+            results['time_indicator'] = time_indicator
             
             grav_ratio_weighted_total = grid_overlap.journey_gap_grav_ratio_weighted.sum()
             grav_indicator = grav_ratio_weighted_total / area_pop
             print('grav_indicator: ',grav_indicator)
-            results['grav_indicator'] = cumsum_indicator
+            results['grav_indicator'] = grav_indicator
         
         
         
