@@ -532,14 +532,14 @@ def spatial_analysis(boundaries,
                         if sustrans_time < 30:
                             grid_gdf_latlon.loc[origin_id, 'cumsum_sustrans'] += dest_pop
                 cumsum_ratio = grid_gdf_latlon.loc[origin_id, 'cumsum_sustrans'] / grid_gdf_latlon.loc[origin_id, 'cumsum_car']
-                grid_gdf_latlon.loc[origin_id, 'journey_gap_cumsum_ratio'] = cumsum_ratio
+                grid_gdf_latlon.loc[origin_id, 'journey_gap_cumsum_ratio_unweighted'] = cumsum_ratio
                 grid_gdf_latlon.loc[origin_id, 'journey_gap_cumsum_ratio_weighted'] = cumsum_ratio * origin_pop
                 time_ratio = grid_gdf_latlon.loc[origin_id, 'time_ratios_w_weighting'] / total_dest_pop
-                grid_gdf_latlon.loc[origin_id, 'journey_gap_time_ratio'] = time_ratio
+                grid_gdf_latlon.loc[origin_id, 'journey_gap_time_ratio_unweighted'] = time_ratio
                 grid_gdf_latlon.loc[origin_id, 'journey_gap_time_ratio_weighted'] = time_ratio * origin_pop
                 grav_ratio = grid_gdf_latlon.loc[origin_id, 'grav_sustrans_sum'] / grid_gdf_latlon.loc[origin_id, 'grav_car_sum']
-                grid_gdf_latlon.loc[origin_id, 'journey_gap_grav_ratio_unweighted'] = grav_ratio / origin_pop
-                grid_gdf_latlon.loc[origin_id, 'journey_gap_grav_ratio_weighted'] = grav_ratio
+                grid_gdf_latlon.loc[origin_id, 'journey_gap_grav_ratio_unweighted'] = grav_ratio
+                grid_gdf_latlon.loc[origin_id, 'journey_gap_grav_ratio_weighted'] = grav_ratio * origin_pop
                 #grav ratio is already weighted because we added origin_pop in calling value_of_cxn
                 
         grid_gdf_latlon.to_file(folder_name+'temp/access/grid_pop_evaluated.geojson')
