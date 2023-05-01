@@ -202,6 +202,7 @@ def get_jurisdictions(hdc,
     print('getting sub-jurisdictions')
     admin_lvls = [str(x) for x in range(4,11)]
     jurisdictions_latlon = ox.geometries_from_polygon(buffered_poly_latlon, tags={'admin_level':admin_lvls})
+    import pdb; pdb.set_trace()
     if 'relation' in jurisdictions_latlon.columns:
         jurisdictions_latlon = jurisdictions_latlon.loc[('relation',)]
         print(f'found {len(jurisdictions_latlon)} on first pass')
