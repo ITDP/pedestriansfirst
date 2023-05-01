@@ -193,7 +193,8 @@ def get_jurisdictions(hdc,
     natural_earth = gpd.read_file('input_data/naturalearth_countries/ne_10m_admin_0_countries.shp')
     earth_utm = natural_earth.to_crs(crs = poly_utm_gdf.crs)
     #get land within 10km
-    nearby_land_gdf_utm = gpd.clip(earth_utm, poly_utm_gdf.buffer(10000).unary_union)
+    area_for_land = poly_utm_gdf.buffer(10000).unary_union
+    nearby_land_gdf_utm = gpd.clip(earth_utm, area_for_land)
     nearby_land_gdf_ll = nearby_land_gdf_utm.to_crs(4326)
         
     
