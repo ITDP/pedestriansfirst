@@ -245,7 +245,7 @@ def get_jurisdictions(hdc,
                 else:
                     print(f'admin_level={admin_level} excluded: insufficient coverage')
             else:
-                print(f'admin_level={admin_level} excluded: polys too small')
+                print(f'admin_level={admin_level} excluded: polys too small: avg {selection.area.mean()/1000000}km2')
         final_jurisdictions_utm = select_jurisdictions_utm[select_jurisdictions_utm.admin_level.isin(selected_levels)]
         final_jurisdictions_latlon = final_jurisdictions_utm.to_crs(4326)
         print(f'found {len(final_jurisdictions_latlon)} in acceptable admin levels {selected_levels}')
@@ -258,7 +258,7 @@ def get_jurisdictions(hdc,
     if len(final_jurisdictions_latlon) > 0:
         for osmid in jurisdictions_latlon.index:
             try:
-                analysis_areas.loc[new_id,'osmid'] = osmid
+                analysis_areas.loc[new_id,'osmid'] = osmid[1]
             except:
                 import pdb; pdb.set_trace()
             analysis_areas.loc[:,'geometry'].loc[new_id] = jurisdictions_latlon.loc[osmid,'geometry']
@@ -311,7 +311,8 @@ def regional_analysis(hdc,
     
     #Let's make sure to buffer this to include peripheral roads etc for routing
     total_poly_latlon=analysis_areas.unary_union
-    total_poly_latlon = shapely.convex_hull(total_poly_latlon)    
+    total_poly_latlon = shapely.convex_hull(total_poly_latlon)   
+    gpd.GeoDataFrame(geometry=[total_poly_latlon], crs=4326).to_file(f'{folder_name}/debug/area_for_osm_extract.gpkg', driver='GPKG')
     prep_from_poly(total_poly_latlon, folder_name, boundary_buffer = 2000)
     
     #now actually call the functions and save the results
