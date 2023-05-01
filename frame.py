@@ -195,6 +195,7 @@ def get_jurisdictions(hdc,
     #get land within 10km
     area_for_land = poly_utm_gdf.buffer(10000).unary_union
     nearby_land_gdf_utm = gpd.clip(earth_utm, area_for_land)
+    import pdb; pdb.set_trace()
     nearby_land_gdf_ll = nearby_land_gdf_utm.to_crs(4326)
         
     
