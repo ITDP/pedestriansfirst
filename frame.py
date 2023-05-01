@@ -172,7 +172,7 @@ def get_jurisdictions(hdc,
         select_metro_areas_utm = brazil_metros_utm[selection]
         select_metro_areas_latlon = select_metro_areas_utm.to_crs(4326)
         for area in select_metro_areas_latlon.iterrows():
-            analysis_areas.loc[new_id,'name'] = area[1].name
+            analysis_areas.loc[new_id,'name'] = area[1].name_muni
             analysis_areas.loc[new_id, 'geometry'] = area[1].geometry
             analysis_areas.loc[new_id, 'hdc'] = None
             analysis_areas.loc[new_id, 'osmid'] = None
@@ -219,6 +219,7 @@ def get_jurisdictions(hdc,
         select_jurisdictions_utm = jurisdictions_utm[selection]
         print(f'found {len(select_jurisdictions_utm)} with {minimum_portion} inside area')
         select_jurisdictions_latlon = select_jurisdictions_utm.to_crs(4326)
+        import pdb; pdb.set_trace()
     else:
         select_jurisdictions_latlon = []
     if len(select_jurisdictions_latlon) > 0:
