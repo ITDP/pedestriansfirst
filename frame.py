@@ -220,7 +220,6 @@ def get_jurisdictions(hdc,
         select_jurisdictions_utm = jurisdictions_utm[selection]
         print(f'found {len(select_jurisdictions_utm)} with {minimum_portion} inside area')
         select_jurisdictions_latlon = select_jurisdictions_utm.to_crs(4326)
-        import pdb; pdb.set_trace()
     else:
         select_jurisdictions_latlon = []
     if len(select_jurisdictions_latlon) > 0:
@@ -489,7 +488,7 @@ if __name__ == '__main__':
     
     
     test_cities = [
-        1210,
+       # 1210,
         1406,
         #621,
 #        3902,
