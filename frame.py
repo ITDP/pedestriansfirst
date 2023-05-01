@@ -134,7 +134,7 @@ def get_pop_ghsl(city):
 #TODO -- consider customizing this for the USA? an extra buffer or something?
 def get_jurisdictions(hdc,
                       minimum_portion = 0.6, #portion of a jurisdiction that has to be within the poly
-                      level_min_mean_area = 3,# min size in km2 for the mean area of a unit at an admin_level
+                      level_min_mean_area = 2,# min size in km2 for the mean area of a unit at an admin_level
                       level_min_coverage = .0000002, #min coverage of an admin_level of the poly_latlon
                       buffer = 2000, #in m
                       ): 
@@ -266,7 +266,8 @@ def get_jurisdictions(hdc,
             for attr in ['name','admin_level']:
                 analysis_areas.loc[new_id,attr] = jurisdictions_latlon.loc[osmid,attr]
                 analysis_areas.loc[new_id, 'hdc'] = hdc
-            level_name = level_names.loc[main_country, jurisdictions_latlon.loc[osmid,'admin_level']]
+            level_number = jurisdictions_latlon.loc[osmid,'admin_level']
+            level_name = level_names.loc[main_country, f'admin_level={level_number}']
             analysis_areas.loc[new_id, 'level_name'] = level_name
             new_id += 1
             
