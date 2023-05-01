@@ -134,8 +134,8 @@ def get_pop_ghsl(city):
 #TODO -- consider customizing this for the USA? an extra buffer or something?
 def get_jurisdictions(hdc,
                       minimum_portion = 0.6, #portion of a jurisdiction that has to be within the poly
-                      level_min_mean_area = 5,# min size in km2 for the mean area of a unit at an admin_level
-                      level_min_coverage = .00002, #min coverage of an admin_level of the poly_latlon
+                      level_min_mean_area = 3,# min size in km2 for the mean area of a unit at an admin_level
+                      level_min_coverage = .0000002, #min coverage of an admin_level of the poly_latlon
                       buffer = 2000, #in m
                       ): 
     
@@ -202,7 +202,6 @@ def get_jurisdictions(hdc,
     print('getting sub-jurisdictions')
     admin_lvls = [str(x) for x in range(4,11)]
     jurisdictions_latlon = ox.geometries_from_polygon(buffered_poly_latlon, tags={'admin_level':admin_lvls})
-    import pdb; pdb.set_trace()
     if 'admin_level' in jurisdictions_latlon.columns:
         #jurisdictions_latlon = jurisdictions_latlon.loc[('relation',)]
         #I forget what that was doing
@@ -243,6 +242,10 @@ def get_jurisdictions(hdc,
             if selection.area.mean() >= level_min_mean_area*1000000:
                 if selection.unary_union.area >= (level_min_coverage * buffered_poly_utm.area):
                     selected_levels.append(admin_level)
+                else:
+                    print(f'admin_level={admin_level} excluded: insufficient coverage')
+            else:
+                print(f'admin_level={admin_level} excluded: polys too small')
         final_jurisdictions_utm = select_jurisdictions_utm[select_jurisdictions_utm.admin_level.isin(selected_levels)]
         final_jurisdictions_latlon = final_jurisdictions_utm.to_crs(4326)
         print(f'found {len(final_jurisdictions_latlon)} in acceptable admin levels {selected_levels}')
@@ -254,7 +257,10 @@ def get_jurisdictions(hdc,
     
     if len(final_jurisdictions_latlon) > 0:
         for osmid in jurisdictions_latlon.index:
-            analysis_areas.loc[new_id,'osmid'] = osmid
+            try:
+                analysis_areas.loc[new_id,'osmid'] = osmid
+            except:
+                import pdb; pdb.set_trace()
             analysis_areas.loc[:,'geometry'].loc[new_id] = jurisdictions_latlon.loc[osmid,'geometry']
             #the above hack is necessary because sometimes geometry is a multipolygon
             for attr in ['name','admin_level']:
