@@ -189,8 +189,6 @@ def get_jurisdictions(hdc,
             buffered_poly_utm
             ])
         
-    import pdb; pdb.set_trace()
-        
     #get natural_earth data here, both to use it for clipping coastline
     #and for countries later
     natural_earth = gpd.read_file('input_data/naturalearth_countries/ne_10m_admin_0_countries.shp')
@@ -198,7 +196,7 @@ def get_jurisdictions(hdc,
     #get land within 10km
     area_for_land = poly_utm_gdf.buffer(10000).unary_union
     if earth_utm.intersection(area_for_land).area.sum() >= area_for_land.area * 0.95:
-        nearby_land_gdf_utm = buffered_poly_utm_gdf
+        nearby_land_gdf_utm = gpd.GeoDataFrame(geometry = buffered_poly_utm_gdf, crs = poly_utm_gdf.crs)
         nearby_land_gdf_ll = buffered_poly_utm_gdf.to_crs(4326)
     else:
         nearby_land_gdf_utm = gpd.clip(earth_utm, area_for_land)
@@ -214,7 +212,7 @@ def get_jurisdictions(hdc,
         #jurisdictions_latlon = jurisdictions_latlon.loc[('relation',)]
         #I forget what that was doing
         print(f'found {len(jurisdictions_latlon)} on first pass')
-        jurisdictions_utm = ox.projection.project_gdf(jurisdictions_latlon)
+        jurisdictions_utm = jurisdictions_latlon.to_crs(buffered_poly_utm_gdf.crs)
         jurisdictions_utm = gpd.clip(jurisdictions_utm, nearby_land_gdf_utm.unary_union)
         jurisdictions_clipped_utm = jurisdictions_utm.intersection(buffered_poly_utm)
         selection = (jurisdictions_clipped_utm.area / jurisdictions_utm.area) > minimum_portion
@@ -238,7 +236,7 @@ def get_jurisdictions(hdc,
         #jurisdictions_latlon = jurisdictions_latlon.loc[('relation',)]
         #I forget what that was doing
         print(f'found {len(jurisdictions_latlon)} on second pass')
-        jurisdictions_utm = ox.projection.project_gdf(jurisdictions_latlon)
+        jurisdictions_utm = jurisdictions_latlon.to_crs(buffered_poly_utm_gdf.crs)
         jurisdictions_utm = gpd.clip(jurisdictions_utm, nearby_land_gdf_utm.unary_union)
         jurisdictions_clipped_utm = jurisdictions_utm.intersection(total_boundaries_utm)
         selection = (jurisdictions_clipped_utm.area / jurisdictions_utm.area) > 0.95
