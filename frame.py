@@ -35,7 +35,8 @@ def poly_from_ghsl_hdc(hdc):
     ucdb.index =  ucdb['ID_HDC_G0']
     boundaries = ucdb.loc[hdc,'geometry']
     name = ucdb.loc[hdc,'UC_NM_MN']
-    return boundaries, name
+    main_country = ucdb.loc[hdc,'CTR_MN_ISO']
+    return boundaries, name, main_country
 
 def prep_from_poly(poly, folder_name, boundary_buffer = 500):
     #save city geometry so that I can take an extract from planet.pbf within it
@@ -105,7 +106,7 @@ def from_id_hdc(hdc, folder_prefix = 'cities_out', boundary_buffer = 500, kwargs
         folder_name = folder_prefix+'/ghsl_'+str(hdc)
     else:
         folder_name = str(hdc)
-    poly, name = poly_from_ghsl_hdc(hdc)
+    poly, name, main_country = poly_from_ghsl_hdc(hdc)
     overpass = prep_from_poly(poly, folder_name, boundary_buffer)
     kwargs['overpass'] = overpass
     calctime = pedestriansfirst.spatial_analysis(poly, hdc, name, folder_name, **kwargs)
@@ -131,24 +132,82 @@ def get_pop_ghsl(city):
 
 #TODO: make this cut out water!
 #TODO -- consider customizing this for the USA? an extra buffer or something?
-def get_jurisdictions(poly_latlon,
+def get_jurisdictions(hdc,
                       minimum_portion = 0.6, #portion of a jurisdiction that has to be within the poly
                       level_min_mean_area = 5,# min size in km2 for the mean area of a unit at an admin_level
-                      level_min_coverage = .2, #min coverage of an admin_level of the poly_latlon
-                      buffer = 1000, #in m
+                      level_min_coverage = .00002, #min coverage of an admin_level of the poly_latlon
+                      buffer = 2000, #in m
                       ): 
+    
+    ghsl_boundaries, name, main_country = poly_from_ghsl_hdc(hdc)
+    
+    poly_utm_gdf = ox.projection.project_gdf(gpd.GeoDataFrame(geometry=[ghsl_boundaries], crs=4326))
+    buffered_poly_utm_gdf = poly_utm_gdf.buffer(buffer)
+    buffered_poly_utm = buffered_poly_utm_gdf.unary_union
+    buffered_poly_latlon = buffered_poly_utm_gdf.to_crs(4326).unary_union
+    
+    analysis_areas = gpd.GeoDataFrame()
+    new_id = 0
+    analysis_areas.loc[new_id,'name'] = name
+    analysis_areas.loc[new_id, 'geometry'] = ghsl_boundaries
+    analysis_areas.loc[new_id, 'hdc'] = hdc
+    analysis_areas.loc[new_id, 'osmid'] = None
+    analysis_areas.loc[new_id, 'level_name'] = 'Agglomeration'
+    analysis_areas.crs=4326
+    new_id += 1
+    
+    #first, for Brazil only, we check which 'metropolitan areas' it's in
+    #based on data from ITDP Brazil
+    #1. get the area that includes the centroid of the agglomeration
+    #2. get any other areas that are at least ?30%? covered by the agglomeration
+    brazil_metros = gpd.read_file('input_data/country_specific_zones/brazil_selected_metro_areas.gpkg')
+    brazil_metros.to_crs(4326)
+    if main_country == 'BRA':
+        brazil_metros_utm = brazil_metros.to_crs(buffered_poly_utm_gdf.crs)
+        overlap = brazil_metros_utm.intersection(buffered_poly_utm)
+        selection = (overlap.area / brazil_metros_utm.area) > 0.3
+        if len(brazil_metros[selection]) == 0:
+            selection = brazil_metros_utm.intersects(buffered_poly_utm.centroid)
+        select_metro_areas_utm = brazil_metros_utm[selection]
+        select_metro_areas_latlon = select_metro_areas_utm.to_crs(4326)
+        for area in select_metro_areas_latlon.iterrows():
+            analysis_areas.loc[new_id,'name'] = area[1].name
+            analysis_areas.loc[new_id, 'geometry'] = area[1].geometry
+            analysis_areas.loc[new_id, 'hdc'] = None
+            analysis_areas.loc[new_id, 'osmid'] = None
+            analysis_areas.loc[new_id, 'level_name'] = 'Brazilian Metro Areas'
+            new_id += 1
+        #and union it with the poly_latlons, mostly so we get jurisdictions 
+        #inside brasilia
+        buffered_poly_latlon = unary_union(
+            select_metro_areas_latlon.unary_union,
+            buffered_poly_latlon
+            )
+        buffered_poly_utm = unary_union(
+            select_metro_areas_utm.unary_union,
+            buffered_poly_utm
+            )
+        
+    #get natural_earth data here, both to use it for clipping coastline
+    #and for countries later
+    natural_earth = gpd.read_file('input_data/naturalearth_countries/ne_10m_admin_0_countries.shp')
+    earth_utm = natural_earth.to_crs(crs = poly_utm_gdf.crs)
+    #get land within 10km
+    nearby_land_gdf_utm = gpd.clip(earth_utm, poly_utm_gdf.buffer(10000).unary_union)
+    nearby_land_gdf_ll = nearby_land_gdf_utm.to_crs(4326)
+        
+    
+    #First, get all the sub-jusisdictions at least minimum_portion within the buffered_poly_latlon,
+    #then buffer the total_boundaries to the union of those and the original poly
     print('getting sub-jurisdictions')
-    poly_utm_gdf = ox.projection.project_gdf(gpd.GeoDataFrame(geometry=[poly_latlon], crs=4326))
-    poly_utm_gdf = poly_utm_gdf.buffer(buffer)
-    poly_utm = poly_utm_gdf.unary_union
-    poly_latlon = poly_utm_gdf.to_crs(4326).unary_union
     admin_lvls = [str(x) for x in range(4,11)]
-    jurisdictions_latlon = ox.geometries_from_polygon(poly_latlon, tags={'admin_level':admin_lvls})
+    jurisdictions_latlon = ox.geometries_from_polygon(buffered_poly_latlon, tags={'admin_level':admin_lvls})
     if 'relation' in jurisdictions_latlon.columns:
         jurisdictions_latlon = jurisdictions_latlon.loc[('relation',)]
         print(f'found {len(jurisdictions_latlon)} on first pass')
         jurisdictions_utm = ox.projection.project_gdf(jurisdictions_latlon)
-        jurisdictions_clipped_utm = jurisdictions_utm.intersection(poly_utm)
+        jurisdictions_utm = gpd.clip(jurisdictions_utm, nearby_land_gdf_utm.unary_union)
+        jurisdictions_clipped_utm = jurisdictions_utm.intersection(buffered_poly_utm)
         selection = (jurisdictions_clipped_utm.area / jurisdictions_utm.area) > minimum_portion
         select_jurisdictions_utm = jurisdictions_utm[selection]
         print(f'found {len(select_jurisdictions_utm)} with {minimum_portion} inside area')
@@ -156,20 +215,21 @@ def get_jurisdictions(poly_latlon,
     else:
         select_jurisdictions_latlon = []
     if len(select_jurisdictions_latlon) > 0:
-        total_boundaries_latlon = unary_union([select_jurisdictions_latlon.unary_union, poly_latlon])
-        total_boundaries_utm = unary_union([select_jurisdictions_utm.unary_union, poly_utm])
+        total_boundaries_latlon = unary_union([select_jurisdictions_latlon.unary_union, buffered_poly_latlon])
+        total_boundaries_utm = unary_union([select_jurisdictions_utm.unary_union, buffered_poly_utm])
     else:
-        total_boundaries_latlon = poly_latlon
-        total_boundaries_utm = poly_utm
+        total_boundaries_latlon = buffered_poly_latlon
+        total_boundaries_utm = buffered_poly_utm
         
     #now get all jurisdictions within total_boundaries
     jurisdictions_latlon = ox.geometries_from_polygon(total_boundaries_latlon, tags={'admin_level':admin_lvls})
     if not 'relation' in jurisdictions_latlon.columns:
-        return []
+        final_jurisdictions_latlon = []
     else:
         jurisdictions_latlon = jurisdictions_latlon.loc[('relation',)]
         print(f'found {len(jurisdictions_latlon)} on second pass')
         jurisdictions_utm = ox.projection.project_gdf(jurisdictions_latlon)
+        jurisdictions_utm = gpd.clip(jurisdictions_utm, nearby_land_gdf_utm.unary_union)
         jurisdictions_clipped_utm = jurisdictions_utm.intersection(total_boundaries_utm)
         selection = (jurisdictions_clipped_utm.area / jurisdictions_utm.area) > 0.95
         select_jurisdictions_utm = jurisdictions_utm[selection]
@@ -178,13 +238,34 @@ def get_jurisdictions(poly_latlon,
         for admin_level in select_jurisdictions_utm.admin_level.unique():
             selection = select_jurisdictions_utm[select_jurisdictions_utm.admin_level==admin_level]
             if selection.area.mean() >= level_min_mean_area*1000000:
-                if selection.unary_union.area >= (level_min_coverage * poly_utm.area):
+                if selection.unary_union.area >= (level_min_coverage * buffered_poly_utm.area):
                     selected_levels.append(admin_level)
         final_jurisdictions_utm = select_jurisdictions_utm[select_jurisdictions_utm.admin_level.isin(selected_levels)]
         final_jurisdictions_latlon = final_jurisdictions_utm.to_crs(4326)
         print(f'found {len(final_jurisdictions_latlon)} in acceptable admin levels {selected_levels}')
-
-        return final_jurisdictions_latlon
+    
+    
+    #TODO -- get admin_level names, add to dataframe
+    level_names = pd.read_csv('input_data/admin_level_names.csv')
+    level_names.index = level_names.ISO_code
+    
+    if len(final_jurisdictions_latlon) > 0:
+        for osmid in jurisdictions_latlon.index:
+            analysis_areas.loc[new_id,'osmid'] = osmid
+            analysis_areas.loc[:,'geometry'].loc[new_id] = jurisdictions_latlon.loc[osmid,'geometry']
+            #the above hack is necessary because sometimes geometry is a multipolygon
+            for attr in ['name','admin_level']:
+                analysis_areas.loc[new_id,attr] = jurisdictions_latlon.loc[osmid,attr]
+                analysis_areas.loc[new_id, 'hdc'] = hdc
+            level_name = level_names.loc[main_country, jurisdictions_latlon.loc[osmid,'admin_level']]
+            analysis_areas.loc[new_id, 'level_name'] = level_name
+            new_id += 1
+            
+    country_overlaps = natural_earth.overlay(gpd.GeoDataFrame(geometry=[ghsl_boundaries], crs=4326), how='intersection')
+    for idx in country_overlaps.index:
+        analysis_areas.loc[new_id,'country'] = country_overlaps.loc[idx,'ISO_A3']
+        analysis_areas.loc[:,'geometry'].loc[new_id] = country_overlaps.loc[idx,'geometry']
+        new_id += 1
 
 def regional_analysis(hdc, 
                       folder_prefix = 'cities_out', 
@@ -208,49 +289,26 @@ def regional_analysis(hdc,
         os.mkdir(str(folder_name)+'/debug/')
     if not os.path.isdir(str(folder_name)+'/temp/'):
         os.mkdir(str(folder_name)+'/temp/')
-    ghsl_boundaries, name = poly_from_ghsl_hdc(hdc)
-    jurisdictions_latlon = get_jurisdictions(
-        ghsl_boundaries, 
+    
+    #this should happen in get_jurisdictions
+    analysis_areas = get_jurisdictions(
+        hdc, 
         minimum_portion=minimum_portion
         )
     
-    analysis_areas = gpd.GeoDataFrame()
-    new_id = 0
-    analysis_areas.loc[new_id,'name'] = name
-    analysis_areas.loc[new_id, 'geometry'] = ghsl_boundaries
-    analysis_areas.loc[new_id, 'hdc'] = hdc
-    analysis_areas.loc[new_id, 'osmid'] = None
-    analysis_areas.crs=4326
-    new_id += 1
-    if len(jurisdictions_latlon) > 0:
-        for osmid in jurisdictions_latlon.index:
-            analysis_areas.loc[new_id,'osmid'] = osmid
-            analysis_areas.loc[:,'geometry'].loc[new_id] = jurisdictions_latlon.loc[osmid,'geometry']
-            #the above hack is necessary because sometimes geometry is a multipolygon
-            for attr in ['name','admin_level']:
-                analysis_areas.loc[new_id,attr] = jurisdictions_latlon.loc[osmid,attr]
-                analysis_areas.loc[new_id, 'hdc'] = hdc
-            new_id += 1
-    
-    natural_earth = gpd.read_file('input_data/naturalearth_countries/ne_10m_admin_0_countries.shp')
-    country_overlaps = natural_earth.overlay(gpd.GeoDataFrame(geometry=[ghsl_boundaries], crs=4326))
-    for idx in country_overlaps.index:
-        analysis_areas.loc[new_id,'country'] = country_overlaps.loc[idx,'ISO_A3']
-        analysis_areas.loc[:,'geometry'].loc[new_id] = country_overlaps.loc[idx,'geometry']
-        new_id += 1
-    
-    total_poly_latlon=analysis_areas.unary_union
-    
     analysis_areas.to_file(f'{folder_name}/debug/analysis_areas.gpkg', driver='GPKG')
     
-    prep_from_poly(total_poly_latlon, folder_name)
+    #Let's make sure to buffer this to include peripheral roads etc for routing
+    total_poly_latlon=analysis_areas.unary_union
+    total_poly_latlon = shapely.convex_hull(total_poly_latlon)    
+    prep_from_poly(total_poly_latlon, folder_name, boundary_buffer = 2000)
     
     #now actually call the functions and save the results
     if analyze == True:
         calctime = pedestriansfirst.spatial_analysis(
             total_poly_latlon,
             hdc,
-            name,
+            analysis_area.loc[0,'name'],
             folder_name=folder_name,
             )
     else:
