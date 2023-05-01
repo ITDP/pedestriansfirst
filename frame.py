@@ -203,8 +203,9 @@ def get_jurisdictions(hdc,
     admin_lvls = [str(x) for x in range(4,11)]
     jurisdictions_latlon = ox.geometries_from_polygon(buffered_poly_latlon, tags={'admin_level':admin_lvls})
     import pdb; pdb.set_trace()
-    if 'relation' in jurisdictions_latlon.columns:
-        jurisdictions_latlon = jurisdictions_latlon.loc[('relation',)]
+    if 'admin_level' in jurisdictions_latlon.columns:
+        #jurisdictions_latlon = jurisdictions_latlon.loc[('relation',)]
+        #I forget what that was doing
         print(f'found {len(jurisdictions_latlon)} on first pass')
         jurisdictions_utm = ox.projection.project_gdf(jurisdictions_latlon)
         jurisdictions_utm = gpd.clip(jurisdictions_utm, nearby_land_gdf_utm.unary_union)
@@ -224,10 +225,11 @@ def get_jurisdictions(hdc,
         
     #now get all jurisdictions within total_boundaries
     jurisdictions_latlon = ox.geometries_from_polygon(total_boundaries_latlon, tags={'admin_level':admin_lvls})
-    if not 'relation' in jurisdictions_latlon.columns:
+    if not 'admin_level' in jurisdictions_latlon.columns:
         final_jurisdictions_latlon = []
     else:
-        jurisdictions_latlon = jurisdictions_latlon.loc[('relation',)]
+        #jurisdictions_latlon = jurisdictions_latlon.loc[('relation',)]
+        #I forget what that was doing
         print(f'found {len(jurisdictions_latlon)} on second pass')
         jurisdictions_utm = ox.projection.project_gdf(jurisdictions_latlon)
         jurisdictions_utm = gpd.clip(jurisdictions_utm, nearby_land_gdf_utm.unary_union)
