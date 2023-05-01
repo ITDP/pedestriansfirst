@@ -266,6 +266,8 @@ def get_jurisdictions(hdc,
         analysis_areas.loc[new_id,'country'] = country_overlaps.loc[idx,'ISO_A3']
         analysis_areas.loc[:,'geometry'].loc[new_id] = country_overlaps.loc[idx,'geometry']
         new_id += 1
+        
+    return analysis_areas
 
 def regional_analysis(hdc, 
                       folder_prefix = 'cities_out', 
