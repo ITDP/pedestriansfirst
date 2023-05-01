@@ -179,14 +179,14 @@ def get_jurisdictions(hdc,
             new_id += 1
         #and union it with the poly_latlons, mostly so we get jurisdictions 
         #inside brasilia
-        buffered_poly_latlon = unary_union(
+        buffered_poly_latlon = unary_union([
             select_metro_areas_latlon.unary_union,
             buffered_poly_latlon
-            )
-        buffered_poly_utm = unary_union(
+            ])
+        buffered_poly_utm = unary_union([
             select_metro_areas_utm.unary_union,
             buffered_poly_utm
-            )
+            ])
         
     #get natural_earth data here, both to use it for clipping coastline
     #and for countries later
