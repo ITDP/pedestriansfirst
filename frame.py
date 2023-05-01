@@ -256,17 +256,17 @@ def get_jurisdictions(hdc,
     level_names.index = level_names.ISO_code
     
     if len(final_jurisdictions_latlon) > 0:
-        for osmid in jurisdictions_latlon.index:
+        for osmid in final_jurisdictions_latlon.index:
             try:
                 analysis_areas.loc[new_id,'osmid'] = osmid[1]
             except:
                 import pdb; pdb.set_trace()
-            analysis_areas.loc[:,'geometry'].loc[new_id] = jurisdictions_latlon.loc[osmid,'geometry']
+            analysis_areas.loc[:,'geometry'].loc[new_id] = final_jurisdictions_latlon.loc[osmid,'geometry']
             #the above hack is necessary because sometimes geometry is a multipolygon
             for attr in ['name','admin_level']:
-                analysis_areas.loc[new_id,attr] = jurisdictions_latlon.loc[osmid,attr]
+                analysis_areas.loc[new_id,attr] = final_jurisdictions_latlon.loc[osmid,attr]
                 analysis_areas.loc[new_id, 'hdc'] = hdc
-            level_number = jurisdictions_latlon.loc[osmid,'admin_level']
+            level_number = final_jurisdictions_latlon.loc[osmid,'admin_level']
             level_name = level_names.loc[main_country, f'admin_level={level_number}']
             analysis_areas.loc[new_id, 'level_name'] = level_name
             new_id += 1
