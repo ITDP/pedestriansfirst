@@ -308,7 +308,7 @@ def regional_analysis(hdc,
         calctime = pedestriansfirst.spatial_analysis(
             total_poly_latlon,
             hdc,
-            analysis_area.loc[0,'name'],
+            analysis_areas.loc[0,'name'],
             folder_name=folder_name,
             )
     else:
@@ -468,6 +468,7 @@ if __name__ == '__main__':
     
     
     test_cities = [
+        1406,
         #621,
 #        3902,
         855,
