@@ -194,9 +194,12 @@ def get_jurisdictions(hdc,
     earth_utm = natural_earth.to_crs(crs = poly_utm_gdf.crs)
     #get land within 10km
     area_for_land = poly_utm_gdf.buffer(10000).unary_union
-    import pdb; pdb.set_trace()
-    nearby_land_gdf_utm = gpd.clip(earth_utm, area_for_land)
-    nearby_land_gdf_ll = nearby_land_gdf_utm.to_crs(4326)
+    if earth_utm.intersection(area_for_land).area.sum() >= area_for_land.area * 0.95:
+        nearby_land_gdf_utm = buffered_poly_utm_gdf
+        nearby_land_gdf_ll = buffered_poly_utm_gdf.to_crs(4326)
+    else:
+        nearby_land_gdf_utm = gpd.clip(earth_utm, area_for_land)
+        nearby_land_gdf_ll = nearby_land_gdf_utm.to_crs(4326)
         
     
     #First, get all the sub-jusisdictions at least minimum_portion within the buffered_poly_latlon,
