@@ -163,6 +163,7 @@ def get_jurisdictions(hdc,
     brazil_metros = gpd.read_file('input_data/country_specific_zones/brazil_selected_metro_areas.gpkg')
     brazil_metros.to_crs(4326)
     if main_country == 'BRA':
+        print("We're in Brazil :)")
         brazil_metros_utm = brazil_metros.to_crs(buffered_poly_utm_gdf.crs)
         overlap = brazil_metros_utm.intersection(buffered_poly_utm)
         selection = (overlap.area / brazil_metros_utm.area) > 0.3
@@ -187,6 +188,8 @@ def get_jurisdictions(hdc,
             select_metro_areas_utm.unary_union,
             buffered_poly_utm
             ])
+        
+    import pdb; pdb.set_trace()
         
     #get natural_earth data here, both to use it for clipping coastline
     #and for countries later
