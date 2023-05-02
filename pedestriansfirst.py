@@ -283,8 +283,8 @@ def spatial_analysis(boundaries,
                       years = [1975, 1980, 1985, 1990, 1995, 2000, 2005, 2010, 2015, 2020, 2022, 2025], #for PNRT and pop_dens. remember range(1,3) = [1,2]
                       current_year = 2022,
                       overpass = False,
-                      patch_length = 8000, #m
-                      block_patch_length = 2000, #m
+                      patch_length = 10000, #m
+                      block_patch_length = 5000, #m
                       boundary_buffer = 500, #m
                       blocks_simplification = 0.0001, #topo-simplification
                       services_simplification = 10, #m TODO replace with gpd simplification?

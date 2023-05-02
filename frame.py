@@ -143,8 +143,9 @@ def get_jurisdictions(hdc,
     
     poly_utm_gdf = ox.projection.project_gdf(gpd.GeoDataFrame(geometry=[ghsl_boundaries], crs=4326))
     buffered_poly_utm_gdf = poly_utm_gdf.buffer(buffer)
+    buffered_poly_latlon_gdf = buffered_poly_utm_gdf.to_crs(4326)
     buffered_poly_utm = buffered_poly_utm_gdf.unary_union
-    buffered_poly_latlon = buffered_poly_utm_gdf.to_crs(4326).unary_union
+    buffered_poly_latlon = buffered_poly_latlon_gdf.unary_union
     
     analysis_areas = gpd.GeoDataFrame()
     new_id = 0
@@ -195,13 +196,12 @@ def get_jurisdictions(hdc,
     natural_earth = gpd.read_file('input_data/naturalearth_countries/ne_10m_admin_0_countries.shp')
     earth_utm = natural_earth.to_crs(crs = poly_utm_gdf.crs)
     #get land within 10km
-    area_for_land = buffered_poly_utm_gdf.buffer(100000).unary_union
-    if earth_utm.intersection(area_for_land).area.sum() >= area_for_land.area * 0.95:
+    area_for_land_ll = buffered_poly_utm_gdf.buffer(100000).to_crs(4326).unary_union
+    if natural_earth.intersection(area_for_land_ll).area.sum() >= area_for_land_ll.area * 0.95:
         nearby_land_gdf_utm = buffered_poly_utm_gdf.buffer(100000)
         nearby_land_gdf_ll = buffered_poly_utm_gdf.to_crs(4326)
     else:
-        nearby_land_gdf_utm = gpd.clip(earth_utm, area_for_land)
-        nearby_land_gdf_ll = nearby_land_gdf_utm.to_crs(4326)
+        nearby_land_gdf_ll = gpd.clip(natural_earth, area_for_land_ll)
         
     
     #First, get all the sub-jusisdictions at least minimum_portion within the buffered_poly_latlon,
