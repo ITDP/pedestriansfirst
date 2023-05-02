@@ -202,6 +202,7 @@ def get_jurisdictions(hdc,
         nearby_land_gdf_ll = buffered_poly_utm_gdf.to_crs(4326)
     else:
         nearby_land_gdf_ll = gpd.clip(natural_earth, area_for_land_ll)
+        nearby_land_gdf_utm = nearby_land_gdf_ll.to_crs(buffered_poly_utm_gdf.crs)
         
     
     #First, get all the sub-jusisdictions at least minimum_portion within the buffered_poly_latlon,
