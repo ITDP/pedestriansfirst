@@ -260,8 +260,10 @@ def get_jurisdictions(hdc,
     
     
     #TODO -- get admin_level names, add to dataframe
-    level_names = pd.read_csv('input_data/admin_level_names.csv')
-    level_names.index = level_names.ISO_code
+    level_names_eng = pd.read_csv('input_data/admin_level_names_eng.csv')
+    level_names_eng.index = level_names_eng.ISO_code
+    level_names_local = pd.read_csv('input_data/admin_level_names_local.csv')
+    level_names_local.index = level_names_local.ISO_code
     
     if len(final_jurisdictions_latlon) > 0:
         for osmid in final_jurisdictions_latlon.index:
@@ -275,8 +277,12 @@ def get_jurisdictions(hdc,
                 analysis_areas.loc[new_id,attr] = final_jurisdictions_latlon.loc[osmid,attr]
                 analysis_areas.loc[new_id, 'hdc'] = hdc
             level_number = final_jurisdictions_latlon.loc[osmid,'admin_level']
-            level_name = level_names.loc[main_country, f'admin_level={level_number}']
-            analysis_areas.loc[new_id, 'level_name'] = level_name
+            level_name_eng = level_names_eng.loc[main_country, f'admin_level={level_number}']
+            level_name_local = level_names_local.loc[main_country, f'admin_level={level_number}']
+            analysis_areas.loc[new_id, 'level_name_eng'] = level_name_eng
+            analysis_areas.loc[new_id, 'level_name_local'] = level_name_local
+            level_name_full = f'{level_name_eng} ({level_name_local}'
+            analysis_areas.loc[new_id, 'level_name_full'] = level_name_full
             new_id += 1
             
     country_overlaps = natural_earth.overlay(gpd.GeoDataFrame(geometry=[ghsl_boundaries], crs=4326), how='intersection')
@@ -489,15 +495,15 @@ if __name__ == '__main__':
     
     
     test_cities = [
-       # 1210,
-       # 1406,
-        #621,
-#        3902,
-        855,
-        2501,
-        2559,
-        2980,
-        4309,
+       1210,
+       1406,
+       1303,
+       1420,
+       21,
+       2851,
+       3751,
+       9691,
+       6845,
         
         
 #     855	,
