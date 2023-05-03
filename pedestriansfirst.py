@@ -51,7 +51,7 @@ def prepare_mode_settings(**kwargs):
         'max_time_walking':datetime.timedelta(hours=2),
         'max_time_cycling':datetime.timedelta(hours=2),
         'max_time_driving':datetime.timedelta(hours=2),
-        'speed_walking':3.6,
+        'speed_walking':4.8,
         'speed_cycling':12.0,
         'max_public_transport_rides':4,
     }
@@ -76,7 +76,7 @@ def prepare_mode_settings(**kwargs):
         'transport_modes':[LegMode.WALK, LegMode.BICYCLE],
         'access_modes':[LegMode.WALK, LegMode.BICYCLE],
         'max_time_walking':datetime.timedelta(minutes=10),
-        'speed_walking':1.8,
+        'speed_walking':4,
         'max_bicycle_traffic_stress':1
         })
     mode_settings['BIKE_LTS1'] = bike_lts1_settings
@@ -86,7 +86,7 @@ def prepare_mode_settings(**kwargs):
          'transport_modes':[LegMode.WALK, LegMode.BICYCLE],
          'access_modes':[LegMode.WALK, LegMode.BICYCLE],
          'max_time_walking':datetime.timedelta(minutes=10),
-         'speed_walking':1.8,
+         'speed_walking':4,
          'max_bicycle_traffic_stress':2
          })
     mode_settings['BIKE_LTS2'] = bike_lts2_settings
@@ -96,7 +96,7 @@ def prepare_mode_settings(**kwargs):
         'transport_modes':[LegMode.WALK, LegMode.BICYCLE],
         'access_modes':[LegMode.WALK, LegMode.BICYCLE],
         'max_time_walking':datetime.timedelta(minutes=10),
-        'speed_walking':1.8,
+        'speed_walking':4,
         'max_bicycle_traffic_stress':4
         })
     mode_settings['BIKE_LTS4'] = bike_lts4_settings
@@ -283,7 +283,7 @@ def spatial_analysis(boundaries,
                       years = [1975, 1980, 1985, 1990, 1995, 2000, 2005, 2010, 2015, 2020, 2022, 2025], #for PNRT and pop_dens. remember range(1,3) = [1,2]
                       current_year = 2022,
                       overpass = False,
-                      patch_length = 10000, #m
+                      patch_length = 8000, #m
                       block_patch_length = 5000, #m
                       boundary_buffer = 500, #m
                       blocks_simplification = 0.0001, #topo-simplification
