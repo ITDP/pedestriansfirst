@@ -28,93 +28,17 @@ import topojson
 import sys
 sys.argv.append(["--max-memory", "80%"])
 
-from r5py import TransportNetwork, TravelTimeMatrixComputer
-from r5py import TransitMode, LegMode
 
 import isochrones
 import get_service_locations
 import gtfs_parser
 import prep_bike_osm
 import prep_pop_ghsl
+import access
 #import summarize_ttm
 
 import pdb
 
-#for use of r5py in journey gap calculations
-def prepare_mode_settings(**kwargs):
-    mode_settings = {}
-    general_settings = {
-        'departure': datetime.datetime(2023,3,15,8,30),
-        #'departure_time_window': datetime.timedelta(hours=1), #this is the default
-        #'percentiles': [50], #this is the default
-        'max_time':datetime.timedelta(hours=2),
-        'max_time_walking':datetime.timedelta(hours=2),
-        'max_time_cycling':datetime.timedelta(hours=2),
-        'max_time_driving':datetime.timedelta(hours=2),
-        'speed_walking':4.8,
-        'speed_cycling':12.0,
-        'max_public_transport_rides':4,
-    }
-    general_settings.update(kwargs)
-    
-    walk_settings = general_settings.copy()
-    walk_settings.update({
-        'transport_modes':[LegMode.WALK],
-        'access_modes':[LegMode.WALK],
-        })
-    mode_settings['WALK'] = walk_settings
-    
-    transit_settings = general_settings.copy()
-    transit_settings.update({
-        'transport_modes':[TransitMode.TRANSIT],
-        'access_modes':[LegMode.WALK],
-         })
-    mode_settings['TRANSIT'] = transit_settings
-    
-    bike_lts1_settings = general_settings.copy()
-    bike_lts1_settings.update({
-        'transport_modes':[LegMode.WALK, LegMode.BICYCLE],
-        'access_modes':[LegMode.WALK, LegMode.BICYCLE],
-        'max_time_walking':datetime.timedelta(minutes=10),
-        'speed_walking':4,
-        'max_bicycle_traffic_stress':1
-        })
-    mode_settings['BIKE_LTS1'] = bike_lts1_settings
-    
-    bike_lts2_settings = general_settings.copy()
-    bike_lts2_settings.update({
-         'transport_modes':[LegMode.WALK, LegMode.BICYCLE],
-         'access_modes':[LegMode.WALK, LegMode.BICYCLE],
-         'max_time_walking':datetime.timedelta(minutes=10),
-         'speed_walking':4,
-         'max_bicycle_traffic_stress':2
-         })
-    mode_settings['BIKE_LTS2'] = bike_lts2_settings
-    
-    bike_lts4_settings = general_settings.copy()
-    bike_lts4_settings.update({
-        'transport_modes':[LegMode.WALK, LegMode.BICYCLE],
-        'access_modes':[LegMode.WALK, LegMode.BICYCLE],
-        'max_time_walking':datetime.timedelta(minutes=10),
-        'speed_walking':4,
-        'max_bicycle_traffic_stress':4
-        })
-    mode_settings['BIKE_LTS4'] = bike_lts4_settings
-    
-    car_settings = general_settings.copy()
-    car_settings.update({
-        'transport_modes':[LegMode.CAR],
-        'access_modes':[LegMode.CAR],
-        })
-    mode_settings['CAR'] = car_settings
-    
-    return mode_settings
-
-def value_of_cxn(from_pop, to_dests, t_min):
-    #see SSTI's Measuring Accessibility, appendix (p.68)
-    #rough average of work and non-work
-    baseval = from_pop * to_dests
-    return baseval * 1.14 * np.e ** (-0.05 * t_min)
 
 
 def make_patches(boundaries_latlon, crs_utm, patch_length = 10000, buffer = 500): #patch_length and buffer in m
@@ -386,7 +310,6 @@ def spatial_analysis(boundaries,
     if 'highways' in to_test:
         all_highway_polys = []
 
-        
     if 'special' in to_test:
         special = gpd.read_file(f'{folder_name}special.geojson')
         if special.geometry[0].type == 'MultiLineString':
@@ -454,144 +377,16 @@ def spatial_analysis(boundaries,
         rt_stns_utm = rt_stns.to_crs(utm_crs)
         rt_isochrones_utm = rt_isochrones.to_crs(utm_crs)
     
+    
+    # TODO -- Put this into a function so it runs smoother?
     if 'journey_gap' in to_test and len(gtfs_filenames) > 0: #ie, it has GTFS
-    
-        for file in [folder_name+'temp/access/grid_pop.geojson',
-                      folder_name+'temp/access/city_ltstagged.pbf']:
-            if os.path.exists(file):
-                os.remove(file)
-        
-        #prep pop -- it would probably be better to do this straight from GHSL, ugh
-        grid_gdf_latlon = prep_pop_ghsl.setup_grid_ghsl(
-            boundaries_latlon.unary_union, 
-            access_resolution, 
-            folder_name+"geodata/population/pop_2020.tif", 
-            'ESRI:54009', 
-            adjust_pop = True
-            )
-        grid_gdf_latlon['id'] = grid_gdf_latlon.index
-        grid_gdf_latlon.to_file(folder_name+'temp/access/grid_pop.geojson')
-        
-        #prep osm (add LTS values)
-        original_filename = folder_name+"temp/city.pbf"
-        biketagged_filename = folder_name+"temp/access/city_ltstagged.pbf"
-        prep_bike_osm.add_lts_tags(original_filename, biketagged_filename)
-        
-        full_gtfs_filenames = [folder_name+'temp/gtfs/'+name for name in gtfs_filenames]
-        print(full_gtfs_filenames)
-        
-        transport_network = TransportNetwork(
-            biketagged_filename,
-            full_gtfs_filenames
-            )
-        
-        wednesday_mornings = [datetime.datetime.strptime(wed+' 08:30:00', '%Y%m%d %H:%M:%S') for wed in gtfs_wednesdays]
-        latest_wednesday = max(wednesday_mornings)
-        mode_settings=prepare_mode_settings(departure = latest_wednesday)
-        
-        points_gdf_latlon = grid_gdf_latlon.copy()
-        points_gdf_latlon.geometry = grid_gdf_latlon.centroid
-        
-        ttms = {}
-        for mode in ['TRANSIT', 'BIKE_LTS1', 'CAR']:#mode_settings.keys():
-            print(f'computing for {mode}')
-            ttm_computer = TravelTimeMatrixComputer(transport_network, points_gdf_latlon,**mode_settings[mode])
-            ttm_long = ttm_computer.compute_travel_times()
-            ttm_wide = pd.pivot(ttm_long, index='from_id', columns='to_id', values='travel_time')
-            ttms[mode] = ttm_wide
-            ttms[mode].to_csv(folder_name+'temp/access/'+mode+'_ttm.csv')
-            
-            
-        #3 versions - cumsum, time, value
-        print('calculating ttms for journey gaps')
-        for origin_id in tqdm(list(grid_gdf_latlon.index)):
-            grid_gdf_latlon.loc[origin_id, 'time_ratios_w_weighting'] = 0
-            grid_gdf_latlon.loc[origin_id, 'grav_sustrans_sum'] = 0
-            grid_gdf_latlon.loc[origin_id, 'grav_car_sum'] = 0
-            grid_gdf_latlon.loc[origin_id, 'cumsum_sustrans'] = 0
-            grid_gdf_latlon.loc[origin_id, 'cumsum_car'] = 0
-            origin_pop = grid_gdf_latlon.loc[origin_id, 'population']
-            if origin_pop > 0:
-                total_dest_pop = 0
-                for dest_id in grid_gdf_latlon.index:
-                    dest_pop = grid_gdf_latlon.loc[dest_id, 'population']
-                    if dest_pop > 0 and not origin_id == dest_id:
-                        car_time = ttms['CAR'].loc[origin_id, dest_id]
-                        sustrans_time = min(ttms['TRANSIT'].loc[origin_id, dest_id],ttms['BIKE_LTS1'].loc[origin_id, dest_id])
-                        time_ratio = (sustrans_time/car_time) 
-                        time_ratio_with_weighting = time_ratio * dest_pop
-                        if not np.isnan(time_ratio_with_weighting):
-                            total_dest_pop += dest_pop
-                            grid_gdf_latlon.loc[origin_id, 'time_ratios_w_weighting'] += time_ratio_with_weighting
-                            grav_sustrans_val = value_of_cxn(origin_pop, dest_pop, sustrans_time)
-                            grid_gdf_latlon.loc[origin_id, 'grav_sustrans_sum'] += grav_sustrans_val
-                            grav_car_val = value_of_cxn(origin_pop, dest_pop, car_time)
-                            grid_gdf_latlon.loc[origin_id, 'grav_car_sum'] += grav_car_val
-                        if car_time < 30:
-                            grid_gdf_latlon.loc[origin_id, 'cumsum_car'] += dest_pop
-                        if sustrans_time < 30:
-                            grid_gdf_latlon.loc[origin_id, 'cumsum_sustrans'] += dest_pop
-                cumsum_ratio = grid_gdf_latlon.loc[origin_id, 'cumsum_sustrans'] / grid_gdf_latlon.loc[origin_id, 'cumsum_car']
-                grid_gdf_latlon.loc[origin_id, 'journey_gap_cumsum_ratio_unweighted'] = cumsum_ratio
-                grid_gdf_latlon.loc[origin_id, 'journey_gap_cumsum_ratio_weighted'] = cumsum_ratio * origin_pop
-                time_ratio = grid_gdf_latlon.loc[origin_id, 'time_ratios_w_weighting'] / total_dest_pop
-                grid_gdf_latlon.loc[origin_id, 'journey_gap_time_ratio_unweighted'] = time_ratio
-                grid_gdf_latlon.loc[origin_id, 'journey_gap_time_ratio_weighted'] = time_ratio * origin_pop
-                grav_ratio = grid_gdf_latlon.loc[origin_id, 'grav_sustrans_sum'] / grid_gdf_latlon.loc[origin_id, 'grav_car_sum']
-                grid_gdf_latlon.loc[origin_id, 'journey_gap_grav_ratio_unweighted'] = grav_ratio
-                grid_gdf_latlon.loc[origin_id, 'journey_gap_grav_ratio_weighted'] = grav_ratio * origin_pop
-                #grav ratio is already weighted because we added origin_pop in calling value_of_cxn
-                
-        grid_gdf_latlon.to_file(folder_name+'temp/access/grid_pop_evaluated.geojson')
-        
-        # #cp over script
-        # shutil.copy('access/two_step_access/calcttm_simple.r', folder_name+'temp/access/calcttm_simple.r')
-        
-        # #run script
-        # command = f"Rscript calcttm_simple.r {folder_name}temp/access/"
-        # subprocess.check_call(command.split(' '))
-        
-        # #
-        # all_modes = ['walk','car','pnft','bike_lts1','bike_lts2','bike_lts4']
-        
-        # mode_ttms = {}
-        # actual_modes = []
-        # for mode in all_modes:
-        #     if os.path.exists(f'{folder_name}temp/access/{mode}_wide.csv'):
-        #         mode_ttms[mode] = summarize_ttm.load_wide_ttm(f'{folder_name}temp/access/{mode}_wide.csv')
-        #         actual_modes.append(mode)
-        
-        
-        # total_value, cxn_df_latlon = summarize_ttm.evaluation(grid_pop, 
-        #                                                mode_ttms, 
-        #                                                cumulative_time_lims = transport_performance_times, 
-        #                                                ec_modes = [], 
-        #                                                ec_ttms = None)
-        
-        # if 'transport_performance' in to_test:
-        #     cxn_df_utm = ox.project_gdf(cxn_df_latlon)
-        #     for mode in transport_performance_speeds.keys():
-        #         for lim in transport_performance_times:
-        #             tp_buffer_dist = transport_performance_speeds[mode] * (1000/60) * lim
-        #             cxn_df_utm[f'buffer_{mode}_{lim}'] = cxn_df_utm.centroid.buffer(tp_buffer_dist)
-        #     for point_id in cxn_df_utm.index:
-        #         for mode in transport_performance_speeds.keys():
-        #             for lim in transport_performance_times:
-        #                 actual_sum = cxn_df_utm.loc[point_id, f'cumsum_{mode}_{lim}']
-        #                 circle = cxn_df_utm.loc[point_id, f'buffer_{mode}_{lim}']
-        #                 circ_gdf = gpd.GeoDataFrame(geometry = [circle], crs = cxn_df_utm.crs)
-        #                 potential_sum = cxn_df_utm.overlay(circ_gdf, how='intersection').population.sum()
-        #                 cxn_df_utm.loc[point_id, f'potentialsum_{mode}_{lim}'] = potential_sum
-        #                 cxn_df_utm.loc[point_id, f'performance_{mode}_{lim}'] = actual_sum / potential_sum
-        #     # before saving the file convert geometry to wkt
-        #     cxn_df_latlon = cxn_df_utm.to_crs(4326)
-        #     for mode in transport_performance_speeds.keys():
-        #         for lim in transport_performance_times:
-        #             cxn_df_latlon[f'buffer_{mode}_{lim}'] = cxn_df_utm[f'buffer_{mode}_{lim}'].to_crs(4326).to_wkt()
-            
-        # #save connections_df
-        # cxn_df_latlon.to_file(f'{folder_name}geodata/connections.gpkg', driver='GPKG')
-    
+        access.journey_gap_calculations(
+                    folder_name,
+                    boundaries_latlon,
+                    access_resolution,
+                    gtfs_filenames,
+                    gtfs_wednesdays,
+                    )
     
     quilt_isochrone_polys = {}
     for service in to_test:
@@ -1023,12 +818,15 @@ def spatial_analysis(boundaries,
     return ft-dt
     
 
-def people_near_x(folder_name, geodata_path, boundaries, year, utm_crs, sqkm_per_pixel):
-    if os.path.exists(geodata_path):
-        service_latlon = gpd.read_file(geodata_path)
-        service_latlon = service_latlon.intersection(boundaries)
-        service_mw = service_latlon.to_crs('ESRI:54009')
-        service_area = service_latlon.to_crs(utm_crs).area.sum()
+def people_near_x(service_gdf_utm, folder_name, boundaries_utm, year, utm_crs, sqkm_per_pixel):
+    if len(service_gdf_utm) > 1:
+        import pdb; pdb.set_trace()
+    if service_gdf_utm == None:
+        return 0
+    else:
+        sel_service_utm = service_gdf_utm.intersection(boundaries_utm)
+        sel_service_mw = sel_service_utm.to_crs('ESRI:54009')
+        service_area = sel_service_utm.area.sum()
         if service_area == 0:
             total_PNS = 0
         else:
@@ -1042,22 +840,23 @@ def people_near_x(folder_name, geodata_path, boundaries, year, utm_crs, sqkm_per
                 all_touched=True
                 ) 
             earlier_dens = earlier_stats[0]['mean'] / sqkm_per_pixel 
-            later_stats = rasterstats.zonal_stats(
-                service_mw,
-                f"{folder_name}geodata/population/pop_{later}.tif", 
-                stats=['mean'], 
-                all_touched=True
-                ) 
-            later_dens = later_stats[0]['mean'] / sqkm_per_pixel 
-            peryear_diff = (later_dens - earlier_dens) / 5
-            mean_dens_per_m2 = (earlier_dens + (modulo * peryear_diff)) / 1000000 #km to m
+            if modulo > 0:
+                later_stats = rasterstats.zonal_stats(
+                    service_mw,
+                    f"{folder_name}geodata/population/pop_{later}.tif", 
+                    stats=['mean'], 
+                    all_touched=True
+                    ) 
+                later_dens = later_stats[0]['mean'] / sqkm_per_pixel 
+                peryear_diff = (later_dens - earlier_dens) / 5
+                mean_dens_per_m2 = (earlier_dens + (modulo * peryear_diff)) / 1000000 #km to m
+            else:
+                mean_dens_per_m2 = earlier_dens / 1000000 #km to m
             total_PNS = mean_dens_per_m2 * service_area
-    else:
-        total_PNS = 0 
-    return total_PNS
+            return total_PNS
 
 
-def calculate_indicators(boundaries, 
+def calculate_indicators(analysis_areas, 
                       folder_name='', 
                       to_test = [
                            'healthcare',
@@ -1088,120 +887,140 @@ def calculate_indicators(boundaries,
     if folder_name != '' and not folder_name[-1:] == '/':
         folder_name += '/'
         
-    results = {}
-     
-    #TODO change this (and similar above) to osmnx function 
-    boundaries_latlon = gpd.GeoDataFrame(geometry=[boundaries], crs=4326)
-    longitude = round(numpy.mean(boundaries_latlon.geometry.centroid.x),10)
-    utm_zone = int(math.floor((longitude + 180) / 6) + 1)
-    utm_crs = '+proj=utm +zone={} +ellps=WGS84 +datum=WGS84 +units=m +no_defs'.format(utm_zone)
-    boundaries_utm = boundaries_latlon.to_crs(utm_crs)
-    boundaries_mw = boundaries_utm.to_crs("ESRI:54009")
+    analysis_areas_utm = ox.project_gdf(analysis_areas)
+    analysis_areas_mw = analysis_areas.to_crs("ESRI:54009")
+    
     sqkm_per_pixel = (float(ghsl_resolution) / 1000) ** 2
-        
-    total_pops = {}
-    for year in years:
-        if year % 5 == 0:
-            pop_stats = rasterstats.zonal_stats(
-                boundaries_mw,
-                f"{folder_name}geodata/population/pop_{year}.tif", 
-                stats=['mean'], 
-                all_touched=True
-                ) 
-            mean_density_per_km2 = pop_stats[0]['mean'] / sqkm_per_pixel
-            mean_density_per_m2 = mean_density_per_km2 / 1000000
-            total_pop = mean_density_per_m2 * boundaries_utm.area.sum()
-            print(f'Total pop {year}:', total_pop)
-            total_pops[year] = total_pop
-            
-    for year in years:
-        modulo = year % 5
-        if modulo == 0:
-            results[f'total_pop_{year}'] = total_pops[year]
+    
+    # 1. Load data files for each indicator
+    # 1.1: Services (People Near X, except for rapid transit)
+    services = ['healthcare','schools','h+s','libraries','bikeshare','pnab','pnpb',
+                'pnft','carfree','special', 'highways']
+    service_gdfs_utm = {}
+    for service in services:
+        if service in to_test:
+            geodata_path = f'{folder_name}geodata/{service}latlon.geojson'
+            if os.path.exists(geodata_path):
+                service_gdfs_utm[service] = ox.project_gdf(gpd.read_file(geodata_path))
+            else:
+                service_gdfs_utm[service] = None
+    
+    service_points_ll = {}     
+    for service_with_points in ['healthcare', 'schools', 'libraries', 'bikeshare', 'pnft','special',]:
+        if service_with_points in to_test:
+            geodata_path = folder_name+'geodata/'+service_with_points+'_points_latlon'+'.geojson'
+            service_points_ll[service] = gpd.read_file(geodata_path)
+    
+    # 1.2 Bikeways
+    if 'pnab' in to_test:
+        filename = folder_name+'geodata/allbike_latlon.geojson'
+        if os.path.exists(filename):
+            all_bikeways_utm = ox.project_gdf(gpd.read_file(filename))
         else:
-            earlier = year - modulo
-            later = year + (5 - modulo)
-            earlier_pop = total_pops[earlier] 
-            later_pop = total_pops[later] 
-            peryear_diff = (later_pop - earlier_pop) / 5
-            total_pops[year] = earlier_pop + (modulo * peryear_diff)
-            results[f'total_pop_{year}'] = earlier_pop + (modulo * peryear_diff)
-            
-    if total_pops[current_year] == 0:
-        results['recording_time'] = str(datetime.datetime.now())
-        return results
+            all_bikeways_utm = None
+    if 'pnpb' in to_test:
+        filename = folder_name+'geodata/protectedbike_latlon.geojson'
+        if os.path.exists(filename):
+            protected_bikeways_utm = ox.project_gdf(gpd.read_file(filename))
+        else:
+            all_bikeways_utm = None
+    
+    # 2. Iterate through analysis_areas gdf, calculate all indicators
+    for idx in analysis_areas.index:
+        print('getting results for', analysis_areas.loc[idx, 'name'])
         
-    if 'density' in to_test:
-        densities = {}
+        boundaries_mw = analysis_areas_mw.loc[idx,'geometry']
+        boundaries_utm = analysis_areas_utm.loc[idx,'geometry']
+        boundaries_ll = analysis_areas.loc[idx,'geometry']
+        
+        # 2.1 Get total_pop for each area, so that we can measure PNx.
+        #     Get density at the same time for convenience.
+        # 2.1.1 First do years where we have GHSL data...
         for year in years:
-            if year % 5 == 0:
+            if (year % 5) == 0:
+                pop_stats = rasterstats.zonal_stats(
+                    analysis_areas_mw.loc[idx,'geometry'],
+                    f"{folder_name}geodata/population/pop_{year}.tif", 
+                    stats=['mean'], 
+                    all_touched=True
+                    ) 
+                mean_density_per_km2 = pop_stats[0]['mean'] / sqkm_per_pixel
+                mean_density_per_m2 = mean_density_per_km2 / 1000000
+                total_pop = mean_density_per_m2 * boundaries_utm.area.sum()
+                analysis_areas.loc[idx, f'total_pop_{year}'] = total_pop
+                
                 density = rasterstats.zonal_stats(boundaries_mw, 
                                         f"{folder_name}geodata/population/pop_{year}.tif", 
                                         stats = [],
                                         add_stats={'weighted': weighted_pop_density}
                                         )[0]['weighted']
-                densities[year] = density / sqkm_per_pixel 
-                print('weighted pop density', year, density / sqkm_per_pixel)
+                analysis_areas.loc[idx, f'density_{year}'] = density / sqkm_per_pixel 
+        # 2.1.2 ...then interpolate other years. 
+        #       The largest and smallest years must be in GHSL (divisible by 5)
         for year in years:
-            modulo = year % 5
-            if modulo == 0:
-                results[f'density_{year}'] = densities[year]
-            else:
-                earlier = year - modulo
-                later = year + (5 - modulo)
-                earlier_dens = densities[earlier]
-                later_dens = densities[later] 
-                peryear_diff = (later_dens - earlier_dens) / 5
-                results[f'density_{year}'] = earlier_dens + (modulo * peryear_diff)
-    
+            if (year % 5) != 0:
+                earlier = year - (year % 5)
+                later = year + (5 - (year % 5))
+                earlier_pop = analysis_areas.loc[idx, f'total_pop_{earlier}']
+                later_pop = analysis_areas.loc[idx, f'total_pop_{later}']
+                peryear_diff_pop = (later_pop - earlier_pop) / 5
+                total_pop = earlier_pop + ((year % 5) * peryear_diff_pop)
+                analysis_areas.loc[idx, f'total_pop_{year}'] = total_pop
+                
+                earlier_dens = analysis_areas.loc[idx, f'density_{earlier}']
+                later_dens = analysis_areas.loc[idx, f'density_{later}']
+                peryear_diff_dens = (later_dens - earlier_dens) / 5
+                current_dens = earlier_dens + ((year % 5) * peryear_diff_dens)
+                analysis_areas.loc[idx, f'density_{year}'] = current_dens
+                
+    # 2.2 People Near Services
     services = ['healthcare','schools','h+s','libraries','bikeshare','pnab','pnpb',
-                'pnft','carfree','special']
+                'pnft','carfree','highways','special']
     for service in services:
         if service in to_test:
-            geodata_path = f'{folder_name}geodata/{service}latlon.geojson'
-            total_PNS = people_near_x(folder_name, geodata_path, boundaries, current_year, utm_crs, sqkm_per_pixel)
-            print('Total People Near Service for', service, ":", total_PNS, 100*total_PNS/total_pops[current_year],"%")
-            results[f'{service}_{current_year}'] = total_PNS / total_pops[current_year]
+            total_PNS = people_near_x(
+                service_gdfs_utm[service],
+                folder_name, 
+                boundaries_utm, 
+                current_year, 
+                sqkm_per_pixel)
+            perc_PNS = total_PNS / analysis_areas.loc[idx,f'total_pop_{current_year}']
+            perc_PNS = max(perc_PNS, 1)
+            analysis_areas.loc[idx,f'{service}_{current_year}'] = perc_PNS
             
     for service_with_points in ['healthcare', 'schools', 'libraries', 'bikeshare', 'pnft','special',]:
         if service_with_points in to_test:
-            geodata_path = folder_name+'geodata/'+service_with_points+'_points_latlon'+'.geojson'
-            total_services = gpd.read_file(geodata_path).intersection(boundaries)
-            results[f'n_points_{service}_{current_year}'] = len(total_services)
+            total_services = service_points_ll[service].intersection(boundaries_ll)
+            analysis_areas.loc[idx,f'n_points_{service}_{current_year}'] = len(total_services)
         
-            
-    if 'pnab' in to_test:
-        if os.path.exists(folder_name+'geodata/allbike_latlon.geojson'):
-            all_bikeways_latlon = gpd.read_file(folder_name+'geodata/allbike_latlon.geojson')
-            all_bikeways_latlon = all_bikeways_latlon.intersection(boundaries)
-            unprotected_m = sum(all_bikeways_latlon.to_crs(utm_crs).geometry.length)
-        else:
-            unprotected_m = 0
-        results['all_bikeways_km'] = unprotected_m / 1000
-        
-    if 'pnpb' in to_test:
-        if os.path.exists(folder_name+'geodata/protectedbike_latlon.geojson'):
-            protected_bikeways_latlon = gpd.read_file(f'{folder_name}geodata/protectedbike_latlon.geojson')
-            protected_bikeways_latlon = protected_bikeways_latlon.intersection(boundaries)
-            protected_m = sum(protected_bikeways_latlon.to_crs(utm_crs).geometry.length)
-        else:
-            protected_m = 0
-        results['protected_bikeways_km'] = protected_m / 1000
-        
+    # 2.2.1 HIGHWAYS ARE SPECIAL
     if 'highways' in to_test:
-        geodata_path = f'{folder_name}geodata/buffered_hwys_latlon.geojson'
-        near_hwys = people_near_x(folder_name, geodata_path, boundaries, current_year, utm_crs, sqkm_per_pixel)
-        not_near_hwys = total_pops[current_year] - near_hwys
-        print('Total People Safe From Highways:', not_near_hwys, 100*not_near_hwys/total_pops[current_year],"%")
-        results['people_not_near_highways'] = not_near_hwys / total_pops[current_year]
-        
-        if os.path.exists(folder_name+'geodata/allhwys_latlon.geojson'):
-            hwypoly_latlon = gpd.read_file(f'{folder_name}geodata/allhwys_latlon.geojson')
-            hwypoly_latlon = hwypoly_latlon.intersection(boundaries)
-            hwy_m = sum(hwypoly_latlon.to_crs(utm_crs).geometry.length) / 4 #divide by 4 because we're looking at divided highway polys, not lines :)
+        PNNH = 1 - analysis_areas.loc[idx,f'highways_{current_year}']
+        analysis_areas.loc[idx,f'people_not_near_highways_{current_year}'] = PNNH
+        if service_gdfs_utm['highways'] is not None:
+            selected_highways_gdf_utm = service_gdfs_utm['highways'].intersection(boundaries_utm)
+            hwy_m = selected_highways_gdf_utm.geometry.length / 4 #divide by 4 because we're looking at divided highway polys, not lines :)
         else:
             hwy_m = 0
-        results['highway_km'] = hwy_m / 1000
+        analysis_areas.loc[idx,f'highway_km_{current_year}'] = hwy_m / 1000
+        
+    # 2.3 People Near Bikeways
+    if 'pnab' in to_test:
+        if all_bikeways_utm is not None:
+            selected_all_bikeways_utm = all_bikeways_utm.intersection(boundaries_utm)
+            unprotected_m = sum(selected_all_bikeways_utm.geometry.length)
+        else:
+            unprotected_m = 0
+        analysis_areas.loc[idx,'all_bikeways_km_{current_year}'] = unprotected_m / 1000
+        
+        
+    if 'pnpb' in to_test:
+        if protected_bikeways_utm is not None:
+            selected_protected_bikeways_utm = protected_bikeways_utm.intersection(boundaries_utm)
+            protected_m = sum(selected_protected_bikeways_utm.geometry.length)
+        else:
+            protected_m = 0
+        analysis_areas.loc[idx,'protected_bikeways_km_{current_year}'] = protected_m / 1000
     
     if 'pnrt' in to_test: 
         geodata_path = f'{folder_name}geodata/rapid_transit/{current_year}/all_isochrones_ll.geojson'
@@ -1287,23 +1106,6 @@ def calculate_indicators(boundaries,
             print('grav_indicator: ',grav_indicator)
             results['grav_indicator'] = grav_indicator
         
-        
-        
-            
-    if 'transport_performance' in to_test:
-        # any_gtfs = False
-        # for file in os.listdir(folder_name+'temp/access/'):
-        #     if file[-4] == '.zip':
-        #         any_gtfs = True
-        cxn_gdf_latlon = gpd.read_file(f'{folder_name}geodata/connections.gpkg')
-        cxn_gdf_overlap = cxn_gdf_latlon.overlay(boundaries_latlon, how='intersection')
-        for column in cxn_gdf_overlap.columns:
-            name_parts = column.split('_')
-            if name_parts[0] == 'performance':
-                total_val = sum(cxn_gdf_overlap[column] * cxn_gdf_overlap['population'])
-                weighted_avg = total_val/sum(cxn_gdf_overlap['population'])
-                print(column, ': ',weighted_avg)
-                results[column] = weighted_avg
         
             
     results['recording_time'] = str(datetime.datetime.now())

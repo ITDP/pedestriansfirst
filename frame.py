@@ -5,6 +5,7 @@ import json
 import shutil
 import geojson
 import shapely
+import datetime
 from shapely.geometry import LineString, Polygon, shape, mapping
 from shapely.ops import unary_union
 import geopandas as gpd
@@ -296,7 +297,7 @@ def get_jurisdictions(hdc,
 def regional_analysis(hdc, 
                       folder_prefix = 'cities_out', 
                       minimum_portion=0.6,
-                      analyze=True,
+                      analyze=False,
                       summarize=True,
                       simplification=0.001 #toposimplification factor
                       ):
@@ -332,44 +333,31 @@ def regional_analysis(hdc,
     
     #now actually call the functions and save the results
     if analyze == True:
-        calctime = pedestriansfirst.spatial_analysis(
+        geospatial_calctime = pedestriansfirst.spatial_analysis(
             total_poly_latlon,
             hdc,
             analysis_areas.loc[0,'name'],
             folder_name=folder_name,
             )
     else:
-        calctime = 0
+        geospatial_calctime = 0
     
     if summarize == True:
-        all_results = pd.DataFrame()
-        # print('getting Urban Centre results')
-        # agglomeration_results = pedestriansfirst.calculate_indicators(
-        #     ghsl_boundaries,
-        #     folder_name=folder_name)
-        # for result in agglomeration_results.keys():
-        #     all_results.loc['agglomeration', result] = agglomeration_results[result] 
-        # all_results.loc['agglomeration', 'geospatial_calctime'] = calctime
-        for area_id in analysis_areas.index:
-            print(f'getting results for {analysis_areas.loc[area_id,"name"]}')
-            juri_results = pedestriansfirst.calculate_indicators(
-                analysis_areas.loc[area_id,'geometry'],
-                folder_name=folder_name)
-            all_results.loc[area_id, 'name'] = analysis_areas.loc[area_id,'name']
-            all_results.loc[area_id, 'osmid'] = analysis_areas.loc[area_id,'osmid']
-            all_results.loc[area_id, 'hdc'] = analysis_areas.loc[area_id,'hdc']
-            all_results.loc[area_id, 'country'] = analysis_areas.loc[area_id,'country']
-            for result in juri_results.keys():
-                analysis_areas.loc[area_id, result] = juri_results[result] 
-                all_results.loc[area_id, result] = juri_results[result] 
-            all_results.loc[area_id, 'geospatial_calctime'] = calctime
+        start = datetime.datetime.now()
+        pedestriansfirst.calculate_indicators(
+            analysis_areas, 
+            folder_name=folder_name,
+            )
+        end = datetime.datetime.now()
+        analysis_areas.loc[0, 'geospatial_calctime'] = geospatial_calctime
+        analysis_areas.loc[0, 'summary_calctime'] = end - start
         
-        #spatially simplify while preserving topology
         topo = topojson.Topology(analysis_areas, prequantize=True)
         analysis_areas = topo.toposimplify(0.001).to_gdf()
-        
-        all_results.to_csv(f'{folder_name}indicator_values.csv')
         analysis_areas.to_file(f'{folder_name}indicator_values.gpkg',driver='GPKG')
+        
+        nongeospatial_results = analysis_areas.drop('geometry', axis=1, inplace=False)
+        nongeospatial_results.to_csv(f'{folder_name}indicator_values.csv')
     
     #import pdb; pdb.set_trace()
         
@@ -500,10 +488,10 @@ if __name__ == '__main__':
        #1303,
        #1420,
        #21,
-       2851,
-       855,
-       3751,
-       9691,
+       #2851,
+       #855,
+       #3751,
+       #9691,
        6845,
         
         
