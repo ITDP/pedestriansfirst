@@ -1136,7 +1136,7 @@ def calculate_indicators(analysis_areas,
             
     if 'journey_gap' in to_test:
         if access_grid is not None:
-            grid_overlap = access_grid.intersection(boundaries_ll)
+            grid_overlap = access_grid[access_grid.intersects(boundaries_ll)]
             area_pop = grid_overlap.population.sum()
             
             cumsum_ratio_weighted_total = grid_overlap.journey_gap_cumsum_ratio_weighted.sum()
