@@ -1021,132 +1021,132 @@ def calculate_indicators(analysis_areas,
                 peryear_diff_dens = (later_dens - earlier_dens) / 5
                 current_dens = earlier_dens + ((year % 5) * peryear_diff_dens)
                 analysis_areas.loc[idx, f'density_{year}'] = current_dens
+                    
+        # 2.2 People Near Services
+        services = ['healthcare','schools','h+s','libraries','bikeshare','pnab','pnpb',
+                    'pnft','carfree','highways','special']
+        for service in services:
+            if service in to_test:
+                total_PNS = people_near_x(
+                    service_gdfs_utm[service],
+                    folder_name, 
+                    boundaries_utm, 
+                    current_year, 
+                    sqkm_per_pixel)
+                perc_PNS = total_PNS / analysis_areas.loc[idx,f'total_pop_{current_year}']
+                perc_PNS = max(perc_PNS, 1)
+                analysis_areas.loc[idx,f'{service}_{current_year}'] = perc_PNS
                 
-    # 2.2 People Near Services
-    services = ['healthcare','schools','h+s','libraries','bikeshare','pnab','pnpb',
-                'pnft','carfree','highways','special']
-    for service in services:
-        if service in to_test:
-            total_PNS = people_near_x(
-                service_gdfs_utm[service],
-                folder_name, 
-                boundaries_utm, 
-                current_year, 
-                sqkm_per_pixel)
-            perc_PNS = total_PNS / analysis_areas.loc[idx,f'total_pop_{current_year}']
-            perc_PNS = max(perc_PNS, 1)
-            analysis_areas.loc[idx,f'{service}_{current_year}'] = perc_PNS
+        for service_with_points in ['healthcare', 'schools', 'libraries', 'bikeshare', 'pnft','special',]:
+            if service_with_points in to_test:
+                total_services = service_points_ll[service_with_points].intersection(boundaries_ll)
+                analysis_areas.loc[idx,f'n_points_{service_with_points}_{current_year}'] = len(total_services)
             
-    for service_with_points in ['healthcare', 'schools', 'libraries', 'bikeshare', 'pnft','special',]:
-        if service_with_points in to_test:
-            total_services = service_points_ll[service_with_points].intersection(boundaries_ll)
-            analysis_areas.loc[idx,f'n_points_{service_with_points}_{current_year}'] = len(total_services)
-        
-    # 2.2.1 HIGHWAYS ARE SPECIAL
-    if 'highways' in to_test:
-        PNNH = 1 - analysis_areas.loc[idx,f'highways_{current_year}']
-        analysis_areas.loc[idx,f'people_not_near_highways_{current_year}'] = PNNH
-        if service_gdfs_utm['highways'] is not None:
-            selected_highways_gdf_utm = service_gdfs_utm['highways'].intersection(boundaries_utm)
-            hwy_m = selected_highways_gdf_utm.geometry.length / 4 #divide by 4 because we're looking at divided highway polys, not lines :)
-        else:
-            hwy_m = 0
-        analysis_areas.loc[idx,f'highway_km_{current_year}'] = hwy_m / 1000
-        
-    # 2.3 People Near Bikeways
-    if 'pnab' in to_test:
-        if all_bikeways_utm is not None:
-            selected_all_bikeways_utm = all_bikeways_utm.intersection(boundaries_utm)
-            unprotected_m = sum(selected_all_bikeways_utm.geometry.length)
-        else:
-            unprotected_m = 0
-        analysis_areas.loc[idx,'all_bikeways_km_{current_year}'] = unprotected_m / 1000
-        
-    if 'pnpb' in to_test:
-        if protected_bikeways_utm is not None:
-            selected_protected_bikeways_utm = protected_bikeways_utm.intersection(boundaries_utm)
-            protected_m = sum(selected_protected_bikeways_utm.geometry.length)
-        else:
-            protected_m = 0
-        analysis_areas.loc[idx,'protected_bikeways_km_{current_year}'] = protected_m / 1000
-    
-                        
-        geodata_path = f'{folder_name}geodata/rapid_transit/{current_year}/all_isochrones_ll.geojson'
-    
-    if 'pnrt' in to_test: 
-        for mode in modes:
-            check_iso = rt_isochrones[mode][current_year]
-            #short-circuit?
-            if (check_iso is None) or (check_iso.intersection(boundaries_utm).unary_union is None):
-                for year in years:
-                    analysis_areas.loc[idx,f'PNrT_{mode}_{year}'] = 0
-                    analysis_areas.loc[idx,f'km_{mode}_{year}'] = 0
-                    analysis_areas.loc[idx,f'stns_{mode}_{year}'] = 0
-                    analysis_areas.loc[idx,f'rtr_{mode}_{year}'] = 0
+        # 2.2.1 HIGHWAYS ARE SPECIAL
+        if 'highways' in to_test:
+            PNNH = 1 - analysis_areas.loc[idx,f'highways_{current_year}']
+            analysis_areas.loc[idx,f'people_not_near_highways_{current_year}'] = PNNH
+            if service_gdfs_utm['highways'] is not None:
+                selected_highways_gdf_utm = service_gdfs_utm['highways'].intersection(boundaries_utm)
+                hwy_m = selected_highways_gdf_utm.geometry.length / 4 #divide by 4 because we're looking at divided highway polys, not lines :)
             else:
-                for year in years:
-                    if year <= current_year:
-                        #PNRT
-                        isochrones_utm = rt_isochrones[mode][year]
-                        if isochrones_utm is None:
-                            analysis_areas.loc[idx,f'PNrT_{mode}_{year}'] = 0
-                        else:
-                            total_pnrt = people_near_x(
-                                    isochrones_utm,
-                                    folder_name, 
-                                    boundaries_utm, 
-                                    current_year, 
-                                    sqkm_per_pixel)
-                            if total_pnrt is None:
+                hwy_m = 0
+            analysis_areas.loc[idx,f'highway_km_{current_year}'] = hwy_m / 1000
+            
+        # 2.3 People Near Bikeways
+        if 'pnab' in to_test:
+            if all_bikeways_utm is not None:
+                selected_all_bikeways_utm = all_bikeways_utm.intersection(boundaries_utm)
+                unprotected_m = sum(selected_all_bikeways_utm.geometry.length)
+            else:
+                unprotected_m = 0
+            analysis_areas.loc[idx,'all_bikeways_km_{current_year}'] = unprotected_m / 1000
+            
+        if 'pnpb' in to_test:
+            if protected_bikeways_utm is not None:
+                selected_protected_bikeways_utm = protected_bikeways_utm.intersection(boundaries_utm)
+                protected_m = sum(selected_protected_bikeways_utm.geometry.length)
+            else:
+                protected_m = 0
+            analysis_areas.loc[idx,'protected_bikeways_km_{current_year}'] = protected_m / 1000
+        
+                            
+            geodata_path = f'{folder_name}geodata/rapid_transit/{current_year}/all_isochrones_ll.geojson'
+        
+        if 'pnrt' in to_test: 
+            for mode in modes:
+                check_iso = rt_isochrones[mode][current_year]
+                #short-circuit?
+                if (check_iso is None) or (check_iso.intersection(boundaries_utm).unary_union is None):
+                    for year in years:
+                        analysis_areas.loc[idx,f'PNrT_{mode}_{year}'] = 0
+                        analysis_areas.loc[idx,f'km_{mode}_{year}'] = 0
+                        analysis_areas.loc[idx,f'stns_{mode}_{year}'] = 0
+                        analysis_areas.loc[idx,f'rtr_{mode}_{year}'] = 0
+                else:
+                    for year in years:
+                        if year <= current_year:
+                            #PNRT
+                            isochrones_utm = rt_isochrones[mode][year]
+                            if isochrones_utm is None:
                                 analysis_areas.loc[idx,f'PNrT_{mode}_{year}'] = 0
                             else:
-                                pnrt = total_pnrt / analysis_areas.loc[idx,f'total_pop_{year}']
-                                analysis_areas.loc[idx,f'PNrT_{mode}_{year}'] = pnrt
-                        # kms of line, stations, RTR
-                        
-                        lines_utm = rt_lines[mode][year]
-                        if lines_utm is None:
-                            km = 0
-                        else:
-                            lines_utm = lines_utm.intersection(boundaries_utm)
-                            km = sum(lines_utm.geometry.length) / 1000
+                                total_pnrt = people_near_x(
+                                        isochrones_utm,
+                                        folder_name, 
+                                        boundaries_utm, 
+                                        current_year, 
+                                        sqkm_per_pixel)
+                                if total_pnrt is None:
+                                    analysis_areas.loc[idx,f'PNrT_{mode}_{year}'] = 0
+                                else:
+                                    pnrt = total_pnrt / analysis_areas.loc[idx,f'total_pop_{year}']
+                                    analysis_areas.loc[idx,f'PNrT_{mode}_{year}'] = pnrt
+                            # kms of line, stations, RTR
                             
-                        stns_utm = rt_stns[mode][year]
-                        if stns_utm is None:
-                            n_stns= 0
-                        else:
-                            stns_utm = stns_utm.intersection(boundaries_utm)
-                            n_stns = len(stns_utm)
-                        
-                        analysis_areas.loc[idx,f'km_{mode}_{year}'] = km
-                        analysis_areas.loc[idx,f'stns_{mode}_{year}'] = n_stns
-                        analysis_areas.loc[idx,f'rtr_{mode}_{year}'] = km / (analysis_areas.loc[idx,f'total_pop_{year}']/1000000)
-  
-    if 'blocks' in to_test:
-        if blocks is not None:
-            try:
-                selection = blocks[blocks.intersects(boundaries_ll)]
-                av_size = selection.area_utm.mean()
-                block_density = 1000000 / av_size
-            except: 
-                block_density = 'ERROR'
-        else:
-            block_density = 'NA'
-        analysis_areas.loc[idx,'block_density'] = block_density
-            
-    if 'journey_gap' in to_test:
-        if access_grid is not None:
-            grid_overlap = access_grid[access_grid.intersects(boundaries_ll)]
-            area_pop = grid_overlap.population.sum()
-            
-            cumsum_ratio_weighted_total = grid_overlap.journey_gap_cumsum_ratio_weighted.sum()
-            cumsum_indicator = cumsum_ratio_weighted_total / area_pop
-            analysis_areas.loc[idx,'cumsum_indicator'] = cumsum_indicator
-            
-            time_ratio_weighted_total = grid_overlap.journey_gap_time_ratio_weighted.sum()
-            time_indicator = time_ratio_weighted_total / area_pop
-            analysis_areas.loc[idx,'time_indicator'] = time_indicator
-            
-            grav_ratio_weighted_total = grid_overlap.journey_gap_grav_ratio_weighted.sum()
-            grav_indicator = grav_ratio_weighted_total / area_pop
-            analysis_areas.loc[idx,'grav_indicator'] = grav_indicator
+                            lines_utm = rt_lines[mode][year]
+                            if lines_utm is None:
+                                km = 0
+                            else:
+                                lines_utm = lines_utm.intersection(boundaries_utm)
+                                km = sum(lines_utm.geometry.length) / 1000
+                                
+                            stns_utm = rt_stns[mode][year]
+                            if stns_utm is None:
+                                n_stns= 0
+                            else:
+                                stns_utm = stns_utm.intersection(boundaries_utm)
+                                n_stns = len(stns_utm)
+                            
+                            analysis_areas.loc[idx,f'km_{mode}_{year}'] = km
+                            analysis_areas.loc[idx,f'stns_{mode}_{year}'] = n_stns
+                            analysis_areas.loc[idx,f'rtr_{mode}_{year}'] = km / (analysis_areas.loc[idx,f'total_pop_{year}']/1000000)
+      
+        if 'blocks' in to_test:
+            if blocks is not None:
+                try:
+                    selection = blocks[blocks.intersects(boundaries_ll)]
+                    av_size = selection.area_utm.mean()
+                    block_density = 1000000 / av_size
+                except: 
+                    block_density = 'ERROR'
+            else:
+                block_density = 'NA'
+            analysis_areas.loc[idx,'block_density'] = block_density
+                
+        if 'journey_gap' in to_test:
+            if access_grid is not None:
+                grid_overlap = access_grid[access_grid.intersects(boundaries_ll)]
+                area_pop = grid_overlap.population.sum()
+                
+                cumsum_ratio_weighted_total = grid_overlap.journey_gap_cumsum_ratio_weighted.sum()
+                cumsum_indicator = cumsum_ratio_weighted_total / area_pop
+                analysis_areas.loc[idx,'cumsum_indicator'] = cumsum_indicator
+                
+                time_ratio_weighted_total = grid_overlap.journey_gap_time_ratio_weighted.sum()
+                time_indicator = time_ratio_weighted_total / area_pop
+                analysis_areas.loc[idx,'time_indicator'] = time_indicator
+                
+                grav_ratio_weighted_total = grid_overlap.journey_gap_grav_ratio_weighted.sum()
+                grav_indicator = grav_ratio_weighted_total / area_pop
+                analysis_areas.loc[idx,'grav_indicator'] = grav_indicator

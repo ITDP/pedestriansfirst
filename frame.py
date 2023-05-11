@@ -349,8 +349,8 @@ def regional_analysis(hdc,
             folder_name=folder_name,
             )
         end = datetime.datetime.now()
-        analysis_areas.loc[0, 'geospatial_calctime'] = geospatial_calctime
-        analysis_areas.loc[0, 'summary_calctime'] = end - start
+        analysis_areas.loc[0, 'geospatial_calctime'] = str(geospatial_calctime)
+        analysis_areas.loc[0, 'summary_calctime'] = str(end - start)
         
         topo = topojson.Topology(analysis_areas, prequantize=True)
         analysis_areas = topo.toposimplify(0.001).to_gdf()
