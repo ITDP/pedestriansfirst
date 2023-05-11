@@ -821,7 +821,7 @@ def spatial_analysis(boundaries,
 def people_near_x(service_gdf_utm, folder_name, boundaries_utm, year, sqkm_per_pixel):
     if len(service_gdf_utm) > 1:
         import pdb; pdb.set_trace()
-    if service_gdf_utm == None:
+    if service_gdf_utm is None:
         return 0
     else:
         sel_service_utm = service_gdf_utm.intersection(boundaries_utm)
