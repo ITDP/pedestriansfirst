@@ -946,7 +946,7 @@ def calculate_indicators(analysis_areas,
                     ) 
                 mean_density_per_km2 = pop_stats[0]['mean'] / sqkm_per_pixel
                 mean_density_per_m2 = mean_density_per_km2 / 1000000
-                total_pop = mean_density_per_m2 * boundaries_utm.area.sum()
+                total_pop = mean_density_per_m2 * boundaries_utm.area
                 analysis_areas.loc[idx, f'total_pop_{year}'] = total_pop
                 
                 density = rasterstats.zonal_stats(boundaries_mw, 
