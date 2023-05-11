@@ -888,6 +888,7 @@ def calculate_indicators(analysis_areas,
         folder_name += '/'
         
     analysis_areas_utm = ox.project_gdf(analysis_areas)
+    utm_crs = analysis_areas_utm.crs
     analysis_areas_mw = analysis_areas.to_crs("ESRI:54009")
     
     sqkm_per_pixel = (float(ghsl_resolution) / 1000) ** 2
@@ -901,7 +902,7 @@ def calculate_indicators(analysis_areas,
         if service in to_test:
             geodata_path = f'{folder_name}geodata/{service}latlon.geojson'
             if os.path.exists(geodata_path):
-                service_gdfs_utm[service] = ox.project_gdf(gpd.read_file(geodata_path))
+                service_gdfs_utm[service] = gpd.read_file(geodata_path).to_crs(utm_crs)
             else:
                 service_gdfs_utm[service] = None
     
@@ -915,15 +916,55 @@ def calculate_indicators(analysis_areas,
     if 'pnab' in to_test:
         filename = folder_name+'geodata/allbike_latlon.geojson'
         if os.path.exists(filename):
-            all_bikeways_utm = ox.project_gdf(gpd.read_file(filename))
+            all_bikeways_utm = gpd.read_file(filename).to_crs(utm_crs)
         else:
             all_bikeways_utm = None
     if 'pnpb' in to_test:
         filename = folder_name+'geodata/protectedbike_latlon.geojson'
         if os.path.exists(filename):
-            protected_bikeways_utm = ox.project_gdf(gpd.read_file(filename))
+            protected_bikeways_utm = gpd.read_file(filename).to_crs(utm_crs)
         else:
             all_bikeways_utm = None
+            
+    # 1.3 PNRT
+    if 'pnrt' in to_test:
+        geodata_path = f'{folder_name}geodata/rapid_transit/{current_year}/all_isochrones_ll.geojson'
+        if os.path.exists(geodata_path):
+            modes = ['all','mrt','lrt','brt']
+            rt_isochrones = {}
+            rt_lines = {}
+            rt_stns = {}
+            for mode in modes:
+                rt_isochrones[mode] = {}
+                rt_lines[mode] = {}
+                rt_stns[mode] = {}
+                for year in years:
+                    iso_path = f'{folder_name}geodata/rapid_transit/{year}/{mode}_isochrones_ll.geojson'
+                    if os.path.exists(iso_path):
+                        iso_utm = gpd.read_file(iso_path).to_crs(utm_crs)
+                        rt_isochrones[mode][year] = iso_utm
+                    else:
+                        rt_isochrones[mode][year] = None
+                    lines_path = f'{folder_name}geodata/rapid_transit/{year}/{mode}_lines_ll.geojson'
+                    if os.path.exists(lines_path):
+                        lines_utm = gpd.read_file(lines_path).to_crs(utm_crs)
+                        rt_lines[mode][year] = lines_utm
+                    else:
+                        rt_lines[mode][year] = None
+                    stns_path = f'{folder_name}geodata/rapid_transit/{year}/{mode}_stations_ll.geojson'
+                    if os.path.exists(stns_path):
+                        stn_utm = gpd.read_file(stns_path).to_crs(utm_crs)
+                        rt_stns[mode][year] = stn_utm
+                    else:
+                        rt_stns[mode][year] = None
+    
+    # 1.4 Blocks
+    if 'blocks' in to_test:
+        geodata_path = folder_name+'geodata/'+'blocks'+'latlon'+'.geojson'
+        if os.path.exists(geodata_path):
+            blocks = gpd.read_file(geodata_path)
+        else:
+            blocks = None
     
     # 2. Iterate through analysis_areas gdf, calculate all indicators
     for idx in analysis_areas.index:
@@ -990,8 +1031,8 @@ def calculate_indicators(analysis_areas,
             
     for service_with_points in ['healthcare', 'schools', 'libraries', 'bikeshare', 'pnft','special',]:
         if service_with_points in to_test:
-            total_services = service_points_ll[service].intersection(boundaries_ll)
-            analysis_areas.loc[idx,f'n_points_{service}_{current_year}'] = len(total_services)
+            total_services = service_points_ll[service_with_points].intersection(boundaries_ll)
+            analysis_areas.loc[idx,f'n_points_{service_with_points}_{current_year}'] = len(total_services)
         
     # 2.2.1 HIGHWAYS ARE SPECIAL
     if 'highways' in to_test:
@@ -1013,7 +1054,6 @@ def calculate_indicators(analysis_areas,
             unprotected_m = 0
         analysis_areas.loc[idx,'all_bikeways_km_{current_year}'] = unprotected_m / 1000
         
-        
     if 'pnpb' in to_test:
         if protected_bikeways_utm is not None:
             selected_protected_bikeways_utm = protected_bikeways_utm.intersection(boundaries_utm)
@@ -1022,67 +1062,66 @@ def calculate_indicators(analysis_areas,
             protected_m = 0
         analysis_areas.loc[idx,'protected_bikeways_km_{current_year}'] = protected_m / 1000
     
-    if 'pnrt' in to_test: 
+                        
         geodata_path = f'{folder_name}geodata/rapid_transit/{current_year}/all_isochrones_ll.geojson'
-        if os.path.exists(geodata_path):
-            rt_gdf = gpd.read_file(geodata_path)
-            rt_in_bounds = rt_gdf.intersection(boundaries)
-            if rt_in_bounds.unary_union is not None:
+    
+    if 'pnrt' in to_test: 
+        for mode in modes:
+            check_iso = rt_isochrones[mode][current_year]
+            #short-circuit?
+            if (check_iso is None) or (check_iso.intersection(boundaries_utm).unary_union is None):
                 for year in years:
-                    if year <= current_year: #TODO efficiency - intersections BEFORE mode loop
-                        for mode in ['all','mrt','lrt','brt']:
-                            #PNRT
-                            geodata_path = f'{folder_name}geodata/rapid_transit/{year}/{mode}_isochrones_ll.geojson'
-                            total_pnrt = people_near_x(folder_name, geodata_path, boundaries, year, utm_crs, sqkm_per_pixel)
-                            if mode == "all" and year % 5 == 0:
-                                print (f"all-modes PNrT {year}: {100*total_pnrt/total_pops[year]}")
-                            results[f'PNrT_{mode}_{year}'] = total_pnrt/total_pops[year]
-                            # # stations, kms of line, RTR
-                            if os.path.exists(f'{folder_name}geodata/rapid_transit/{year}/{mode}_lines_ll.geojson'):
-                                lines_ll = gpd.read_file(f'{folder_name}geodata/rapid_transit/{year}/{mode}_lines_ll.geojson')
-                                lines_ll = lines_ll.intersection(boundaries)
-                                km = sum(lines_ll.to_crs(utm_crs).geometry.length) / 1000
-                            else:
-                                km=0
-                            if os.path.exists(f'{folder_name}geodata/rapid_transit/{year}/{mode}_stations_ll.geojson'):
-                                stns_ll = gpd.read_file(f'{folder_name}geodata/rapid_transit/{year}/{mode}_stations_ll.geojson')
-                                stns_ll = stns_ll.intersection(boundaries)
-                                n_stns = len(stns_ll)
-                            else:
-                                n_stns = 0
-                            results[f'km_{mode}_{year}'] = km
-                            results[f'stns_{mode}_{year}'] = n_stns
-                            results[f'rtr_{mode}_{year}'] = km / (total_pops[year]/1000000)
+                    analysis_areas.loc[idx,f'PNrT_{mode}_{year}'] = 0
+                    analysis_areas.loc[idx,f'km_{mode}_{year}'] = 0
+                    analysis_areas.loc[idx,f'stns_{mode}_{year}'] = 0
+                    analysis_areas.loc[idx,f'rtr_{mode}_{year}'] = 0
             else:
                 for year in years:
                     if year <= current_year:
-                        for mode in ['all','mrt','lrt','brt']:
-                            results[f'PNrT_{mode}_{year}'] = 0
-                            results[f'km_{mode}_{year}'] = 0
-                            results[f'stns_{mode}_{year}'] = 0
-                            results[f'rtr_{mode}_{year}'] = 0
-        else:
-            for year in years:
-                if year <= current_year:
-                    for mode in ['all','mrt','lrt','brt']:
-                        results[f'PNrT_{mode}_{year}'] = 0
-                        results[f'km_{mode}_{year}'] = 0
-                        results[f'stns_{mode}_{year}'] = 0
-                        results[f'rtr_{mode}_{year}'] = 0
+                        #PNRT
+                        isochrones_utm = rt_isochrones[mode][year]
+                        if isochrones_utm is None:
+                            analysis_areas.loc[idx,f'PNrT_{mode}_{year}'] = 0
+                        else:
+                            total_pnrt = people_near_x(
+                                    isochrones_utm,
+                                    folder_name, 
+                                    boundaries_utm, 
+                                    current_year, 
+                                    sqkm_per_pixel)
+                            pnrt = total_pnrt / analysis_areas.loc[idx,f'total_pop_{year}']
+                            analysis_areas.loc[idx,f'PNrT_{mode}_{year}'] = pnrt
+                        # kms of line, stations, RTR
                         
+                        lines_utm = rt_lines[mode][year]
+                        if lines_utm is None:
+                            km = 0
+                        else:
+                            lines_utm = lines_utm.intersection(boundaries_utm)
+                            km = sum(lines_utm.geometry.length) / 1000
+                            
+                        stns_utm = rt_stns[mode][year]
+                        if stns_utm is None:
+                            n_stns= 0
+                        else:
+                            stns_utm = stns_utm.intersection(boundaries_utm)
+                            n_stns = len(stns_utm)
+                        
+                        analysis_areas.loc[idx,f'km_{mode}_{year}'] = km
+                        analysis_areas.loc[idx,f'stns_{mode}_{year}'] = n_stns
+                        analysis_areas.loc[idx,f'rtr_{mode}_{year}'] = km / (analysis_areas.loc[idx,f'total_pop_{year}']/1000000)
+  
     if 'blocks' in to_test:
-        geodata_path = folder_name+'geodata/'+'blocks'+'latlon'+'.geojson'
-        if os.path.exists(geodata_path):
-            blocks = gpd.read_file(geodata_path)
+        if blocks is not None:
             try:
-                selection = blocks[blocks.intersects(boundaries)]
+                selection = blocks[blocks.intersects(boundaries_ll)]
                 av_size = selection.area_utm.mean()
                 block_density = 1000000 / av_size
             except: 
                 block_density = 'ERROR'
         else:
             block_density = 'NA'
-        results['block_density'] = block_density
+        analysis_areas.loc[idx,'block_density'] = block_density
             
     if 'journey_gap' in to_test:
         geodata_path = f'{folder_name}temp/access/grid_pop_evaluated.geojson'
