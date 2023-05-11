@@ -1097,8 +1097,11 @@ def calculate_indicators(analysis_areas,
                                     boundaries_utm, 
                                     current_year, 
                                     sqkm_per_pixel)
-                            pnrt = total_pnrt / analysis_areas.loc[idx,f'total_pop_{year}']
-                            analysis_areas.loc[idx,f'PNrT_{mode}_{year}'] = pnrt
+                            if total_pnrt is None:
+                                analysis_areas.loc[idx,f'PNrT_{mode}_{year}'] = 0
+                            else:
+                                pnrt = total_pnrt / analysis_areas.loc[idx,f'total_pop_{year}']
+                                analysis_areas.loc[idx,f'PNrT_{mode}_{year}'] = pnrt
                         # kms of line, stations, RTR
                         
                         lines_utm = rt_lines[mode][year]
