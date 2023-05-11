@@ -818,7 +818,7 @@ def spatial_analysis(boundaries,
     return ft-dt
     
 
-def people_near_x(service_gdf_utm, folder_name, boundaries_utm, year, utm_crs, sqkm_per_pixel):
+def people_near_x(service_gdf_utm, folder_name, boundaries_utm, year, sqkm_per_pixel):
     if len(service_gdf_utm) > 1:
         import pdb; pdb.set_trace()
     if service_gdf_utm == None:
@@ -834,7 +834,7 @@ def people_near_x(service_gdf_utm, folder_name, boundaries_utm, year, utm_crs, s
             earlier = year - modulo
             later = year + (5 - modulo)
             earlier_stats = rasterstats.zonal_stats(
-                service_mw,
+                sel_service_mw,
                 f"{folder_name}geodata/population/pop_{earlier}.tif", 
                 stats=['mean'], 
                 all_touched=True
@@ -842,7 +842,7 @@ def people_near_x(service_gdf_utm, folder_name, boundaries_utm, year, utm_crs, s
             earlier_dens = earlier_stats[0]['mean'] / sqkm_per_pixel 
             if modulo > 0:
                 later_stats = rasterstats.zonal_stats(
-                    service_mw,
+                    sel_service_mw,
                     f"{folder_name}geodata/population/pop_{later}.tif", 
                     stats=['mean'], 
                     all_touched=True
