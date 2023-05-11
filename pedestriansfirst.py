@@ -1033,10 +1033,13 @@ def calculate_indicators(analysis_areas,
                     boundaries_utm, 
                     current_year, 
                     sqkm_per_pixel)
-                perc_PNS = total_PNS / analysis_areas.loc[idx,f'total_pop_{current_year}']
-                perc_PNS = max(perc_PNS, 1)
-                analysis_areas.loc[idx,f'{service}_{current_year}'] = perc_PNS
-                
+                if total_PNS is not None:
+                    perc_PNS = total_PNS / analysis_areas.loc[idx,f'total_pop_{current_year}']
+                    perc_PNS = max(perc_PNS, 1)
+                    analysis_areas.loc[idx,f'{service}_{current_year}'] = perc_PNS
+                else:
+                    analysis_areas.loc[idx,f'{service}_{current_year}'] = 0
+                    
         for service_with_points in ['healthcare', 'schools', 'libraries', 'bikeshare', 'pnft','special',]:
             if service_with_points in to_test:
                 total_services = service_points_ll[service_with_points].intersection(boundaries_ll)
