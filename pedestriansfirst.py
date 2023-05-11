@@ -910,7 +910,7 @@ def calculate_indicators(analysis_areas,
     for service_with_points in ['healthcare', 'schools', 'libraries', 'bikeshare', 'pnft','special',]:
         if service_with_points in to_test:
             geodata_path = folder_name+'geodata/'+service_with_points+'_points_latlon'+'.geojson'
-            service_points_ll[service] = gpd.read_file(geodata_path)
+            service_points_ll[service_with_points] = gpd.read_file(geodata_path)
     
     # 1.2 Bikeways
     if 'pnab' in to_test:
@@ -965,6 +965,14 @@ def calculate_indicators(analysis_areas,
             blocks = gpd.read_file(geodata_path)
         else:
             blocks = None
+            
+            
+    if 'journey_gap' in to_test:
+        geodata_path = f'{folder_name}temp/access/grid_pop_evaluated.geojson'
+        if os.path.exists(geodata_path):
+            access_grid = gpd.read_file(geodata_path)
+        else:
+            access_grid = None
     
     # 2. Iterate through analysis_areas gdf, calculate all indicators
     for idx in analysis_areas.index:
@@ -1124,29 +1132,18 @@ def calculate_indicators(analysis_areas,
         analysis_areas.loc[idx,'block_density'] = block_density
             
     if 'journey_gap' in to_test:
-        geodata_path = f'{folder_name}temp/access/grid_pop_evaluated.geojson'
-        if os.path.exists(geodata_path):
-            access_grid = gpd.read_file(geodata_path)
-            grid_overlap = access_grid.overlay(boundaries_latlon, how='intersection')
+        if access_grid is not None:
+            grid_overlap = access_grid.overlay(boundaries_ll, how='intersection')
             area_pop = grid_overlap.population.sum()
             
             cumsum_ratio_weighted_total = grid_overlap.journey_gap_cumsum_ratio_weighted.sum()
             cumsum_indicator = cumsum_ratio_weighted_total / area_pop
-            print('cumsum_indicator: ',cumsum_indicator)
-            results['cumsum_indicator'] = cumsum_indicator
+            analysis_areas.loc[idx,'cumsum_indicator'] = cumsum_indicator
             
             time_ratio_weighted_total = grid_overlap.journey_gap_time_ratio_weighted.sum()
             time_indicator = time_ratio_weighted_total / area_pop
-            print('time_indicator: ',time_indicator)
-            results['time_indicator'] = time_indicator
+            analysis_areas.loc[idx,'time_indicator'] = time_indicator
             
             grav_ratio_weighted_total = grid_overlap.journey_gap_grav_ratio_weighted.sum()
             grav_indicator = grav_ratio_weighted_total / area_pop
-            print('grav_indicator: ',grav_indicator)
-            results['grav_indicator'] = grav_indicator
-        
-        
-            
-    results['recording_time'] = str(datetime.datetime.now())
-        
-    return results
+            analysis_areas.loc[idx,'grav_indicator'] = grav_indicator
