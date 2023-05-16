@@ -383,9 +383,10 @@ def spatial_analysis(boundaries,
         access.journey_gap_calculations(
                     folder_name,
                     boundaries_latlon,
-                    access_resolution,
                     gtfs_filenames,
                     gtfs_wednesdays,
+                    access_resolution = access_resolution,
+                    min_pop = 2000,
                     )
     
     quilt_isochrone_polys = {}

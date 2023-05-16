@@ -297,7 +297,7 @@ def get_jurisdictions(hdc,
 def regional_analysis(hdc, 
                       folder_prefix = 'cities_out', 
                       minimum_portion=0.6,
-                      analyze=False,
+                      analyze=True,
                       summarize=True,
                       simplification=0.001 #toposimplification factor
                       ):

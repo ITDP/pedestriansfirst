@@ -90,9 +90,10 @@ def value_of_cxn(from_pop, to_dests, t_min):
 def journey_gap_calculations(
             folder_name,
             boundaries_latlon,
-            access_resolution,
             gtfs_filenames,
             gtfs_wednesdays,
+            access_resolution = 2000, #m
+            min_pop = 2000, #defaults to 500 ppl/km2
             ):
         for file in [folder_name+'temp/access/grid_pop.geojson',
                       folder_name+'temp/access/city_ltstagged.pbf']:
@@ -108,6 +109,8 @@ def journey_gap_calculations(
             adjust_pop = True
             )
         grid_gdf_latlon['id'] = grid_gdf_latlon.index
+        selection = grid_gdf_latlon.population > min_pop
+        grid_gdf_latlon = grid_gdf_latlon[selection]
         grid_gdf_latlon.to_file(folder_name+'temp/access/grid_pop.geojson')
         
         #prep osm (add LTS values)
