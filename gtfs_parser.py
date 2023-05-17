@@ -128,10 +128,12 @@ def get_frequent_stops(poly, folder_name, headwaylim = 20):
     for filename in filenames:
         feed = feed_from_filename(filename)
         counts = get_stop_frequencies(feed, headwaylim)
-        import pdb; pdb.set_trace()
-        all_freq_stops = gpd.GeoDataFrame(
-            pd.concat([all_freq_stops, counts], ignore_index=True),
-            crs = 4326)
-        wednesdays.append(feed.get_first_week()[2])
+        try:
+            all_freq_stops = gpd.GeoDataFrame(
+                pd.concat([all_freq_stops, counts], ignore_index=True),
+                crs = 4326)
+            wednesdays.append(feed.get_first_week()[2])
+        except TypeError:
+            print ('did not add stops!! concat typeperror')
     return all_freq_stops, wednesdays
     
