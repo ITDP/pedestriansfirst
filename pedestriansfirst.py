@@ -24,11 +24,6 @@ from shapely.ops import unary_union, transform
 import shapely.ops
 import topojson
 
-#do this before importing r5py
-import sys
-sys.argv.append(["--max-memory", "80%"])
-
-
 import isochrones
 import get_service_locations
 import gtfs_parser
@@ -380,7 +375,7 @@ def spatial_analysis(boundaries,
     
     # TODO -- Put this into a function so it runs smoother?
     if 'journey_gap' in to_test and len(gtfs_filenames) > 0: #ie, it has GTFS
-        access.journey_gap_calculations(
+        journey_gap_success = access.journey_gap_calculations(
                     folder_name,
                     boundaries_latlon,
                     gtfs_filenames,

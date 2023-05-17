@@ -1,3 +1,9 @@
+
+#do this before importing r5py
+import sys
+sys.argv.append(["--max-memory", "90%"])
+
+
 from r5py import TransportNetwork, TravelTimeMatrixComputer
 from r5py import TransitMode, LegMode
 from tqdm import tqdm
@@ -134,17 +140,20 @@ def journey_gap_calculations(
         points_gdf_latlon.geometry = grid_gdf_latlon.centroid
         
         ttms = {}
-        for mode in ['TRANSIT', 'BIKE_LTS1', 'CAR']:#mode_settings.keys():
-            print(f'computing for {mode}')
-            ttm_computer = TravelTimeMatrixComputer(transport_network, points_gdf_latlon,**mode_settings[mode])
-            ttm_long = ttm_computer.compute_travel_times()
-            ttm_wide = pd.pivot(ttm_long, index='from_id', columns='to_id', values='travel_time')
-            ttms[mode] = ttm_wide
-            ttms[mode].to_csv(folder_name+'temp/access/'+mode+'_ttm.csv')
-            
+        try:
+            for mode in ['TRANSIT', 'BIKE_LTS1', 'CAR']:#mode_settings.keys():
+                print(f'computing ttm for {mode}')
+                ttm_computer = TravelTimeMatrixComputer(transport_network, points_gdf_latlon,**mode_settings[mode])
+                ttm_long = ttm_computer.compute_travel_times()
+                ttm_wide = pd.pivot(ttm_long, index='from_id', columns='to_id', values='travel_time')
+                ttms[mode] = ttm_wide
+                ttms[mode].to_csv(folder_name+'temp/access/'+mode+'_ttm.csv')
+        except:
+           print('FAILED to calculate ttm for', mode)
+           return False
             
         #3 versions - cumsum, time, value
-        print('calculating ttms for journey gaps')
+        print('calculating indicators for journey gaps')
         for origin_id in tqdm(list(grid_gdf_latlon.index)):
             grid_gdf_latlon.loc[origin_id, 'time_ratios_w_weighting'] = 0
             grid_gdf_latlon.loc[origin_id, 'grav_sustrans_sum'] = 0
@@ -184,3 +193,4 @@ def journey_gap_calculations(
                 #grav ratio is already weighted because we added origin_pop in calling value_of_cxn
                 
         grid_gdf_latlon.to_file(folder_name+'temp/access/grid_pop_evaluated.geojson')
+        return True
