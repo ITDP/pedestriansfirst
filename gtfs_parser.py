@@ -99,8 +99,10 @@ def get_stop_frequencies(feed, headwaylim):
                                       headway_end_time= '21:00:00', 
                                       split_directions = False)
     except TypeError:
+        print("did not get counts (typeerror)", feed.agency)
         return {}
     if stopstats.empty:
+        print("did not get counts (stopstats.empty)", feed.agency)
         return {}
     for stop_id in stopstats.stop_id.unique():
         headway = stopstats.loc[stopstats['stop_id']==stop_id].mean_headway.mean()
@@ -112,11 +114,11 @@ def get_stop_frequencies(feed, headwaylim):
                 counts.loc[stop_id,'headway'] = headway
                 counts.loc[stop_id,'geometry'] = Point(lon, lat)
             except IndexError:
-                print("IndexError")
+                print("did not get counts (indexerror)", feed.agency)
     if not counts.empty:
-        print ("got counts!")
+        print ("got counts!", feed.agency)
     else:
-        print("did not get counts")
+        print("did not get counts (counts.empty)", feed.agency)
     return counts
     
 def get_frequent_stops(poly, folder_name, headwaylim = 20):
@@ -126,6 +128,7 @@ def get_frequent_stops(poly, folder_name, headwaylim = 20):
     for filename in filenames:
         feed = feed_from_filename(filename)
         counts = get_stop_frequencies(feed, headwaylim)
+        import pdb; pdb.set_trace()
         all_freq_stops = gpd.GeoDataFrame(
             pd.concat([all_freq_stops, counts], ignore_index=True),
             crs = 4326)
