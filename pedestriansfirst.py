@@ -1031,7 +1031,7 @@ def calculate_indicators(analysis_areas,
                     sqkm_per_pixel)
                 if total_PNS is not None:
                     perc_PNS = total_PNS / analysis_areas.loc[idx,f'total_pop_{current_year}']
-                    perc_PNS = max(perc_PNS, 1)
+                    perc_PNS = min(perc_PNS, 1)
                     analysis_areas.loc[idx,f'{service}_{current_year}'] = perc_PNS
                 else:
                     analysis_areas.loc[idx,f'{service}_{current_year}'] = 0
