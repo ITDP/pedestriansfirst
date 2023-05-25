@@ -883,6 +883,10 @@ def calculate_indicators(analysis_areas,
     if folder_name != '' and not folder_name[-1:] == '/':
         folder_name += '/'
         
+        
+    #to see if we should put NA instead of 0 for pnft and journey_gap
+    gtfs_filenames = os.listdir(folder_name+'temp/gtfs/')
+    
     analysis_areas_utm = ox.project_gdf(analysis_areas)
     utm_crs = analysis_areas_utm.crs
     analysis_areas_mw = analysis_areas.to_crs("ESRI:54009")
@@ -974,6 +978,8 @@ def calculate_indicators(analysis_areas,
     for idx in analysis_areas.index:
         print('getting results for', analysis_areas.loc[idx, 'name'])
         
+        analysis_areas.loc[idx, f'has_gtfs'] = (len(gtfs_filenames) > 0)
+        
         boundaries_mw = analysis_areas_mw.loc[idx,'geometry']
         boundaries_utm = analysis_areas_utm.loc[idx,'geometry']
         boundaries_ll = analysis_areas.loc[idx,'geometry']
@@ -1041,6 +1047,11 @@ def calculate_indicators(analysis_areas,
                 total_services = service_points_ll[service_with_points].intersection(boundaries_ll)
                 analysis_areas.loc[idx,f'n_points_{service_with_points}_{current_year}'] = len(total_services)
             
+        if len(gtfs_filenames) == 0:
+            analysis_areas.loc[idx,f'pnft_{current_year}'] = "NA"
+            analysis_areas.loc[idx,f'n_points_pnft_{current_year}'] = "NA"
+            
+            
         # 2.2.1 HIGHWAYS ARE SPECIAL
         if 'highways' in to_test:
             PNNH = 1 - analysis_areas.loc[idx,f'highways_{current_year}']
@@ -1059,7 +1070,7 @@ def calculate_indicators(analysis_areas,
                 unprotected_m = sum(selected_all_bikeways_utm.geometry.length)
             else:
                 unprotected_m = 0
-            analysis_areas.loc[idx,'all_bikeways_km_{current_year}'] = unprotected_m / 1000
+            analysis_areas.loc[idx,f'all_bikeways_km_{current_year}'] = unprotected_m / 1000
             
         if 'pnpb' in to_test:
             if protected_bikeways_utm is not None:
@@ -1067,7 +1078,7 @@ def calculate_indicators(analysis_areas,
                 protected_m = sum(selected_protected_bikeways_utm.geometry.length)
             else:
                 protected_m = 0
-            analysis_areas.loc[idx,'protected_bikeways_km_{current_year}'] = protected_m / 1000
+            analysis_areas.loc[idx,f'protected_bikeways_km_{current_year}'] = protected_m / 1000
         
                             
             geodata_path = f'{folder_name}geodata/rapid_transit/{current_year}/all_isochrones_ll.geojson'
@@ -1131,7 +1142,7 @@ def calculate_indicators(analysis_areas,
                     block_density = 'ERROR'
             else:
                 block_density = 'NA'
-            analysis_areas.loc[idx,'block_density'] = block_density
+            analysis_areas.loc[idx,f'block_density_{current_year}'] = block_density
                 
         if 'journey_gap' in to_test:
             if access_grid is not None:
@@ -1140,12 +1151,17 @@ def calculate_indicators(analysis_areas,
                 
                 cumsum_ratio_weighted_total = grid_overlap.journey_gap_cumsum_ratio_weighted.sum()
                 cumsum_indicator = cumsum_ratio_weighted_total / area_pop
-                analysis_areas.loc[idx,'cumsum_indicator'] = cumsum_indicator
+                analysis_areas.loc[idx,f'cumsum_journeygap_{current_year}'] = cumsum_indicator
                 
                 time_ratio_weighted_total = grid_overlap.journey_gap_time_ratio_weighted.sum()
                 time_indicator = time_ratio_weighted_total / area_pop
-                analysis_areas.loc[idx,'time_indicator'] = time_indicator
+                analysis_areas.loc[idx,f'time_journeygap_{current_year}'] = time_indicator
                 
                 grav_ratio_weighted_total = grid_overlap.journey_gap_grav_ratio_weighted.sum()
                 grav_indicator = grav_ratio_weighted_total / area_pop
-                analysis_areas.loc[idx,'grav_indicator'] = grav_indicator
+                analysis_areas.loc[idx,f'grav_journeygap_{current_year}'] = grav_indicator
+
+            if len(gtfs_filenames) == 0:
+                analysis_areas.loc[idx,f'cumsum_journeygap_{current_year}'] = "NA"
+                analysis_areas.loc[idx,f'time_journeygap_{current_year}'] = "NA"
+                analysis_areas.loc[idx,f'grav_journeygap_{current_year}'] = "NA"

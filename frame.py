@@ -260,7 +260,7 @@ def get_jurisdictions(hdc,
         print(f'found {len(final_jurisdictions_latlon)} in acceptable admin levels {selected_levels}')
     
     
-    #TODO -- get admin_level names, add to dataframe
+    # get admin_level names, add to dataframe
     level_names_eng = pd.read_csv('input_data/admin_level_names_eng.csv')
     level_names_eng.index = level_names_eng.ISO_code
     level_names_local = pd.read_csv('input_data/admin_level_names_local.csv')
@@ -279,10 +279,15 @@ def get_jurisdictions(hdc,
                 analysis_areas.loc[new_id, 'hdc'] = hdc
             level_number = final_jurisdictions_latlon.loc[osmid,'admin_level']
             level_name_eng = level_names_eng.loc[main_country, f'admin_level={level_number}']
+            if level_name_eng == "" or level_name_eng is None:
+                level_name_eng = f"admin_level {level_number}"
             level_name_local = level_names_local.loc[main_country, f'admin_level={level_number}']
             analysis_areas.loc[new_id, 'level_name_eng'] = level_name_eng
             analysis_areas.loc[new_id, 'level_name_local'] = level_name_local
-            level_name_full = f'{level_name_eng} ({level_name_local}'
+            if level_name_local == "" or level_name_local is None:
+                level_name_full = level_name_eng
+            else:
+                level_name_full = f'{level_name_eng} ({level_name_local}'
             analysis_areas.loc[new_id, 'level_name_full'] = level_name_full
             new_id += 1
             
@@ -382,44 +387,71 @@ def regional_analysis(hdc,
 #                     json.dump(all_results, out_file)
             
 def calculate_country_indicators(current_year=2022,
-                                 years = [1975, 1980, 1985, 1990, 1995, 2000, 2005, 2010, 2015, 2020, 2022, 2025],
+                                 rt_and_pop_years = [1975, 1980, 1985, 1990, 1995, 2000, 2005, 2010, 2015, 2020, 2022, 2025],
+                                 #TODO add years for other indicators with more than one
                                  ):
     natural_earth = gpd.read_file('input_data/naturalearth_countries/ne_10m_admin_0_countries.shp')
     countries_ISO = list(natural_earth.ISO_A3.unique())
     
     #list indicators
-    no_year = [
+    current_year_indicators = [
+        'healthcare',
+        'schools',
+        'h+s',
+        'bikeshare',
+        'pnab',
+        'pnpb',
+        'carfree',
+        'highways',
+        'n_points_healthcare',
+        'n_points_schools',
+        'n_points_bikeshare',
+        'people_not_near_highways',
+        'highway_km',
+        'all_bikeways_km',
+        'protected_bikeways_km',
         'block_density',
-        'people_not_near_highways',        
         ]
     
-    current_indicators = [
-        'h+s_',
-        'bikeshare_',
-        'pnab_',
-        'pnpb_',
-        'pnft_',
-        'carfree_',
-        
+    gtfs_dependent_indicators = [
+        'pnft',
+        'n_points_pnft',
+        'cumsum_journeygap',
+        'time_journeygap',
+        'grav_journeygap',
         ]
-    year_indicators = [
-        'density_',
-        'PNrT_all_',
-        'PNrT_brt_',
-        'PNrT_mrt_',
-        'PNrT_lrt_', #TODO: add new indicators here as I develop them
+    
+    current_year_indicators += gtfs_dependent_indicators
+    
+    rt_and_pop_indicators = [
+        'total_pop',
+        'total_pop_gtfs_cities_only'
+        'density',
+        'PNrT_all',
+        'km_all'
+        'stns_all',
+        'rtr_all',
+        'PNrT_mrt',
+        'km_mrt'
+        'stns_mrt',
+        'rtr_mrt',
+        'PNrT_lrt',
+        'km_lrt'
+        'stns_lrt',
+        'rtr_lrt',
+        'PNrT_brt',
+        'km_brt'
+        'stns_brt',
+        'rtr_brt',
         ]
-    indicators = current_indicators + year_indicators
+     
+    
     full_indicator_names = []
-    for indicator in no_year:
-        full_indicator_names.append(indicator)
-    for indicator in current_indicators:
-        full_indicator_names.append(indicator+str(current_year))
-    for year in years:
-        full_indicator_names.append('total_pop_'+str(year))
-        for indicator in year_indicators:
-            full_indicator_names.append(indicator+str(year))
-            
+    for indicator in current_year_indicators:
+        full_indicator_names.append(f'{indicator}_{current_year}')
+    for year in rt_and_pop_years:
+        for indicator in rt_and_pop_indicators:
+            full_indicator_names.append(f'{indicator}_{year}')
             
     #set up dataframes for results
     country_totals = pd.DataFrame(index=countries_ISO, columns=full_indicator_names)
@@ -433,33 +465,34 @@ def calculate_country_indicators(current_year=2022,
             city_results = pd.read_csv(f'cities_out/{city_folder}/indicator_values.csv')
             for country in city_results.country.unique():
                 if type(country) == type('this is a string, which means it is not np.nan'):
-                    for year in years:
+                    for year in rt_and_pop_years:
                         total_pop_year = city_results[city_results.country == country][f'total_pop_{year}'].sum()
-                        if year == 2022:
-                            total_pop_now = total_pop_year
                         country_totals.loc[country, f'total_pop_{year}'] += total_pop_year
-                        for indicator in indicators:
-                            if indicator+str(year) in city_results.columns:
+                        if city_results[city_results.country == country]['has_gtfs'] == 'True':
+                            country_totals.loc[country, f'total_pop_gtfs_cities_only_{year}'] += total_pop_year
+                            
+                        for indicator in full_indicator_names:
+                            if indicator+'_'+str(year) in city_results.columns:
                                 value = city_results[city_results.country == country][indicator+str(year)].sum() * total_pop_year
                                 country_totals.loc[country, indicator+str(year)] += value
-                    for indicator in no_year:
-                        value = float(city_results[city_results.country == country][indicator].sum()) * total_pop_now
-                        country_totals.loc[country, indicator] += value
+
                         
     
     #get weighted averages
     print('iterating through countries')
     for country in tqdm(countries_ISO):
-        for indicator in indicators:
-            for year in years:
+        for indicator in full_indicator_names:
+            for year in rt_and_pop_years:
                 if indicator+str(year) in country_totals.columns:
-                    weighted_avg = country_totals.loc[country, indicator+str(year)] / country_totals.loc[country, f'total_pop_{year}']
-                    #import pdb; pdb.set_trace()
-                    country_weighted_avgs.loc[country, indicator+str(year)] = weighted_avg
-        for indicator in no_year:
-            weighted_avg = country_totals.loc[country, indicator] / country_totals.loc[country, f'total_pop_{2022}']
-            #import pdb; pdb.set_trace()
-            country_weighted_avgs.loc[country, indicator] = weighted_avg
+                    if indicator in gtfs_dependent_indicators:
+                        weighted_avg = country_totals.loc[country, indicator+str(year)] / country_totals.loc[country, f'total_pop_gtfs_cities_only_{year}']
+                        #import pdb; pdb.set_trace()
+                        country_weighted_avgs.loc[country, indicator+str(year)] = weighted_avg
+                        
+                    else:   
+                        weighted_avg = country_totals.loc[country, indicator+str(year)] / country_totals.loc[country, f'total_pop_{year}']
+                        #import pdb; pdb.set_trace()
+                        country_weighted_avgs.loc[country, indicator+str(year)] = weighted_avg
             
     
     #save output
