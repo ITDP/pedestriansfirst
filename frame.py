@@ -262,7 +262,7 @@ def get_jurisdictions(hdc,
     
     # get admin_level names, add to dataframe
     level_names_eng = pd.read_csv('input_data/admin_level_names_eng.csv')
-    level_names_eng.index = level_names_eng.ISO_code
+    level_names_eng.index = level_names_eng['ISO country code']
     level_names_local = pd.read_csv('input_data/admin_level_names_local.csv')
     level_names_local.index = level_names_local.ISO_code
     
@@ -278,13 +278,13 @@ def get_jurisdictions(hdc,
                 analysis_areas.loc[new_id,attr] = final_jurisdictions_latlon.loc[osmid,attr]
                 analysis_areas.loc[new_id, 'hdc'] = hdc
             level_number = final_jurisdictions_latlon.loc[osmid,'admin_level']
-            level_name_eng = level_names_eng.loc[main_country, f'admin_level={level_number}']
-            if level_name_eng == "" or level_name_eng is None:
+            level_name_eng = level_names_eng.loc[main_country, f'{level_number}']
+            if level_name_eng == "" or np.isnan(level_name_eng):
                 level_name_eng = f"admin_level {level_number}"
-            level_name_local = level_names_local.loc[main_country, f'admin_level={level_number}']
+            level_name_local = level_names_local.loc[main_country, f'{level_number}']
             analysis_areas.loc[new_id, 'level_name_eng'] = level_name_eng
             analysis_areas.loc[new_id, 'level_name_local'] = level_name_local
-            if level_name_local == "" or level_name_local is None:
+            if level_name_local == "" or isnan(level_name_local):
                 level_name_full = level_name_eng
             else:
                 level_name_full = f'{level_name_eng} ({level_name_local}'
