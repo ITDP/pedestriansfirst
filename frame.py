@@ -279,13 +279,12 @@ def get_jurisdictions(hdc,
                 analysis_areas.loc[new_id, 'hdc'] = hdc
             level_number = final_jurisdictions_latlon.loc[osmid,'admin_level']
             level_name_eng = level_names_eng.loc[main_country, f'{level_number}']
-            import pdb; pdb.set_trace()
-            if level_name_eng == "" or np.isnan(level_name_eng):
+            if type(level_name_eng) != type('string'):
                 level_name_eng = f"admin_level {level_number}"
             level_name_local = level_names_local.loc[main_country, f'{level_number}']
             analysis_areas.loc[new_id, 'level_name_eng'] = level_name_eng
             analysis_areas.loc[new_id, 'level_name_local'] = level_name_local
-            if level_name_local == "" or np.isnan(level_name_local):
+            if type(level_name_local) != type('string'):
                 level_name_full = level_name_eng
             else:
                 level_name_full = f'{level_name_eng} ({level_name_local}'
