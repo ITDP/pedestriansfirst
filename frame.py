@@ -264,7 +264,7 @@ def get_jurisdictions(hdc,
     level_names_eng = pd.read_csv('input_data/admin_level_names_eng.csv')
     level_names_eng.index = level_names_eng['ISO country code']
     level_names_local = pd.read_csv('input_data/admin_level_names_local.csv')
-    level_names_local.index = level_names_local.ISO_code
+    level_names_local.index = level_names_local['ISO country code']
     
     if len(final_jurisdictions_latlon) > 0:
         for osmid in final_jurisdictions_latlon.index:
@@ -284,7 +284,7 @@ def get_jurisdictions(hdc,
             level_name_local = level_names_local.loc[main_country, f'{level_number}']
             analysis_areas.loc[new_id, 'level_name_eng'] = level_name_eng
             analysis_areas.loc[new_id, 'level_name_local'] = level_name_local
-            if level_name_local == "" or isnan(level_name_local):
+            if level_name_local == "" or np.isnan(level_name_local):
                 level_name_full = level_name_eng
             else:
                 level_name_full = f'{level_name_eng} ({level_name_local}'
