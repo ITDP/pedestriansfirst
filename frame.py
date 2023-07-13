@@ -278,10 +278,16 @@ def get_jurisdictions(hdc,
                 analysis_areas.loc[new_id,attr] = final_jurisdictions_latlon.loc[osmid,attr]
                 analysis_areas.loc[new_id, 'hdc'] = hdc
             level_number = final_jurisdictions_latlon.loc[osmid,'admin_level']
-            level_name_eng = level_names_eng.loc[main_country, f'{level_number}']
+            try:
+                level_name_eng = level_names_eng.loc[main_country, f'{level_number}']
+            except KeyError:
+                level_name_eng = f'admin_level_{level_number}'
             if type(level_name_eng) != type('string'):
                 level_name_eng = f"admin_level {level_number}"
-            level_name_local = level_names_local.loc[main_country, f'{level_number}']
+            try:
+                level_name_local = level_names_local.loc[main_country, f'{level_number}']
+            except KeyError:
+                level_name_local = None
             analysis_areas.loc[new_id, 'level_name_eng'] = level_name_eng
             analysis_areas.loc[new_id, 'level_name_local'] = level_name_local
             if type(level_name_local) != type('string'):
