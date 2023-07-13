@@ -364,6 +364,11 @@ def regional_analysis(hdc,
         nongeospatial_results = analysis_areas.drop('geometry', axis=1, inplace=False)
         nongeospatial_results.to_csv(f'{folder_name}indicator_values.csv')
     
+    os.remove(str(folder_name)+'/temp/city.o5m')
+    os.remove(str(folder_name)+'/temp/city.pbf')
+    os.remove(str(folder_name)+'/temp/cityhighways.o5m')
+    os.remove(str(folder_name)+'/temp/citywalk.o5m')
+    os.remove(str(folder_name)+'/temp/access/city_ltstagged.pbf')
     #import pdb; pdb.set_trace()
         
 
@@ -518,9 +523,9 @@ if __name__ == '__main__':
     test_cities = [
 
         #australia
-        13007,
-        11640,
-        13043,
+        #13007,
+        #11640,
+        #13043,
         
         
        #1210,
