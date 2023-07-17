@@ -121,13 +121,13 @@ def get_stop_frequencies(feed, headwaylim, folder_name):
                 counts.loc[stop_id,'headway'] = headway
                 counts.loc[stop_id,'geometry'] = Point(lon, lat)
             except IndexError:
-                log("indexerror,", feed.agency.agency_name[0])
+                log(folder_name, "indexerror,"+feed.agency.agency_name[0])
             except ValueError:
-                log("valueerror,", feed.agency.agency_name[0])
+                log(folder_name, "valueerror,"+feed.agency.agency_name[0])
     if not counts.empty:
-        log("success,", feed.agency.agency_name[0])
+        log(folder_name,"success,"+feed.agency.agency_name[0])
     else:
-        log("counts.empty,", feed.agency.agency_name[0])
+        log(folder_name,"counts.empty,"+feed.agency.agency_name[0])
     return counts
     
 def get_frequent_stops(poly, folder_name, headwaylim = 20):
