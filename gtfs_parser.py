@@ -106,7 +106,10 @@ def get_stop_frequencies(feed, headwaylim, folder_name):
                                       headway_end_time= '21:00:00', 
                                       split_directions = False)
     except TypeError:
-        print("did not get counts (typeerror)", feed.agency)
+        log(folder_name, "typeerror,"+feed.agency.agency_name[0])
+        return {}
+    except ValueError:
+        log(folder_name, "valueerror,"+feed.agency.agency_name[0])
         return {}
     if stopstats.empty:
         print("did not get counts (stopstats.empty)", feed.agency)
@@ -123,7 +126,7 @@ def get_stop_frequencies(feed, headwaylim, folder_name):
             except IndexError:
                 log(folder_name, "indexerror,"+feed.agency.agency_name[0])
             except ValueError:
-                log(folder_name, "valueerror,"+feed.agency.agency_name[0])
+                log(folder_name, "valueerror2,"+feed.agency.agency_name[0])
     if not counts.empty:
         log(folder_name,"success,"+feed.agency.agency_name[0])
     else:
