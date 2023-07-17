@@ -101,7 +101,6 @@ def get_stop_frequencies(feed, headwaylim, folder_name):
         return {}
     counts = gpd.GeoDataFrame(geometry=[], crs=4326)
     try:
-        import pdb; pdb.set_trace()
         stopstats = gk.stops.compute_stop_stats(feed, days, 
                                       headway_start_time= '07:00:00', 
                                       headway_end_time= '21:00:00', 
