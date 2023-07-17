@@ -1084,7 +1084,7 @@ def calculate_indicators(analysis_areas,
             geodata_path = f'{folder_name}geodata/rapid_transit/{current_year}/all_isochrones_ll.geojson'
         
         if 'pnrt' in to_test: 
-            for mode in modes:
+            for mode in ['brt','lrt','mrt','all']:
                 check_iso = rt_isochrones[mode][current_year]
                 #short-circuit?
                 if (check_iso is None) or (check_iso.intersection(boundaries_utm).unary_union is None):
