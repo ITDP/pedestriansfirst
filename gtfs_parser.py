@@ -87,7 +87,14 @@ def feed_from_filename(filename):
         shutil.rmtree('temp_gtfs_dir')
     return feed
 
-def get_stop_frequencies(feed, headwaylim):
+def log(folder_name, msg):
+    print(msg)
+    with open(folder_name+"/temp/gtfs/log.txt", "a") as myfile:
+        myfile.write(msg)
+
+
+def get_stop_frequencies(feed, headwaylim, folder_name):
+
     try:
         days = feed.get_first_week()[0:5]
     except:
@@ -115,11 +122,13 @@ def get_stop_frequencies(feed, headwaylim):
                 counts.loc[stop_id,'headway'] = headway
                 counts.loc[stop_id,'geometry'] = Point(lon, lat)
             except IndexError:
-                print("did not get counts (indexerror)", feed.agency)
+                log("indexerror,", feed.agency.agency_name[0])
+            except ValueError:
+                log("valueerror,", feed.agency.agency_name[0])
     if not counts.empty:
-        print ("got counts!", feed.agency)
+        log("success,", feed.agency.agency_name[0])
     else:
-        print("did not get counts (counts.empty)", feed.agency)
+        log("counts.empty,", feed.agency.agency_name[0])
     return counts
     
 def get_frequent_stops(poly, folder_name, headwaylim = 20):
@@ -128,7 +137,7 @@ def get_frequent_stops(poly, folder_name, headwaylim = 20):
     wednesdays = []
     for filename in filenames:
         feed = feed_from_filename(filename)
-        counts = get_stop_frequencies(feed, headwaylim)
+        counts = get_stop_frequencies(feed, headwaylim, folder_name)
         try:
             all_freq_stops = gpd.GeoDataFrame(
                 pd.concat([all_freq_stops, counts], ignore_index=True),
