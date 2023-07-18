@@ -115,7 +115,6 @@ def get_stop_frequencies(feed, headwaylim, folder_name, filename):
         os.remove(filename)
         return {}
     except ValueError:
-        import pdb; pdb.set_trace()
         log(folder_name, "valueerror,"+feed.agency.agency_name[0]+"\n")
         os.remove(filename)
         return {}
