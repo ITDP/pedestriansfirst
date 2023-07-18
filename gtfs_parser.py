@@ -95,11 +95,11 @@ def log(folder_name, msg):
 
 def get_stop_frequencies(feed, headwaylim, folder_name, filename):
     validation = gk.validate(feed)
-    import pdb; pdb.set_trace()
-    if "error" in validation['type']:
-        log(folder_name, "validation_failed,"+feed.agency.agency_name[0])
-        os.remove(filename)
-        return {}
+    #if "error" in validation['type']: #turns out this removes files that would otherwise succeed
+        #remove the gtfs file so it doesn't cause problems for r5py
+   #     log(folder_name, "validation_failed,"+feed.agency.agency_name[0])
+    #    os.remove(filename)
+     #   return {}
     try:
         days = feed.get_first_week()[0:5]
     except:
@@ -112,9 +112,11 @@ def get_stop_frequencies(feed, headwaylim, folder_name, filename):
                                       split_directions = False)
     except TypeError:
         log(folder_name, "typeerror,"+feed.agency.agency_name[0])
+        os.remove(filename)
         return {}
     except ValueError:
         log(folder_name, "valueerror,"+feed.agency.agency_name[0])
+        os.remove(filename)
         return {}
     if stopstats.empty:
         print("did not get counts (stopstats.empty)", feed.agency)
