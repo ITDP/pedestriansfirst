@@ -95,6 +95,7 @@ def log(folder_name, msg):
 
 def get_stop_frequencies(feed, headwaylim, folder_name, filename):
     validation = gk.validate(feed)
+    import pdb; pdb.set_trace()
     if "error" in validation['type']:
         log(folder_name, "validation_failed,"+feed.agency.agency_name[0])
         os.remove(filename)
