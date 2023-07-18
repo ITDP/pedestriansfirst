@@ -131,8 +131,8 @@ def journey_gap_calculations(
                 biketagged_filename,
                 full_gtfs_filenames
                 )
-        except r5py.com.conveyal.gtfs.GtfsLibException:
-            print('GTFS ERROR')
+        except:
+            print('r5py ERROR')
         
         wednesday_mornings = [datetime.datetime.strptime(wed+' 08:30:00', '%Y%m%d %H:%M:%S') for wed in gtfs_wednesdays]
         latest_wednesday = max(wednesday_mornings)
