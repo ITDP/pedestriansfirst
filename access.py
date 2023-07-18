@@ -3,7 +3,7 @@
 import sys
 sys.argv.append(["--max-memory", "90%"])
 
-
+import r5py
 from r5py import TransportNetwork, TravelTimeMatrixComputer
 from r5py import TransitMode, LegMode
 from tqdm import tqdm
@@ -126,11 +126,13 @@ def journey_gap_calculations(
         
         full_gtfs_filenames = [folder_name+'temp/gtfs/'+name for name in gtfs_filenames]
         print(full_gtfs_filenames)
-        
-        transport_network = TransportNetwork(
-            biketagged_filename,
-            full_gtfs_filenames
-            )
+        try:
+            transport_network = TransportNetwork(
+                biketagged_filename,
+                full_gtfs_filenames
+                )
+        except r5py.com.conveyal.gtfs.GtfsLibException:
+            print('GTFS ERROR')
         
         wednesday_mornings = [datetime.datetime.strptime(wed+' 08:30:00', '%Y%m%d %H:%M:%S') for wed in gtfs_wednesdays]
         latest_wednesday = max(wednesday_mornings)

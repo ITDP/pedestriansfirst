@@ -93,8 +93,12 @@ def log(folder_name, msg):
         myfile.write(msg)
 
 
-def get_stop_frequencies(feed, headwaylim, folder_name):
-
+def get_stop_frequencies(feed, headwaylim, folder_name, filename):
+    validation = gk.validate(feed)
+    if "error" in validation['type']:
+        log(folder_name, "validation_failed,"+feed.agency.agency_name[0])
+        os.remove(filename)
+        return {}
     try:
         days = feed.get_first_week()[0:5]
     except:
@@ -139,7 +143,7 @@ def get_frequent_stops(poly, folder_name, headwaylim = 20):
     wednesdays = []
     for filename in filenames:
         feed = feed_from_filename(filename)
-        counts = get_stop_frequencies(feed, headwaylim, folder_name)
+        counts = get_stop_frequencies(feed, headwaylim, folder_name, filename)
         try:
             all_freq_stops = gpd.GeoDataFrame(
                 pd.concat([all_freq_stops, counts], ignore_index=True),
