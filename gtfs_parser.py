@@ -111,16 +111,17 @@ def get_stop_frequencies(feed, headwaylim, folder_name, filename):
                                       headway_end_time= '21:00:00', 
                                       split_directions = False)
     except TypeError:
-        log(folder_name, "typeerror,"+feed.agency.agency_name[0])
+        log(folder_name, "typeerror,"+feed.agency.agency_name[0]+"\n")
         os.remove(filename)
         return {}
     except ValueError:
         import pdb; pdb.set_trace()
-        log(folder_name, "valueerror,"+feed.agency.agency_name[0])
+        log(folder_name, "valueerror,"+feed.agency.agency_name[0]+"\n")
         os.remove(filename)
         return {}
     if stopstats.empty:
         print("did not get counts (stopstats.empty)", feed.agency)
+        os.remove(filename)
         return {}
     for stop_id in stopstats.stop_id.unique():
         headway = stopstats.loc[stopstats['stop_id']==stop_id].mean_headway.mean()
@@ -132,13 +133,13 @@ def get_stop_frequencies(feed, headwaylim, folder_name, filename):
                 counts.loc[stop_id,'headway'] = headway
                 counts.loc[stop_id,'geometry'] = Point(lon, lat)
             except IndexError:
-                log(folder_name, "indexerror,"+feed.agency.agency_name[0])
+                log(folder_name, "indexerror,"+feed.agency.agency_name[0]+"\n")
             except ValueError:
-                log(folder_name, "valueerror2,"+feed.agency.agency_name[0])
+                log(folder_name, "valueerror2,"+feed.agency.agency_name[0]+"\n")
     if not counts.empty:
-        log(folder_name,"success,"+feed.agency.agency_name[0])
+        log(folder_name,"success,"+feed.agency.agency_name[0]+"\n")
     else:
-        log(folder_name,"counts.empty,"+feed.agency.agency_name[0])
+        log(folder_name,"counts.empty,"+feed.agency.agency_name[0]+"\n")
     return counts
     
 def get_frequent_stops(poly, folder_name, headwaylim = 20):
