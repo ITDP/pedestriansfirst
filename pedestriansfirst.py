@@ -348,7 +348,8 @@ def spatial_analysis(boundaries,
             folder_name, 
             headway_threshold)
         service_point_locations['pnft'] = freq_stops
-        gtfs_filenames = os.listdir(folder_name+'temp/gtfs/')
+        gtfs_filenames = [file for file in os.listdir(folder_name+'temp/gtfs/') if file[-4:] == '.zip']
+        
         
             
     if 'pnrt' in to_test:
