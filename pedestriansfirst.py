@@ -929,7 +929,9 @@ def calculate_indicators(analysis_areas,
     # 1.3 PNRT
     if 'pnrt' in to_test:
         geodata_path = f'{folder_name}geodata/rapid_transit/{current_year}/all_isochrones_ll.geojson'
+        has_rt = False
         if os.path.exists(geodata_path):
+            has_rt = True
             modes = ['all','mrt','lrt','brt']
             rt_isochrones = {}
             rt_lines = {}
@@ -1083,7 +1085,7 @@ def calculate_indicators(analysis_areas,
                             
             geodata_path = f'{folder_name}geodata/rapid_transit/{current_year}/all_isochrones_ll.geojson'
         
-        if 'pnrt' in to_test: 
+        if 'pnrt' in to_test and has_rt: 
             for mode in ['brt','lrt','mrt','all']:
                 check_iso = rt_isochrones[mode][current_year]
                 #short-circuit?
