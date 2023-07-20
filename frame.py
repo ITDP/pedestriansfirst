@@ -371,9 +371,9 @@ def regional_analysis(hdc,
         nongeospatial_results.to_csv(f'{folder_name}indicator_values.csv')
     
     #clean up big files
-    for file in ['city.o5m', 'city.pbf','cityhighways.o5m','citywalk.o5m','access/city_ltstagged.pbf']:
-        if os.exists(f'{folder_name}/temp/{file}'):
-            os.remove(f'{folder_name}/temp/{file}')
+    for cleanup in ['city.o5m', 'city.pbf','cityhighways.o5m','citywalk.o5m','access/city_ltstagged.pbf']:
+        if os.path.exists(f'{folder_name}/temp/{cleanup}'):
+            os.remove(f'{folder_name}/temp/{cleanup}')
     #import pdb; pdb.set_trace()
         
 
