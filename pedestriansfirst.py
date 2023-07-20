@@ -924,7 +924,7 @@ def calculate_indicators(analysis_areas,
         if os.path.exists(filename):
             protected_bikeways_utm = gpd.read_file(filename).to_crs(utm_crs)
         else:
-            all_bikeways_utm = None
+            protected_bikeways_utm = None
             
     # 1.3 PNRT
     if 'pnrt' in to_test:
