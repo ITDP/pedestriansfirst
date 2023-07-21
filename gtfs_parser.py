@@ -94,7 +94,6 @@ def log(folder_name, msg):
 
 
 def get_stop_frequencies(feed, headwaylim, folder_name, filename):
-    validation = gk.validate(feed)
     #if "error" in validation['type']: #turns out this removes files that would otherwise succeed
         #remove the gtfs file so it doesn't cause problems for r5py
    #     log(folder_name, "validation_failed,"+feed.agency.agency_name[0])
