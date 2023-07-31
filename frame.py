@@ -478,6 +478,7 @@ def calculate_country_indicators(current_year=2022,
                     for year in rt_and_pop_years:
                         total_pop_year = city_results[city_results.country == country][f'total_pop_{year}'].sum()
                         country_totals.loc[country, f'total_pop_{year}'] += total_pop_year
+                        import pdb; pdb.set_trace()
                         if city_results[city_results.country == country]['has_gtfs'] == 'True':
                             country_totals.loc[country, f'total_pop_gtfs_cities_only_{year}'] += total_pop_year
                             
