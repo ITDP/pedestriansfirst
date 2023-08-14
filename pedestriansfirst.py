@@ -656,9 +656,9 @@ def spatial_analysis(boundaries,
             service = 'h+s'
             intersect = shapely.ops.unary_union([quilt_isochrone_polys['healthcare'].intersection(quilt_isochrone_polys['schools'])])
             if type(intersect) == shapely.geometry.collection.GeometryCollection:
-                import pdb; pdb.set_trace()
-                intersect = [obj for obj in intersect if type(obj) == shapely.geometry.polygon.Polygon]
-                intersect = shapely.geometry.MultiPolygon(intersect)
+                if not intersect.is_empty:
+                    intersect = [obj for obj in intersect if type(obj) == shapely.geometry.polygon.Polygon]
+                    intersect = shapely.geometry.MultiPolygon(intersect)
             hs_utm = gpd.GeoDataFrame(geometry = [intersect], crs=utm_crs)
             if hs_utm.geometry.area.sum() != 0:
                 hs_utm = gpd.overlay(hs_utm ,boundaries_utm, how='intersection')
