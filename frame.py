@@ -428,9 +428,7 @@ def calculate_country_indicators(current_year=2022,
     gtfs_dependent_indicators = [
         'pnft',
         'n_points_pnft',
-        'cumsum_journeygap',
-        'time_journeygap',
-        'grav_journeygap',
+        'journey_gap',
         ]
     
     current_year_indicators += gtfs_dependent_indicators

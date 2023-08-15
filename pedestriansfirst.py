@@ -1156,18 +1156,10 @@ def calculate_indicators(analysis_areas,
                 grid_overlap = access_grid[access_grid.intersects(boundaries_ll)]
                 area_pop = grid_overlap.population.sum()
                 
-                cumsum_ratio_weighted_total = grid_overlap.journey_gap_cumsum_ratio_weighted.sum()
-                cumsum_indicator = cumsum_ratio_weighted_total / area_pop
-                analysis_areas.loc[idx,f'cumsum_journeygap_{current_year}'] = cumsum_indicator
+                journey_gap_weighted_total = grid_overlap.journey_gap_weighted.sum()
+                journey_gap = journey_gap_weighted_total / area_pop
+                analysis_areas.loc[idx,f'journey_gap_{current_year}'] = journey_gap
                 
-                time_ratio_weighted_total = grid_overlap.journey_gap_time_ratio_weighted.sum()
-                time_indicator = time_ratio_weighted_total / area_pop
-                analysis_areas.loc[idx,f'time_journeygap_{current_year}'] = time_indicator
-                
-                grav_ratio_weighted_total = grid_overlap.journey_gap_grav_ratio_weighted.sum()
-                grav_indicator = grav_ratio_weighted_total / area_pop
-                analysis_areas.loc[idx,f'grav_journeygap_{current_year}'] = grav_indicator
-
             if len(gtfs_filenames) == 0:
                 analysis_areas.loc[idx,f'cumsum_journeygap_{current_year}'] = "NA"
                 analysis_areas.loc[idx,f'time_journeygap_{current_year}'] = "NA"

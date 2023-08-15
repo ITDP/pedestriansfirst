@@ -158,6 +158,7 @@ def journey_gap_calculations(
         print('calculating indicators for journey gaps')
         for origin_id in tqdm(list(grid_gdf_latlon.index)):
             origin_pop = grid_gdf_latlon.loc[origin_id, 'population']
+            grid_gdf_latlon.loc[origin_id, 'time_ratio_weighted_sum'] = 0
             if origin_pop > 0:
                 #we weight by both the destination pop and by the gravity model
                 # factor, by multiplying by both of them
