@@ -586,8 +586,8 @@ def spatial_analysis(boundaries,
                         
                     print(f"finished patch #{p_idx+1} out of {len(patches)} for {name} {id_code} in {patch_time}")
                     patch_times.append(patch_time)
-            except ox._errors.EmptyOverpassResponse:
-                print('EmptyOverpassResponse')
+            except ox._errors.InsufficientResponseError:
+                print('InsufficientResponseError')
                 pass
             #except:
             #    print("GOT SOME ERROR FOR PATCH", p_idx)
