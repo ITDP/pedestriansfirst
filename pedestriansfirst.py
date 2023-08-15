@@ -901,7 +901,11 @@ def calculate_indicators(analysis_areas,
     service_gdfs_utm = {}
     for service in services:
         if service in to_test:
-            geodata_path = f'{folder_name}geodata/{service}latlon.geojson'
+            if service == "highways":
+                geodata_path = f'{folder_name}geodata/buffered_hwys_latlon.geojson'
+            else:
+                geodata_path = f'{folder_name}geodata/{service}latlon.geojson'
+            
             if os.path.exists(geodata_path):
                 service_gdfs_utm[service] = gpd.read_file(geodata_path).to_crs(utm_crs)
             else:
