@@ -1068,6 +1068,7 @@ def calculate_indicators(analysis_areas,
                 hwy_m = selected_highways_gdf_utm.geometry.length / 4 #divide by 4 because we're looking at divided highway polys, not lines :)
             else:
                 hwy_m = 0
+            import pdb; pdb.set_trace()
             analysis_areas.loc[idx,f'highway_km_{current_year}'] = hwy_m / 1000
             
         # 2.3 People Near Bikeways

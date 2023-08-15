@@ -90,7 +90,7 @@ def value_of_cxn(from_pop, to_dests, t_min):
     #see SSTI's Measuring Accessibility, appendix (p.68)
     #rough average of work and non-work
     baseval = from_pop * to_dests
-    return baseval * 1.14 * np.e ** (-0.05 * t_min)
+    return baseval * np.e ** (-0.05 * t_min)
 
 
 def journey_gap_calculations(
@@ -157,42 +157,28 @@ def journey_gap_calculations(
         #3 versions - cumsum, time, value
         print('calculating indicators for journey gaps')
         for origin_id in tqdm(list(grid_gdf_latlon.index)):
-            grid_gdf_latlon.loc[origin_id, 'time_ratios_w_weighting'] = 0
-            grid_gdf_latlon.loc[origin_id, 'grav_sustrans_sum'] = 0
-            grid_gdf_latlon.loc[origin_id, 'grav_car_sum'] = 0
-            grid_gdf_latlon.loc[origin_id, 'cumsum_sustrans'] = 0
-            grid_gdf_latlon.loc[origin_id, 'cumsum_car'] = 0
             origin_pop = grid_gdf_latlon.loc[origin_id, 'population']
             if origin_pop > 0:
-                total_dest_pop = 0
+                #we weight by both the destination pop and by the gravity model
+                # factor, by multiplying by both of them
+                # see https://docs.google.com/spreadsheets/d/11SpKFZfN-pr3ieftGoyNBPx5lcqY0b0Wg6RBgdevkMY/edit#gid=0 
+                weighting_factor_sum = 0
                 for dest_id in grid_gdf_latlon.index:
                     dest_pop = grid_gdf_latlon.loc[dest_id, 'population']
                     if dest_pop > 0 and not origin_id == dest_id:
                         car_time = ttms['CAR'].loc[origin_id, dest_id]
                         sustrans_time = min(ttms['TRANSIT'].loc[origin_id, dest_id],ttms['BIKE_LTS1'].loc[origin_id, dest_id])
                         time_ratio = (sustrans_time/car_time) 
-                        time_ratio_with_weighting = time_ratio * dest_pop
+                        #we pretend origin is 1 for now, just to get the weighting factor
+                        #we'll weight by origin pop when we calculate analysis-area-wide indicators
+                        weighting_factor = value_of_cxn(1, dest_pop, sustrans_time) 
+                        time_ratio_with_weighting = time_ratio * weighting_factor
                         if not np.isnan(time_ratio_with_weighting):
-                            total_dest_pop += dest_pop
-                            grid_gdf_latlon.loc[origin_id, 'time_ratios_w_weighting'] += time_ratio_with_weighting
-                            grav_sustrans_val = value_of_cxn(origin_pop, dest_pop, sustrans_time)
-                            grid_gdf_latlon.loc[origin_id, 'grav_sustrans_sum'] += grav_sustrans_val
-                            grav_car_val = value_of_cxn(origin_pop, dest_pop, car_time)
-                            grid_gdf_latlon.loc[origin_id, 'grav_car_sum'] += grav_car_val
-                        if car_time < 30:
-                            grid_gdf_latlon.loc[origin_id, 'cumsum_car'] += dest_pop
-                        if sustrans_time < 30:
-                            grid_gdf_latlon.loc[origin_id, 'cumsum_sustrans'] += dest_pop
-                cumsum_ratio = grid_gdf_latlon.loc[origin_id, 'cumsum_sustrans'] / grid_gdf_latlon.loc[origin_id, 'cumsum_car']
-                grid_gdf_latlon.loc[origin_id, 'journey_gap_cumsum_ratio_unweighted'] = cumsum_ratio
-                grid_gdf_latlon.loc[origin_id, 'journey_gap_cumsum_ratio_weighted'] = cumsum_ratio * origin_pop
-                time_ratio = grid_gdf_latlon.loc[origin_id, 'time_ratios_w_weighting'] / total_dest_pop
-                grid_gdf_latlon.loc[origin_id, 'journey_gap_time_ratio_unweighted'] = time_ratio
-                grid_gdf_latlon.loc[origin_id, 'journey_gap_time_ratio_weighted'] = time_ratio * origin_pop
-                grav_ratio = grid_gdf_latlon.loc[origin_id, 'grav_sustrans_sum'] / grid_gdf_latlon.loc[origin_id, 'grav_car_sum']
-                grid_gdf_latlon.loc[origin_id, 'journey_gap_grav_ratio_unweighted'] = grav_ratio
-                grid_gdf_latlon.loc[origin_id, 'journey_gap_grav_ratio_weighted'] = grav_ratio * origin_pop
-                #grav ratio is already weighted because we added origin_pop in calling value_of_cxn
+                            weighting_factor_sum += weighting_factor
+                            grid_gdf_latlon.loc[origin_id, 'time_ratio_weighted_sum'] += time_ratio_with_weighting
+                journey_gap = grid_gdf_latlon.loc[origin_id, 'time_ratio_weighted_sum'] / weighting_factor_sum
+                grid_gdf_latlon.loc[origin_id, 'journey_gap_unweighted'] = journey_gap
+                grid_gdf_latlon.loc[origin_id, 'journey_gap_weighted'] = journey_gap * origin_pop
                 
         grid_gdf_latlon.to_file(folder_name+'temp/access/grid_pop_evaluated.geojson')
         return True
