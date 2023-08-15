@@ -308,9 +308,10 @@ def get_jurisdictions(hdc,
 def regional_analysis(hdc, 
                       folder_prefix = 'cities_out', 
                       minimum_portion=0.6,
-                      analyze=True,
+                      analyze=False,
                       summarize=True,
-                      simplification=0.001 #toposimplification factor
+                      simplification=0.001, #toposimplification factor
+                      cleanup=False,
                       ):
     
     if not os.path.isdir('temp/'):
@@ -371,9 +372,10 @@ def regional_analysis(hdc,
         nongeospatial_results.to_csv(f'{folder_name}indicator_values.csv')
     
     #clean up big files
-    for cleanup in ['city.o5m', 'city.pbf','cityhighways.o5m','citywalk.o5m','access/city_ltstagged.pbf']:
-        if os.path.exists(f'{folder_name}/temp/{cleanup}'):
-            os.remove(f'{folder_name}/temp/{cleanup}')
+    if cleanup:
+        for cleanup_filename in ['city.o5m', 'city.pbf','cityhighways.o5m','citywalk.o5m','access/city_ltstagged.pbf']:
+            if os.path.exists(f'{folder_name}/temp/{cleanup_filename}'):
+                os.remove(f'{folder_name}/temp/{cleanup_filename}')
     #import pdb; pdb.set_trace()
         
 
