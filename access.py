@@ -5,7 +5,7 @@ sys.argv.append(["--max-memory", "90%"])
 
 import r5py
 from r5py import TransportNetwork, TravelTimeMatrixComputer
-from r5py import TransitMode, LegMode
+from r5py import TransportMode
 from tqdm import tqdm
 
 import datetime
@@ -35,22 +35,22 @@ def prepare_mode_settings(**kwargs):
     
     walk_settings = general_settings.copy()
     walk_settings.update({
-        'transport_modes':[LegMode.WALK],
-        'access_modes':[LegMode.WALK],
+        'transport_modes':[TransportMode.WALK],
+        'access_modes':[TransportMode.WALK],
         })
     mode_settings['WALK'] = walk_settings
     
     transit_settings = general_settings.copy()
     transit_settings.update({
-        'transport_modes':[TransitMode.TRANSIT],
-        'access_modes':[LegMode.WALK],
+        'transport_modes':[TransportMode.TRANSIT],
+        'access_modes':[TransportMode.WALK],
          })
     mode_settings['TRANSIT'] = transit_settings
     
     bike_lts1_settings = general_settings.copy()
     bike_lts1_settings.update({
-        'transport_modes':[LegMode.WALK, LegMode.BICYCLE],
-        'access_modes':[LegMode.WALK, LegMode.BICYCLE],
+        'transport_modes':[TransportMode.WALK, TransportMode.BICYCLE],
+        'access_modes':[TransportMode.WALK, TransportMode.BICYCLE],
         'max_time_walking':datetime.timedelta(minutes=10),
         'speed_walking':4,
         'max_bicycle_traffic_stress':1
@@ -59,8 +59,8 @@ def prepare_mode_settings(**kwargs):
     
     bike_lts2_settings = general_settings.copy()
     bike_lts2_settings.update({
-         'transport_modes':[LegMode.WALK, LegMode.BICYCLE],
-         'access_modes':[LegMode.WALK, LegMode.BICYCLE],
+         'transport_modes':[TransportMode.WALK, TransportMode.BICYCLE],
+         'access_modes':[TransportMode.WALK, TransportMode.BICYCLE],
          'max_time_walking':datetime.timedelta(minutes=10),
          'speed_walking':4,
          'max_bicycle_traffic_stress':2
@@ -69,8 +69,8 @@ def prepare_mode_settings(**kwargs):
     
     bike_lts4_settings = general_settings.copy()
     bike_lts4_settings.update({
-        'transport_modes':[LegMode.WALK, LegMode.BICYCLE],
-        'access_modes':[LegMode.WALK, LegMode.BICYCLE],
+        'transport_modes':[TransportMode.WALK, TransportMode.BICYCLE],
+        'access_modes':[TransportMode.WALK, TransportMode.BICYCLE],
         'max_time_walking':datetime.timedelta(minutes=10),
         'speed_walking':4,
         'max_bicycle_traffic_stress':4
@@ -79,8 +79,8 @@ def prepare_mode_settings(**kwargs):
     
     car_settings = general_settings.copy()
     car_settings.update({
-        'transport_modes':[LegMode.CAR],
-        'access_modes':[LegMode.CAR],
+        'transport_modes':[TransportMode.CAR],
+        'access_modes':[TransportMode.CAR],
         })
     mode_settings['CAR'] = car_settings
     
