@@ -1065,7 +1065,7 @@ def calculate_indicators(analysis_areas,
             analysis_areas.loc[idx,f'people_not_near_highways_{current_year}'] = PNNH
             if service_gdfs_utm['highways'] is not None:
                 selected_highways_gdf_utm = service_gdfs_utm['highways'].intersection(boundaries_utm)
-                hwy_m = sum(selected_highways_gdf_utm.geometry.length) / 4 #divide by 4 because we're looking at divided highway polys, not lines :)
+                hwy_m = sum(selected_highways_gdf_utm.geometry.boundary.length) / 4 #divide by 4 because we're looking at divided highway polys, not lines :)
             else:
                 hwy_m = 0
             analysis_areas.loc[idx,f'highway_km_{current_year}'] = hwy_m / 1000
