@@ -95,6 +95,7 @@ def value_of_cxn(from_pop, to_dests, t_min):
 
 def journey_gap_calculations(
             folder_name,
+            current_year,
             boundaries_latlon,
             gtfs_filenames,
             gtfs_wednesdays,
@@ -181,5 +182,5 @@ def journey_gap_calculations(
                 grid_gdf_latlon.loc[origin_id, 'journey_gap_unweighted'] = journey_gap
                 grid_gdf_latlon.loc[origin_id, 'journey_gap_weighted'] = journey_gap * origin_pop
                 
-        grid_gdf_latlon.to_file(folder_name+'temp/access/grid_pop_evaluated.geojson')
+        grid_gdf_latlon.to_file(f'{folder_name}geodata/access/grid_pop_evaluated_{current_year}.geojson')
         return True

@@ -377,6 +377,7 @@ def spatial_analysis(boundaries,
     if 'journey_gap' in to_test and len(gtfs_filenames) > 0 and len(gtfs_wednesdays) > 0: #ie, it has GTFS
         journey_gap_success = access.journey_gap_calculations(
                     folder_name,
+                    current_year,
                     boundaries_latlon,
                     gtfs_filenames,
                     gtfs_wednesdays,
@@ -611,31 +612,30 @@ def spatial_analysis(boundaries,
             service_utm.geometry = service_utm.geometry.simplify(services_simplification)
             service_utm = gpd.overlay(service_utm ,boundaries_utm, how='intersection')
             service_latlon = service_utm.to_crs(epsg=4326)
-            #service_utm.to_file(folder_name+service+'utm'+'.geojson', driver='GeoJSON')
-            service_latlon.to_file(folder_name+'geodata/'+service+'latlon'+'.geojson', driver='GeoJSON')
+            service_latlon.to_file(f"{folder_name}geodata/{service}/{service}_latlon_{current_year}.geojson", driver='GeoJSON')
         if service in service_point_locations.keys():
-            service_point_locations[service].to_file(folder_name+'geodata/'+service+'_points_latlon'+'.geojson', driver='GeoJSON')
+            service_point_locations[service].to_file(f"{folder_name}geodata/{service}_points/{service}_points_latlon_{current_year}.geojson", driver='GeoJSON')
             
     if 'pnpb' in to_test or 'pnab' in to_test:
         if not quilt_protectedbike.empty:
             quilt_protectedbike = quilt_protectedbike.to_crs(4326)
             merged_protectedbike = quilt_protectedbike.intersection(boundaries)
             merged_protectedbike = gpd.GeoDataFrame(geometry = [merged_protectedbike.unary_union], crs=4326)
-            merged_protectedbike.to_file(folder_name+'geodata/protectedbike_latlon.geojson',driver='GeoJSON')
+            merged_protectedbike.to_file(f"{folder_name}geodata/protectedbike/protectedbike_latlon_{current_year}.geojson",driver='GeoJSON')
         if not quilt_allbike.empty:
             quilt_allbike = quilt_allbike.to_crs(4326)
             merged_allbike = quilt_allbike.intersection(boundaries)
             merged_allbike = gpd.GeoDataFrame(geometry = [merged_allbike.unary_union], crs=4326)
-            merged_allbike.to_file(folder_name+'geodata/allbike_latlon.geojson',driver='GeoJSON')
+            merged_allbike.to_file(f"{folder_name}geodata/allbike/allbike_latlon_{current_year}.geojson",driver='GeoJSON')
     
     if 'highways' in to_test:
         all_hwys_poly = shapely.ops.unary_union(all_highway_polys)
         all_hwys_gdf = gpd.GeoDataFrame(geometry=[all_hwys_poly], crs=utm_crs)
         all_hwys_latlon = all_hwys_gdf.to_crs(4326)
-        all_hwys_latlon.to_file(folder_name+'geodata/allhwys_latlon.geojson',driver='GeoJSON')
+        all_hwys_latlon.to_file(f"{folder_name}geodata/allhwys/allhwys_latlon_{current_year}.geojson",driver='GeoJSON')
         buffered_hwys = all_hwys_gdf.buffer(distances['highways'])
         buffered_hwys_latlon = buffered_hwys.to_crs(4326)
-        buffered_hwys_latlon.to_file(folder_name+'geodata/buffered_hwys_latlon.geojson',driver='GeoJSON')
+        buffered_hwys_latlon.to_file(f"{folder_name}geodata/buffered_hwys/buffered_hwys_latlon_{current_year}.geojson",driver='GeoJSON')
         
         
     if 'carfree' in to_test:
@@ -649,7 +649,7 @@ def spatial_analysis(boundaries,
         carfree_utm.geometry = carfree_utm.geometry.simplify(services_simplification)
         carfree_utm = gpd.overlay(carfree_utm ,boundaries_utm, how='intersection')
         carfree_latlon = carfree_utm.to_crs('epsg:4326')
-        carfree_latlon.to_file(folder_name+'geodata/carfreelatlon.geojson', driver='GeoJSON')
+        carfree_latlon.to_file(f"{folder_name}geodata/carfree/carfree_latlon_{current_year}.geojson",driver='GeoJSON')
         
     if 'h+s' in to_test:
         if quilt_isochrone_polys['healthcare'] and quilt_isochrone_polys['schools']:
@@ -664,7 +664,7 @@ def spatial_analysis(boundaries,
                 hs_utm = gpd.overlay(hs_utm ,boundaries_utm, how='intersection')
                 hs_utm.geometry = hs_utm.geometry.simplify(services_simplification)
                 hs_latlon = hs_utm.to_crs(epsg=4326)
-                hs_latlon.to_file(folder_name+'geodata/'+service+'latlon.geojson', driver='GeoJSON')
+                hs_latlon.to_file(f"{folder_name}geodata/{service}/{service}_latlon_{current_year}.geojson", driver='GeoJSON')
     
     if 'pnrt' in to_test:
         if not os.path.exists(folder_name+'geodata/rapid_transit/'):
@@ -721,7 +721,7 @@ def spatial_analysis(boundaries,
             patch_length=block_patch_length
             )
         unbuf_patches_utm = unbuffered_patches_latlon.to_crs(utm_crs)
-        print ("cut", len(list(patches)),"patches for block size in",name)
+        print ("cut", len(list(unbuf_patches_utm)),"patches for block size in",name)
         
         outblocks = []
         block_counts = []
@@ -788,7 +788,7 @@ def spatial_analysis(boundaries,
         patch_densities_utm = patch_densities.to_crs(utm_crs)
         patch_densities_utm['density'] = patch_densities_utm.block_count / (patch_densities_utm.area /1000000)
         patch_densities_latlon = patch_densities_utm.to_crs(epsg=4326)
-        patch_densities_latlon.to_file(f'{folder_name}geodata/block_densities_latlon.geojson', driver='GeoJSON')
+        patch_densities_latlon.to_file(f"{folder_name}geodata/blocks/block_densities_latlon_{current_year}.geojson", driver='GeoJSON')
         blocks_utm = gpd.GeoDataFrame(geometry=[block[0] for block in outblocks], crs=utm_crs)
         blocks_utm['area_utm'] = [block[1] for block in outblocks]
         blocks_utm['perim'] = [block[2] for block in outblocks]
@@ -800,15 +800,13 @@ def spatial_analysis(boundaries,
             (blocks_utm.area_utm > 1000) &
             (blocks_utm.area_utm < 1000000)]
         
-        
-        
         #TODO -- determine whether to normal simplify or toposimplify, and how much
         filtered_blocks_utm.geometry = filtered_blocks_utm.geometry.simplify(10)
         blocks_latlon = filtered_blocks_utm.to_crs(epsg=4326)
         #blocks_topo = topojson.Topology(blocks_latlon, prequantize=True)
         #blocks_latlon = blocks_topo.toposimplify(blocks_simplification).to_gdf()
         
-        blocks_latlon.to_file(folder_name+'geodata/'+'blocks'+'latlon'+'.geojson', driver='GeoJSON')
+        blocks_latlon.to_file(f"{folder_name}geodata/blocks/blocks_latlon_{current_year}.geojson", driver='GeoJSON')
     
     
     ft = datetime.datetime.now()
@@ -902,9 +900,9 @@ def calculate_indicators(analysis_areas,
     for service in services:
         if service in to_test:
             if service == "highways":
-                geodata_path = f'{folder_name}geodata/buffered_hwys_latlon.geojson'
+                geodata_path = f"{folder_name}geodata/buffered_hwys/buffered_hwys_latlon_{current_year}.geojson"
             else:
-                geodata_path = f'{folder_name}geodata/{service}latlon.geojson'
+                geodata_path = f'{folder_name}geodata/{service}/{service}_latlon_{current_year}.geojson'
             
             if os.path.exists(geodata_path):
                 service_gdfs_utm[service] = gpd.read_file(geodata_path).to_crs(utm_crs)
@@ -919,13 +917,13 @@ def calculate_indicators(analysis_areas,
     
     # 1.2 Bikeways
     if 'pnab' in to_test:
-        filename = folder_name+'geodata/allbike_latlon.geojson'
+        filename = f"{folder_name}geodata/allbike/allbike_latlon_{current_year}.geojson"
         if os.path.exists(filename):
             all_bikeways_utm = gpd.read_file(filename).to_crs(utm_crs)
         else:
             all_bikeways_utm = None
     if 'pnpb' in to_test:
-        filename = folder_name+'geodata/protectedbike_latlon.geojson'
+        filename = f"{folder_name}geodata/protectedbike/protectedbike_latlon_{current_year}.geojson"
         if os.path.exists(filename):
             protected_bikeways_utm = gpd.read_file(filename).to_crs(utm_crs)
         else:
@@ -967,7 +965,7 @@ def calculate_indicators(analysis_areas,
     
     # 1.4 Blocks
     if 'blocks' in to_test:
-        geodata_path = folder_name+'geodata/'+'blocks'+'latlon'+'.geojson'
+        geodata_path = f"{folder_name}geodata/blocks/blocks_latlon_{current_year}.geojson"
         if os.path.exists(geodata_path):
             blocks = gpd.read_file(geodata_path)
         else:
@@ -975,7 +973,7 @@ def calculate_indicators(analysis_areas,
             
             
     if 'journey_gap' in to_test:
-        geodata_path = f'{folder_name}temp/access/grid_pop_evaluated.geojson'
+        geodata_path = f'{folder_name}geodata/access/grid_pop_evaluated_{current_year}.geojson'
         if os.path.exists(geodata_path):
             access_grid = gpd.read_file(geodata_path)
         else:

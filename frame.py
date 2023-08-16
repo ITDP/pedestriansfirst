@@ -600,7 +600,7 @@ if __name__ == '__main__':
         regional_analysis(cityid)
 
     ucdb = gpd.read_file('input_data/old_ghsl/GHS_STAT_UCDB2015MT_GLOBE_R2019A_V1_2.gpkg')
-    for hdc in ucdb[(500000 < ucdb.P15)&(ucdb.P15 < 4000000)].sort_values('P15', ascending=False).ID_HDC_G0:
+    for hdc in ucdb[(500000 < ucdb.P15)&(ucdb.P15 < 2000000)].sort_values('P15', ascending=False).ID_HDC_G0:
         hdc = int(hdc)
         if not os.path.exists(f'cities_out/ghsl_region_{hdc}/indicator_values.csv'):
             regional_analysis(hdc)
