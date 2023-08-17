@@ -930,7 +930,7 @@ def calculate_indicators(analysis_areas,
     service_points_ll = {}     
     for service_with_points in ['healthcare', 'schools', 'libraries', 'bikeshare', 'pnft','special',]:
         if service_with_points in to_test:
-            geodata_path = folder_name+'geodata/'+service_with_points+'_points_latlon'+'.geojson'
+            geodata_path = f"{folder_name}geodata/{service_with_points}_points/{service_with_points}_points_latlon_{current_year}.geojson"
             service_points_ll[service_with_points] = gpd.read_file(geodata_path)
     
     # 1.2 Bikeways

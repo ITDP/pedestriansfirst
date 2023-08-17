@@ -603,7 +603,11 @@ if __name__ == '__main__':
     for hdc in ucdb[(500000 < ucdb.P15)&(ucdb.P15 < 1000000)].sort_values('P15', ascending=False).ID_HDC_G0:
         hdc = int(hdc)
         if not os.path.exists(f'cities_out/ghsl_region_{hdc}/indicator_values.csv'):
-            regional_analysis(hdc)
+            if os.path.exists(f'cities_out/ghsl_region_{hdc}/geodata/blocks/blocks_latlon_2022.geojson'):
+                regional_analysis(hdc, analyze=False)
+            else:
+                regional_analysis(hdc)
+                
 
 
     #calculate_country_indicators()
