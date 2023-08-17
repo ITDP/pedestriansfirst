@@ -614,8 +614,8 @@ def spatial_analysis(boundaries,
         'protectedbike/',
         'allbike/',
         'carfree/',
-        'blocks/'
-        'allhwys/'
+        'blocks/',
+        'allhwys/',
         'buffered_hwys',
         ]
     for subfolder in geodata_subfolders:
