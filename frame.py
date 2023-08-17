@@ -45,7 +45,7 @@ def prep_from_poly(poly, folder_name, boundary_buffer = 500):
     folder_name = str(folder_name)
     if not os.path.isdir(folder_name):
         os.mkdir(folder_name)
-    for subfolder in ['/debug/','/temp/','/temp/access/','/geodata/']:
+    for subfolder in ['/debug/','/temp/','/temp/access/','/geodata/','/geodata/access/']:
         subfolder = folder_name+subfolder
         if not os.path.isdir(subfolder):
             os.mkdir(subfolder)
