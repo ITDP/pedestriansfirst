@@ -615,6 +615,8 @@ def spatial_analysis(boundaries,
         'allbike/',
         'carfree/',
         'blocks/'
+        'allhwys/'
+        'buffered_hwys',
         ]
     for subfolder in geodata_subfolders:
         if not os.path.exists(f"{folder_name}geodata/{subfolder}/"):
