@@ -605,6 +605,22 @@ def spatial_analysis(boundaries,
             pd.DataFrame({'failures':failures}).to_csv(folder_name+'debug/failures.csv')
     
     #start saving files
+    geodata_subfolders = []
+    for service in testing_services:
+        geodata_subfolders.append(service+'/')
+        geodata_subfolders.append(service+'_points/')
+    geodata_subfolders += [
+        'h+s',
+        'protectedbike/',
+        'allbike/',
+        'carfree/',
+        'blocks/'
+        ]
+    for subfolder in geodata_subfolders:
+        if not os.path.exists(f"{folder_name}geodata/{subfolder}/"):
+            os.mkdir(f"{folder_name}geodata/{subfolder}/")
+    
+    
     for service in testing_services:
         if quilt_isochrone_polys[service]:
             service_utm = gpd.GeoDataFrame(geometry = [quilt_isochrone_polys[service]],
