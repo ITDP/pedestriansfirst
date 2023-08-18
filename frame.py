@@ -67,16 +67,17 @@ def prep_from_poly(poly, folder_name, boundary_buffer = 500):
             command = f"osmium extract input_data/planet-latest.osm.pbf -p {str(folder_name)}/temp/boundaries.geojson -s complete_ways -v -o {str(folder_name)}/temp/city.pbf"
             print(command)
             subprocess.check_call(command.split(' '))
-        command = f"osmconvert {str(folder_name)}temp/city.pbf -o={str(folder_name)}temp/city.o5m"
-        print(command)
-        subprocess.check_call(command.split(' '))
-        command = f'osmfilter {str(folder_name)}temp/city.o5m --keep="highway=" -o={str(folder_name)}temp/cityhighways.o5m'
-        print(command)
-        subprocess.check_call(command, shell=True)
-        #todo -- read both bikeways and walkways direct from a patch'd cityhighways.osm; do walking/cycling selection logic in here.
-        command = [f'osmfilter {str(folder_name)}temp/cityhighways.o5m --drop="area=yes highway=link =motor =proposed =construction =abandoned =platform =raceway service=parking_aisle =driveway =private foot=no" -o={str(folder_name)}temp/citywalk.o5m']
-        print(command)
-        subprocess.check_call(command, shell=True)
+        if not os.path.exists(f"{str(folder_name)}temp/cityhighways.o5m"):
+            command = f"osmconvert {str(folder_name)}temp/city.pbf -o={str(folder_name)}temp/city.o5m"
+            print(command)
+            subprocess.check_call(command.split(' '))
+            command = f'osmfilter {str(folder_name)}temp/city.o5m --keep="highway=" -o={str(folder_name)}temp/cityhighways.o5m'
+            print(command)
+            subprocess.check_call(command, shell=True)
+            #todo -- read both bikeways and walkways direct from a patch'd cityhighways.osm; do walking/cycling selection logic in here.
+            command = [f'osmfilter {str(folder_name)}temp/cityhighways.o5m --drop="area=yes highway=link =motor =proposed =construction =abandoned =platform =raceway service=parking_aisle =driveway =private foot=no" -o={str(folder_name)}temp/citywalk.o5m']
+            print(command)
+            subprocess.check_call(command, shell=True)
         return False
     else:
         return True

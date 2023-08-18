@@ -463,6 +463,19 @@ def spatial_analysis(boundaries,
                                               simplify=True, 
                                               retain_all=True)
                         G = G_allroads
+                    except ValueError: #something to do with clipping, seems to happen once in a while
+                        #pdb.set_trace()
+                        #this is a very stupid band-aid, but it works for now
+                        #TODO either figure this out or make the patch more efficient somehow? idk
+                        #I think right now it's getting EVERYTHING, not just highways. Except not highways that are abandoned :)
+                        print ('ValueError FROM CLIPPING PATCH', p_idx)
+                        with open(str(folder_name)+"patcherrorlog.txt", "a") as patcherrorlog:
+                            patcherrorlog.write('ValueError FROM CLIPPING PATCH '+str(p_idx))
+                        G_allroads = ox.graph_from_polygon(patch, 
+                                              #custom_filter=walk_filter, 
+                                              simplify=True, 
+                                              retain_all=True)
+                        G = G_allroads
                 os.remove('temp/patchbounds.poly')
                         
                 G.remove_nodes_from(list(nx.isolates(G)))
