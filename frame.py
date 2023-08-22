@@ -489,8 +489,8 @@ def calculate_country_indicators(current_year=2022,
                             print(indicator)
                             if indicator in city_results.columns:
                                 print("is in city_results")
-                                value = city_results[city_results.country == country][indicator+str(year)].sum() * total_pop_year
-                                country_totals.loc[country, indicator+str(year)] += value
+                                value = city_results[city_results.country == country][indicator].sum() * total_pop_year
+                                country_totals.loc[country, indicator] += value
 
                         
     
@@ -499,16 +499,16 @@ def calculate_country_indicators(current_year=2022,
     for country in tqdm(countries_ISO):
         for indicator in full_indicator_names:
             for year in rt_and_pop_years:
-                if indicator+str(year) in country_totals.columns:
+                if indicator in country_totals.columns:
                     if indicator in gtfs_dependent_indicators:
-                        weighted_avg = country_totals.loc[country, indicator+str(year)] / country_totals.loc[country, f'total_pop_gtfs_cities_only_{year}']
+                        weighted_avg = country_totals.loc[country, indicator] / country_totals.loc[country, f'total_pop_gtfs_cities_only_{year}']
                         #import pdb; pdb.set_trace()
-                        country_weighted_avgs.loc[country, indicator+str(year)] = weighted_avg
+                        country_weighted_avgs.loc[country, indicator] = weighted_avg
                         
                     else:   
-                        weighted_avg = country_totals.loc[country, indicator+str(year)] / country_totals.loc[country, f'total_pop_{year}']
+                        weighted_avg = country_totals.loc[country, indicator] / country_totals.loc[country, f'total_pop_{year}']
                         #import pdb; pdb.set_trace()
-                        country_weighted_avgs.loc[country, indicator+str(year)] = weighted_avg
+                        country_weighted_avgs.loc[country, indicator] = weighted_avg
             
     
     #save output
