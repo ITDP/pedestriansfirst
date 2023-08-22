@@ -211,7 +211,10 @@ def get_jurisdictions(hdc,
     #then buffer the total_boundaries to the union of those and the original poly
     print('getting sub-jurisdictions')
     admin_lvls = [str(x) for x in range(4,11)]
-    jurisdictions_latlon = ox.geometries_from_polygon(buffered_poly_latlon, tags={'admin_level':admin_lvls})
+    try:
+        jurisdictions_latlon = ox.geometries_from_polygon(buffered_poly_latlon, tags={'admin_level':admin_lvls})
+    except:
+        jurisdictions_latlon = gpd.GeoDataFrame()
     if 'admin_level' in jurisdictions_latlon.columns:
         #jurisdictions_latlon = jurisdictions_latlon.loc[('relation',)]
         #I forget what that was doing
@@ -476,6 +479,7 @@ def calculate_country_indicators(current_year=2022,
             city_results = pd.read_csv(f'cities_out/{city_folder}/indicator_values.csv')
             for country in city_results.country.unique():
                 if type(country) == type('this is a string, which means it is not np.nan'):
+                    print (f"found {country} in {city_folder}")
                     for year in rt_and_pop_years:
                         total_pop_year = city_results[city_results.country == country][f'total_pop_{year}'].sum()
                         country_totals.loc[country, f'total_pop_{year}'] += total_pop_year
@@ -483,7 +487,9 @@ def calculate_country_indicators(current_year=2022,
                             country_totals.loc[country, f'total_pop_gtfs_cities_only_{year}'] += total_pop_year
                             
                         for indicator in full_indicator_names:
+                            print("indicator")
                             if indicator+'_'+str(year) in city_results.columns:
+                                print("is in city_results")
                                 value = city_results[city_results.country == country][indicator+str(year)].sum() * total_pop_year
                                 country_totals.loc[country, indicator+str(year)] += value
 
@@ -608,9 +614,6 @@ if __name__ == '__main__':
                 regional_analysis(hdc, analyze=False)
             else:
                 regional_analysis(hdc)
-                
-
-
-    #calculate_country_indicators()
+        calculate_country_indicators()
 
 
