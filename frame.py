@@ -490,24 +490,24 @@ def calculate_country_indicators(current_year=2022,
                                 country_totals.loc[country, indicator] += value
 
                         
-        import pdb; pdb.set_trace()
         
     #get weighted averages
     print('iterating through countries')
     for country in tqdm(countries_ISO):
         for indicator in full_indicator_names:
-            for year in rt_and_pop_years:
-                if indicator in country_totals.columns:
-                    if indicator in gtfs_dependent_indicators:
-                        weighted_avg = country_totals.loc[country, indicator] / country_totals.loc[country, f'total_pop_gtfs_cities_only_{year}']
-                        #import pdb; pdb.set_trace()
-                        country_weighted_avgs.loc[country, indicator] = weighted_avg
-                        
-                    else:   
-                        weighted_avg = country_totals.loc[country, indicator] / country_totals.loc[country, f'total_pop_{year}']
-                        #import pdb; pdb.set_trace()
-                        country_weighted_avgs.loc[country, indicator] = weighted_avg
-            
+            year = indicator[-4:]
+            if indicator in country_totals.columns:
+                if indicator in gtfs_dependent_indicators:
+                    weighted_avg = country_totals.loc[country, indicator] / country_totals.loc[country, f'total_pop_gtfs_cities_only_{year}']
+                    #import pdb; pdb.set_trace()
+                    country_weighted_avgs.loc[country, indicator] = weighted_avg
+                    
+                else:   
+                    weighted_avg = country_totals.loc[country, indicator] / country_totals.loc[country, f'total_pop_{year}']
+                    #import pdb; pdb.set_trace()
+                    country_weighted_avgs.loc[country, indicator] = weighted_avg
+        
+    import pdb; pdb.set_trace()
     
     #save output
     if not os.path.exists('country_results/'):
