@@ -439,7 +439,7 @@ def calculate_country_indicators(current_year=2022,
     
     rt_and_pop_indicators = [
         'total_pop',
-        'total_pop_gtfs_cities_only'
+        'total_pop_gtfs_cities_only',
         'density',
         'PNrT_all',
         'km_all'
@@ -454,7 +454,7 @@ def calculate_country_indicators(current_year=2022,
         'stns_lrt',
         'rtr_lrt',
         'PNrT_brt',
-        'km_brt'
+        'km_brt',
         'stns_brt',
         'rtr_brt',
         ]
@@ -485,10 +485,9 @@ def calculate_country_indicators(current_year=2022,
                         country_totals.loc[country, f'total_pop_{year}'] += total_pop_year
                         if city_results[city_results.country == country]['has_gtfs'].iloc[0] == 'True':
                             country_totals.loc[country, f'total_pop_gtfs_cities_only_{year}'] += total_pop_year
-                        import pdb; pdb.set_trace()
                         for indicator in full_indicator_names:
                             print(indicator)
-                            if indicator+'_'+str(year) in city_results.columns:
+                            if indicator in city_results.columns:
                                 print("is in city_results")
                                 value = city_results[city_results.country == country][indicator+str(year)].sum() * total_pop_year
                                 country_totals.loc[country, indicator+str(year)] += value
