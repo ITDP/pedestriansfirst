@@ -490,7 +490,8 @@ def calculate_country_indicators(current_year=2022,
                                 country_totals.loc[country, indicator] += value
 
                         
-    import pdb; pdb.set_trace()
+        import pdb; pdb.set_trace()
+        
     #get weighted averages
     print('iterating through countries')
     for country in tqdm(countries_ISO):
