@@ -617,8 +617,8 @@ if __name__ == '__main__':
             divide_by = 1
             remainder = 1
         else: 
-            divide_by = sys.argv[1]
-            remainder = sys.argv[2]
+            divide_by = int(sys.argv[1])
+            remainder = int(sys.argv[2])
         if hdc % divide_by == remainder:
             if not os.path.exists(f'cities_out/ghsl_region_{hdc}/indicator_values.csv'):
                 if os.path.exists(f'cities_out/ghsl_region_{hdc}/geodata/blocks/blocks_latlon_2022.geojson'):
