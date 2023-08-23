@@ -18,6 +18,7 @@ import warnings
 import urllib
 import zipfile
 from tqdm import tqdm
+import sys
 
 import pdb
 
@@ -315,7 +316,7 @@ def regional_analysis(hdc,
                       analyze=True,
                       summarize=True,
                       simplification=0.001, #toposimplification factor
-                      cleanup=False,
+                      cleanup=True,
                       ):
     
     if not os.path.isdir('temp/'):
@@ -491,7 +492,10 @@ def calculate_country_indicators(current_year=2022,
                         if indicator in city_results.columns:
                             if not indicator[:9] == 'total_pop':
                                 total_pop_year = country_totals.loc[country, f'total_pop_{year}']
-                                value = city_results[city_results.country == country][indicator].sum() * total_pop_year
+                                try:
+                                    value = city_results[city_results.country == country][indicator].sum() * total_pop_year
+                                except:
+                                    import pdb; pdb.set_trace()
                                 country_totals.loc[country, indicator] += value
 
                         
@@ -534,86 +538,93 @@ if __name__ == '__main__':
     
     test_cities = [
 
-        #2185,
-        #11640,
-        #13043,
+        2185,
+        11640,
+        13043,
         
         
-       #1210,
-       #1303,
-       #1420,
-       #21,
-       #2851,
-       #855,
-       #3751,
-       #9691,
-       #855,
+       1210,
+       1303,
+       1420,
+       21,
+       2851,
+       855,
+       3751,
+       9691,
+       855,
         
         
-#     855	,
-#                 11498	,
-# 57	,
-# 88	,
-# 561	,
-# 4351	,
-# 4309	,
-# 4359	,
-# 12696	,
-# 12080	,
-# 2051	,
-# 3541	,
-# 1361	,
-# 1445	,
-# 1406	,
-# 154	,
-# 200	,
-# 21	,
-# 350	,
-# 1105	,
-# 931	,
-# 5134	,
-# 4172	,
-# 3902	,
-# 4427	,
-# 4608	,
-# 9691	,
-# 7041	,
-# 10076	,
-# 8050	,
-# 6522	,
-# 11862	,
-# 1709	,
-# 2806	,
-# 2980	,
-# 2559	,
-# 13039	,
-# 3562	,
-# 1372	,
-# 8675	,
-# 7041	,
-# 6845	,
-# 12394	,
-# 12384	,
-# 1022	,
-# 1009	,
-# 828	,
-# 2749	,
-# 10687	,
-# 11223	,
-# 14	,
+    855	,
+                11498	,
+57	,
+88	,
+561	,
+4351	,
+4309	,
+4359	,
+12696	,
+12080	,
+2051	,
+3541	,
+1361	,
+1445	,
+1406	,
+154	,
+200	,
+21	,
+350	,
+1105	,
+931	,
+5134	,
+4172	,
+3902	,
+4427	,
+4608	,
+9691	,
+7041	,
+10076	,
+8050	,
+6522	,
+11862	,
+1709	,
+2806	,
+2980	,
+2559	,
+13039	,
+3562	,
+1372	,
+8675	,
+7041	,
+6845	,
+12394	,
+12384	,
+1022	,
+1009	,
+828	,
+2749	,
+10687	,
+11223	,
+14	,
         ]
     
     for cityid in test_cities:
         regional_analysis(cityid)
 
     ucdb = gpd.read_file('input_data/old_ghsl/GHS_STAT_UCDB2015MT_GLOBE_R2019A_V1_2.gpkg')
-    for hdc in ucdb[(500000 < ucdb.P15)&(ucdb.P15 < 1000000)].sort_values('P15', ascending=False).ID_HDC_G0:
+    for hdc in ucdb[(500000 < ucdb.P15)&(ucdb.P15 < 10000000000)].sort_values('P15', ascending=False).ID_HDC_G0:
         hdc = int(hdc)
-        if not os.path.exists(f'cities_out/ghsl_region_{hdc}/indicator_values.csv'):
-            if os.path.exists(f'cities_out/ghsl_region_{hdc}/geodata/blocks/blocks_latlon_2022.geojson'):
-                regional_analysis(hdc, analyze=False)
-            else:
-                regional_analysis(hdc)
-        calculate_country_indicators()
+        if len(sys.argv == 1):
+            divide_by = 1
+            remainder = 1
+        else: 
+            divide_by = sys.argv[1]
+            remainder = sys.argv[2]
+        if hdc % divide_by == remainder:
+            if not os.path.exists(f'cities_out/ghsl_region_{hdc}/indicator_values.csv'):
+                if os.path.exists(f'cities_out/ghsl_region_{hdc}/geodata/blocks/blocks_latlon_2022.geojson'):
+                    regional_analysis(hdc, analyze=False)
+                else:
+                    regional_analysis(hdc)
+            calculate_country_indicators()
 
 
