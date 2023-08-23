@@ -210,7 +210,7 @@ def get_jurisdictions(hdc,
     
     #First, get all the sub-jusisdictions at least minimum_portion within the buffered_poly_latlon,
     #then buffer the total_boundaries to the union of those and the original poly
-    print('getting sub-jurisdictions')
+    print('getting sub-jurisdictions for', name)
     admin_lvls = [str(x) for x in range(4,11)]
     try:
         jurisdictions_latlon = ox.geometries_from_polygon(buffered_poly_latlon, tags={'admin_level':admin_lvls})
@@ -619,6 +619,7 @@ if __name__ == '__main__':
         else: 
             divide_by = int(sys.argv[1])
             remainder = int(sys.argv[2])
+        print (hdc, divide_by, remainder)
         if hdc % divide_by == remainder:
             if not os.path.exists(f'cities_out/ghsl_region_{hdc}/indicator_values.csv'):
                 if os.path.exists(f'cities_out/ghsl_region_{hdc}/geodata/blocks/blocks_latlon_2022.geojson'):
