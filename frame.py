@@ -502,18 +502,16 @@ def calculate_country_indicators(current_year=2022,
         for indicator in full_indicator_names:
             year = indicator[-4:]
             if indicator in country_totals.columns:
-                if indicator[:-4] in gtfs_dependent_indicators:
+                if indicator[:9] == 'total_pop':
+                    country_weighted_avgs.loc[country, indicator] = country_totals.loc[country, indicator]
+                elif indicator[:-4] in gtfs_dependent_indicators:
                     weighted_avg = country_totals.loc[country, indicator] / country_totals.loc[country, f'total_pop_gtfs_cities_only_{year}']
                     #import pdb; pdb.set_trace()
                     country_weighted_avgs.loc[country, indicator] = weighted_avg
-                    
                 else:   
                     weighted_avg = country_totals.loc[country, indicator] / country_totals.loc[country, f'total_pop_{year}']
                     #import pdb; pdb.set_trace()
-                    country_weighted_avgs.loc[country, indicator] = weighted_avg
-        
-    import pdb; pdb.set_trace()
-    
+                    country_weighted_avgs.loc[country, indicator] = weighted_avg    
     #save output
     if not os.path.exists('country_results/'):
         os.mkdir('country_results')
