@@ -479,16 +479,16 @@ def calculate_country_indicators(current_year=2022,
             city_results = pd.read_csv(f'cities_out/{city_folder}/indicator_values.csv')
             for country in city_results.country.unique():
                 if type(country) == type('this is a string, which means it is not np.nan'):
-                    for year in rt_and_pop_years:
+                    for indicator in full_indicator_names:
+                        year = indicator[-4:]
                         total_pop_year = city_results[city_results.country == country][f'total_pop_{year}'].sum()
                         country_totals.loc[country, f'total_pop_{year}'] += total_pop_year
                         if city_results[city_results.country == country]['has_gtfs'].iloc[0] == 'True':
                             country_totals.loc[country, f'total_pop_gtfs_cities_only_{year}'] += total_pop_year
-                        for indicator in full_indicator_names:
-                            if indicator in city_results.columns:
-                                if not indicator[:9] == 'total_pop':
-                                    value = city_results[city_results.country == country][indicator].sum() * total_pop_year
-                                    country_totals.loc[country, indicator] += value
+                        if indicator in city_results.columns:
+                            if not indicator[:9] == 'total_pop':
+                                value = city_results[city_results.country == country][indicator].sum() * total_pop_year
+                                country_totals.loc[country, indicator] += value
 
                         
         
