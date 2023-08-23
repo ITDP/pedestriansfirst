@@ -493,7 +493,7 @@ def calculate_country_indicators(current_year=2022,
                             if not indicator[:9] == 'total_pop':
                                 total_pop_year = country_totals.loc[country, f'total_pop_{year}']
                                 try:
-                                    value = city_results[city_results.country == country][indicator].sum() * total_pop_year
+                                    value = city_results[city_results.country == country][indicator].astype(float).sum() * total_pop_year
                                 except:
                                     import pdb; pdb.set_trace()
                                 country_totals.loc[country, indicator] += value
