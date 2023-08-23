@@ -497,8 +497,8 @@ def calculate_country_indicators(current_year=2022,
     for country in tqdm(countries_ISO):
         for indicator in full_indicator_names:
             year = indicator[-4:]
-            if indicator[:-4] in country_totals.columns:
-                if indicator in gtfs_dependent_indicators:
+            if indicator in country_totals.columns:
+                if indicator[:-4] in gtfs_dependent_indicators:
                     weighted_avg = country_totals.loc[country, indicator] / country_totals.loc[country, f'total_pop_gtfs_cities_only_{year}']
                     #import pdb; pdb.set_trace()
                     country_weighted_avgs.loc[country, indicator] = weighted_avg
