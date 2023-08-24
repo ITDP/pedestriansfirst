@@ -471,11 +471,14 @@ def spatial_analysis(boundaries,
                         print ('ValueError FROM CLIPPING PATCH', p_idx)
                         with open(str(folder_name)+"patcherrorlog.txt", "a") as patcherrorlog:
                             patcherrorlog.write('ValueError FROM CLIPPING PATCH '+str(p_idx))
-                        G_allroads = ox.graph_from_polygon(patch, 
+                        try:
+                            G_allroads = ox.graph_from_polygon(patch, 
                                               #custom_filter=walk_filter, 
                                               simplify=True, 
                                               retain_all=True)
-                        G = G_allroads
+                            G = G_allroads
+                        except ValueError:
+                            raise ox._errors.InsufficientResponseError()
                 os.remove('temp/patchbounds.poly')
                         
                 G.remove_nodes_from(list(nx.isolates(G)))
