@@ -868,7 +868,10 @@ def people_near_x(service_gdf_utm, folder_name, boundaries_utm, year, sqkm_per_p
                 stats=['mean'], 
                 all_touched=True
                 ) 
-            earlier_dens = earlier_stats[0]['mean'] / sqkm_per_pixel 
+            earlier_mean = earlier_stats[0]['mean']
+            if earlier_mean is None:
+                return 0
+            earlier_dens = earlier_mean / sqkm_per_pixel 
             if modulo > 0:
                 later_stats = rasterstats.zonal_stats(
                     sel_service_mw,
@@ -876,7 +879,11 @@ def people_near_x(service_gdf_utm, folder_name, boundaries_utm, year, sqkm_per_p
                     stats=['mean'], 
                     all_touched=True
                     ) 
-                later_dens = later_stats[0]['mean'] / sqkm_per_pixel 
+                
+                later_mean = later_stats[0]['mean']
+                if later_mean is None:
+                    return 0
+                later_dens = later_mean / sqkm_per_pixel 
                 peryear_diff = (later_dens - earlier_dens) / 5
                 mean_dens_per_m2 = (earlier_dens + (modulo * peryear_diff)) / 1000000 #km to m
             else:
