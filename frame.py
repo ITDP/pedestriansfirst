@@ -298,7 +298,7 @@ def get_jurisdictions(hdc,
             if type(level_name_local) != type('string'):
                 level_name_full = level_name_eng
             else:
-                level_name_full = f'{level_name_eng} ({level_name_local}'
+                level_name_full = f'{level_name_eng} ({level_name_local})'
             analysis_areas.loc[new_id, 'level_name_full'] = level_name_full
             new_id += 1
             
@@ -440,26 +440,27 @@ def calculate_country_indicators(current_year=2022,
     
     current_year_indicators += gtfs_dependent_indicators
     
-    rt_and_pop_indicators = [
-        'total_pop',
-        'total_pop_gtfs_cities_only',
+    rt_and_pop_indicators_avg = [
         'density',
         'PNrT_all',
-        'km_all',
-        'stns_all',
         'rtr_all',
         'PNrT_mrt',
-        'km_mrt'
-        'stns_mrt',
         'rtr_mrt',
         'PNrT_lrt',
-        'km_lrt'
-        'stns_lrt',
         'rtr_lrt',
         'PNrT_brt',
+        'rtr_brt',
+        ]
+    
+    rt_and_pop_indicators_sum = [
+        'km_all',
+        'stns_all',
+        'km_mrt'
+        'stns_mrt',
+        'km_lrt'
+        'stns_lrt',
         'km_brt',
         'stns_brt',
-        'rtr_brt',
         ]
      
     
@@ -467,7 +468,7 @@ def calculate_country_indicators(current_year=2022,
     for indicator in current_year_indicators:
         full_indicator_names.append(f'{indicator}_{current_year}')
     for year in rt_and_pop_years:
-        for indicator in rt_and_pop_indicators:
+        for indicator in rt_and_pop_indicators_avg:
             full_indicator_names.append(f'{indicator}_{year}')
             
     #set up dataframes for results
@@ -482,25 +483,26 @@ def calculate_country_indicators(current_year=2022,
             city_results = pd.read_csv(f'cities_out/{city_folder}/indicator_values.csv')
             for country in city_results.country.unique():
                 if type(country) == type('this is a string, which means it is not np.nan'):
-                    #total pop first
+                    #indicators based on sums first
                     for year in rt_and_pop_years:
                         total_pop_year = city_results[city_results.country == country][f'total_pop_{year}'].sum()
                         country_totals.loc[country, f'total_pop_{year}'] += total_pop_year
                         if city_results[city_results.country == country]['has_gtfs'].iloc[0] == 'True':
                             country_totals.loc[country, f'total_pop_gtfs_cities_only_{year}'] += total_pop_year
+                        for indicator in rt_and_pop_indicators_sum:
+                            indicator_total = city_results[city_results.country == country][f'{indicator}_{year}'].sum()
+                            country_totals.loc[country, f'{indicator}_{year}'] += indicator_total
                     #then the other indicators
                     for indicator in full_indicator_names:
                         year = indicator[-4:]
                         if indicator in city_results.columns:
-                            if not indicator[:9] == 'total_pop':
+                            if not indicator[:-5] in rt_and_pop_indicators_sum:
                                 total_pop_year = country_totals.loc[country, f'total_pop_{year}']
                                 try:
                                     value = city_results[city_results.country == country][indicator].astype(float).sum() * total_pop_year
                                 except:
-                                    import pdb; pdb.set_trace()
-                                country_totals.loc[country, indicator] += value
-
-                        
+                                    pdb.set_trace()
+                                country_totals.loc[country, indicator] += value       
         
     #get weighted averages
     print('iterating through countries')

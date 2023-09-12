@@ -1041,7 +1041,10 @@ def calculate_indicators(analysis_areas,
                     stats=['mean'], 
                     all_touched=True
                     ) 
-                mean_density_per_km2 = pop_stats[0]['mean'] / sqkm_per_pixel
+                try:
+                    mean_density_per_km2 = pop_stats[0]['mean'] / sqkm_per_pixel
+                except TypeError:
+                    pdb.set_trace()
                 mean_density_per_m2 = mean_density_per_km2 / 1000000
                 total_pop = mean_density_per_m2 * boundaries_utm.area
                 analysis_areas.loc[idx, f'total_pop_{year}'] = total_pop
@@ -1090,9 +1093,9 @@ def calculate_indicators(analysis_areas,
                     
         for service_with_points in ['healthcare', 'schools', 'libraries', 'bikeshare', 'pnft','special',]:
             if service_with_points in to_test:
-                total_services = service_points_ll[service_with_points].intersection(boundaries_ll)
-                import pdb; pdb.set_trace()
-                analysis_areas.loc[idx,f'n_points_{service_with_points}_{current_year}'] = len(total_services)
+                total_services = service_points_ll[service_with_points].intersects(boundaries_ll)
+                analysis_areas.loc[idx,f'n_points_{service_with_points}_{current_year}'] = total_services.value_counts()[True]
+
             
         if len(gtfs_filenames) == 0:
             analysis_areas.loc[idx,f'pnft_{current_year}'] = "NA"
@@ -1172,8 +1175,7 @@ def calculate_indicators(analysis_areas,
                             if stns_utm is None:
                                 n_stns= 0
                             else:
-                                stns_utm = stns_utm.intersection(boundaries_utm)
-                                n_stns = len(stns_utm)
+                                n_stns = stns_utm.intersects(boundaries_utm).value_counts()[True]
                             
                             analysis_areas.loc[idx,f'km_{mode}_{year}'] = km
                             analysis_areas.loc[idx,f'stns_{mode}_{year}'] = n_stns
