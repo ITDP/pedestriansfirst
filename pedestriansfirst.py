@@ -1094,7 +1094,10 @@ def calculate_indicators(analysis_areas,
         for service_with_points in ['healthcare', 'schools', 'libraries', 'bikeshare', 'pnft','special',]:
             if service_with_points in to_test:
                 total_services = service_points_ll[service_with_points].intersects(boundaries_ll)
-                analysis_areas.loc[idx,f'n_points_{service_with_points}_{current_year}'] = total_services.value_counts()[True]
+                try:
+                    analysis_areas.loc[idx,f'n_points_{service_with_points}_{current_year}'] = total_services.value_counts()[True]
+                except KeyError:
+                    analysis_areas.loc[idx,f'n_points_{service_with_points}_{current_year}']  = 0
 
             
         if len(gtfs_filenames) == 0:
@@ -1175,7 +1178,10 @@ def calculate_indicators(analysis_areas,
                             if stns_utm is None:
                                 n_stns= 0
                             else:
-                                n_stns = stns_utm.intersects(boundaries_utm).value_counts()[True]
+                                try:
+                                    n_stns = stns_utm.intersects(boundaries_utm).value_counts()[True]
+                                except KeyError:
+                                    n_stns = 0
                             
                             analysis_areas.loc[idx,f'km_{mode}_{year}'] = km
                             analysis_areas.loc[idx,f'stns_{mode}_{year}'] = n_stns
