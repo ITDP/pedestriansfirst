@@ -313,6 +313,7 @@ def get_jurisdictions(hdc,
 def regional_analysis(hdc, 
                       folder_prefix = 'cities_out', 
                       minimum_portion=0.6,
+                      prep = True,
                       analyze=True,
                       summarize=True,
                       simplification=0.001, #toposimplification factor
@@ -342,11 +343,12 @@ def regional_analysis(hdc,
     
     analysis_areas.to_file(f'{folder_name}/debug/analysis_areas.gpkg', driver='GPKG')
     
-    #Let's make sure to buffer this to include peripheral roads etc for routing
-    total_poly_latlon=analysis_areas.unary_union
-    total_poly_latlon = shapely.convex_hull(total_poly_latlon)   
-    gpd.GeoDataFrame(geometry=[total_poly_latlon], crs=4326).to_file(f'{folder_name}/debug/area_for_osm_extract.gpkg', driver='GPKG')
-    prep_from_poly(total_poly_latlon, folder_name, boundary_buffer = 2000)
+    if prep:
+        #Let's make sure to buffer this to include peripheral roads etc for routing
+        total_poly_latlon=analysis_areas.unary_union
+        total_poly_latlon = shapely.convex_hull(total_poly_latlon)   
+        gpd.GeoDataFrame(geometry=[total_poly_latlon], crs=4326).to_file(f'{folder_name}/debug/area_for_osm_extract.gpkg', driver='GPKG')
+        prep_from_poly(total_poly_latlon, folder_name, boundary_buffer = 2000)
     
     #now actually call the functions and save the results
     if analyze == True:

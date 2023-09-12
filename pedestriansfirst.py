@@ -1091,6 +1091,7 @@ def calculate_indicators(analysis_areas,
         for service_with_points in ['healthcare', 'schools', 'libraries', 'bikeshare', 'pnft','special',]:
             if service_with_points in to_test:
                 total_services = service_points_ll[service_with_points].intersection(boundaries_ll)
+                import pdb; pdb.set_trace()
                 analysis_areas.loc[idx,f'n_points_{service_with_points}_{current_year}'] = len(total_services)
             
         if len(gtfs_filenames) == 0:
