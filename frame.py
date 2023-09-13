@@ -453,6 +453,8 @@ def calculate_country_indicators(current_year=2022,
         ]
     
     rt_and_pop_indicators_sum = [
+        'total_pop',
+        'total_pop_gtfs_cities_only',
         'km_all',
         'stns_all',
         'km_mrt'
@@ -472,6 +474,7 @@ def calculate_country_indicators(current_year=2022,
             full_indicator_names.append(f'{indicator}_{year}')
         for indicator in rt_and_pop_indicators_sum:
             full_indicator_names.append(f'{indicator}_{year}')
+        
             
     #set up dataframes for results
     country_totals = pd.DataFrame(index=countries_ISO, columns=full_indicator_names)
@@ -492,8 +495,9 @@ def calculate_country_indicators(current_year=2022,
                         if city_results[city_results.country == country]['has_gtfs'].iloc[0] == 'True':
                             country_totals.loc[country, f'total_pop_gtfs_cities_only_{year}'] += total_pop_year
                         for indicator in rt_and_pop_indicators_sum:
-                            indicator_total = city_results[city_results.country == country][f'{indicator}_{year}'].sum()
-                            country_totals.loc[country, f'{indicator}_{year}'] += indicator_total
+                            if not indicator[:9] == 'total_pop':
+                                indicator_total = city_results[city_results.country == country][f'{indicator}_{year}'].sum()
+                                country_totals.loc[country, f'{indicator}_{year}'] += indicator_total
                     #then the other indicators
                     for indicator in full_indicator_names:
                         year = indicator[-4:]
