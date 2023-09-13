@@ -470,6 +470,8 @@ def calculate_country_indicators(current_year=2022,
     for year in rt_and_pop_years:
         for indicator in rt_and_pop_indicators_avg:
             full_indicator_names.append(f'{indicator}_{year}')
+        for indicator in rt_and_pop_indicators_sum:
+            full_indicator_names.append(f'{indicator}_{year}')
             
     #set up dataframes for results
     country_totals = pd.DataFrame(index=countries_ISO, columns=full_indicator_names)
