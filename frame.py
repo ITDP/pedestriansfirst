@@ -496,7 +496,10 @@ def calculate_country_indicators(current_year=2022,
                             country_totals.loc[country, f'total_pop_gtfs_cities_only_{year}'] += total_pop_year
                         for indicator in rt_and_pop_indicators_sum:
                             if not indicator[:9] == 'total_pop':
-                                indicator_total = city_results[city_results.country == country][f'{indicator}_{year}'].sum()
+                                try:
+                                    indicator_total = city_results[city_results.country == country][f'{indicator}_{year}'].sum()
+                                except KeyError:
+                                    pdb.set_trace()
                                 country_totals.loc[country, f'{indicator}_{year}'] += indicator_total
                     #then the other indicators
                     for indicator in full_indicator_names:
