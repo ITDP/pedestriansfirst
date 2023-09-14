@@ -457,9 +457,9 @@ def calculate_country_indicators(current_year=2022,
         'total_pop_gtfs_cities_only',
         'km_all',
         'stns_all',
-        'km_mrt'
+        'km_mrt',
         'stns_mrt',
-        'km_lrt'
+        'km_lrt',
         'stns_lrt',
         'km_brt',
         'stns_brt',
@@ -496,10 +496,10 @@ def calculate_country_indicators(current_year=2022,
                             country_totals.loc[country, f'total_pop_gtfs_cities_only_{year}'] += total_pop_year
                         for indicator in rt_and_pop_indicators_sum:
                             if not indicator[:9] == 'total_pop':
-                                try:
+                                if indicator in city_results.columns:
                                     indicator_total = city_results[city_results.country == country][f'{indicator}_{year}'].sum()
-                                except KeyError:
-                                    pdb.set_trace()
+                                else
+                                    indicator_total = 0
                                 country_totals.loc[country, f'{indicator}_{year}'] += indicator_total
                     #then the other indicators
                     for indicator in full_indicator_names:
