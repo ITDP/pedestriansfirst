@@ -237,7 +237,11 @@ def get_jurisdictions(hdc,
         total_boundaries_utm = buffered_poly_utm
         
     #now get all jurisdictions within total_boundaries
-    jurisdictions_latlon = ox.geometries_from_polygon(total_boundaries_latlon, tags={'admin_level':admin_lvls})
+    try:
+        jurisdictions_latlon = ox.geometries_from_polygon(total_boundaries_latlon, tags={'admin_level':admin_lvls})
+    except:
+        jurisdictions_latlon = gpd.GeoDataFrame()
+        
     if not 'admin_level' in jurisdictions_latlon.columns:
         final_jurisdictions_latlon = []
     else:
