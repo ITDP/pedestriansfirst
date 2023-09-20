@@ -552,82 +552,8 @@ if __name__ == '__main__':
     warnings.simplefilter(action='ignore', category=FutureWarning)
     warnings.simplefilter(action='ignore', category=pd.errors.PerformanceWarning)
     ox.utils.config(log_console = False)
-    
-    
-    
-    test_cities = [
-
-        2185,
-        11640,
-        13043,
-        
-        
-       1210,
-       1303,
-       1420,
-       21,
-       2851,
-       855,
-       3751,
-       9691,
-       855,
-        
-        
-    855	,
-                11498	,
-57	,
-88	,
-561	,
-4351	,
-4309	,
-4359	,
-12696	,
-12080	,
-2051	,
-3541	,
-1361	,
-1445	,
-1406	,
-154	,
-200	,
-21	,
-350	,
-1105	,
-931	,
-5134	,
-4172	,
-3902	,
-4427	,
-4608	,
-9691	,
-7041	,
-10076	,
-8050	,
-6522	,
-11862	,
-1709	,
-2806	,
-2980	,
-2559	,
-13039	,
-3562	,
-1372	,
-8675	,
-7041	,
-6845	,
-12394	,
-12384	,
-1022	,
-1009	,
-828	,
-2749	,
-10687	,
-11223	,
-14	,
-        ]
-
     ucdb = gpd.read_file('input_data/old_ghsl/GHS_STAT_UCDB2015MT_GLOBE_R2019A_V1_2.gpkg')
-    for hdc in ucdb[(500000 < ucdb.P15)&(ucdb.P15 < 1000000)].sort_values('P15', ascending=False).ID_HDC_G0:
+    for hdc in ucdb[(500000 < ucdb.P15)&(ucdb.P15 < 1000000000000)].sort_values('P15', ascending=False).ID_HDC_G0:
         hdc = int(hdc)
         if len(sys.argv) == 1:
             divide_by = 1
