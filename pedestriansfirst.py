@@ -359,8 +359,8 @@ def spatial_analysis(boundaries,
             'Light Metro': 'lrt',
             'Heavy Rail': 'mrt',
             }
-        rt_lines = gpd.read_file('input_data/transit_explorer/shapefile/lines.shp')
-        rt_stns = gpd.read_file('input_data/transit_explorer/shapefile/stations.shp')
+        rt_lines = gpd.read_file('input_data/transit_explorer/geojson/lines.geojson')
+        rt_stns = gpd.read_file('input_data/transit_explorer/geojson/stations.geojson')
         rt_lines = rt_lines.overlay(boundaries_latlon, how='intersection')
         rt_stns = rt_stns.overlay(boundaries_latlon, how='intersection')
         rt_lines = rt_lines[rt_lines['mode'].isin(mode_classifications.keys())]

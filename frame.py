@@ -387,6 +387,8 @@ def regional_analysis(hdc,
         for cleanup_filename in ['city.o5m', 'city.pbf','cityhighways.o5m','citywalk.o5m','access/city_ltstagged.pbf']:
             if os.path.exists(f'{folder_name}/temp/{cleanup_filename}'):
                 os.remove(f'{folder_name}/temp/{cleanup_filename}')
+        for file in os.listdir('cache/'):
+            os.remove(f'cache/{file}')
     #import pdb; pdb.set_trace()
         
 
