@@ -718,7 +718,7 @@ def spatial_analysis(boundaries,
                 for mode in ['brt','lrt','mrt','all']:
                     mode_selector = mode_selectors[mode]
                     opened_before = rt_isochrones_latlon['year_open'] <= year
-                    not_closed = (np.isnan(rt_isochrones_latlon.year_close) | (rt_isochrones_latlon.year_close>year))
+                    not_closed = (np.isnan(rt_isochrones_latlon.year_closed) | (rt_isochrones_latlon.year_closed>year))
                     selector = mode_selector & opened_before & not_closed
                     total_isochrone = gpd.GeoDataFrame(
                         geometry=[rt_isochrones_latlon[selector].unary_union],
@@ -737,7 +737,7 @@ def spatial_analysis(boundaries,
                 for mode in ['brt','lrt','mrt','all']:
                     mode_selector = mode_selectors[mode]
                     opened_before = rt_lines['year_open'] <= year
-                    not_closed = (np.isnan(rt_lines.year_close) | (rt_lines.year_close>year))
+                    not_closed = (np.isnan(rt_lines.year_closed) | (rt_lines.year_closed>year))
                     selector = mode_selector & opened_before & not_closed
                     select_lines = gpd.GeoDataFrame(
                         geometry=[rt_lines[selector].unary_union],
