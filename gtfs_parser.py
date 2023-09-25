@@ -145,8 +145,8 @@ def get_frequent_stops(poly, folder_name, headwaylim = 20):
     all_freq_stops = gpd.GeoDataFrame(geometry=[], crs=4326)
     wednesdays = []
     for filename in filenames:
-        feed = feed_from_filename(filename)
         try:
+            feed = feed_from_filename(filename)
             counts = get_stop_frequencies(feed, headwaylim, folder_name, filename)
         except UnicodeDecodeError:
             print ('did not add stops!! UnicodeDecodeError')
