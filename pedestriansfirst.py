@@ -1213,5 +1213,5 @@ def calculate_indicators(analysis_areas,
                     analysis_areas.loc[idx,f'cumsum_journeygap_{current_year}'] = "NA"
                     analysis_areas.loc[idx,f'time_journeygap_{current_year}'] = "NA"
                     analysis_areas.loc[idx,f'grav_journeygap_{current_year}'] = "NA"
-        except TypeErrpr:
+        except TypeError:
             pass

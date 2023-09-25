@@ -146,7 +146,11 @@ def get_frequent_stops(poly, folder_name, headwaylim = 20):
     wednesdays = []
     for filename in filenames:
         feed = feed_from_filename(filename)
-        counts = get_stop_frequencies(feed, headwaylim, folder_name, filename)
+        try:
+            counts = get_stop_frequencies(feed, headwaylim, folder_name, filename)
+        except UnicodeDecodeError:
+            print ('did not add stops!! UnicodeDecodeError')
+            return all_freq_stops, wednesdays
         try:
             all_freq_stops = gpd.GeoDataFrame(
                 pd.concat([all_freq_stops, counts], ignore_index=True),
