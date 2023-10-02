@@ -553,6 +553,7 @@ if __name__ == '__main__':
     warnings.simplefilter(action='ignore', category=pd.errors.PerformanceWarning)
     ox.utils.config(log_console = False)
     ucdb = gpd.read_file('input_data/old_ghsl/GHS_STAT_UCDB2015MT_GLOBE_R2019A_V1_2.gpkg')
+    ucdb.index =  ucdb['ID_HDC_G0']
     for hdc in ucdb[(int(sys.argv[2]) < ucdb.P15)&(ucdb.P15 < int(sys.argv[1]))].sort_values('P15', ascending=False).ID_HDC_G0:
         hdc = int(hdc)
         if len(sys.argv) == 1:
@@ -561,16 +562,14 @@ if __name__ == '__main__':
         else: 
             divide_by = int(sys.argv[3])
             remainder = int(sys.argv[4])
-        print (hdc, divide_by, remainder)
-        print(ucdb.loc[hdc,'UC_NM_MN'])
-        if hdc % divide_by == remainder:
-            if ucdb.loc[hdc,'UC_NM_MN'] != 'N/A':
-                if not os.path.exists(f'cities_out/ghsl_region_{hdc}/indicator_values.csv'):
-                    if os.path.exists(f'cities_out/ghsl_region_{hdc}/geodata/blocks/blocks_latlon_2022.geojson'):
-                        regional_analysis(hdc, analyze=False)
-                        calculate_country_indicators()
-                    else:
-                        regional_analysis(hdc)
-                        calculate_country_indicators()
+        print (hdc, divide_by, remainder, ucdb.loc[hdc,'UC_NM_MN'])
+        if hdc % divide_by == remainder and ucdb.loc[hdc,'UC_NM_MN'] != 'N/A':
+            if not os.path.exists(f'cities_out/ghsl_region_{hdc}/indicator_values.csv'):
+                if os.path.exists(f'cities_out/ghsl_region_{hdc}/geodata/blocks/blocks_latlon_2022.geojson'):
+                    regional_analysis(hdc, analyze=False)
+                    calculate_country_indicators()
+                else:
+                    regional_analysis(hdc)
+                    calculate_country_indicators()
 
 
