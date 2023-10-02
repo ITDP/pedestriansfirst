@@ -691,7 +691,10 @@ def spatial_analysis(boundaries,
             intersect = shapely.ops.unary_union([quilt_isochrone_polys['healthcare'].intersection(quilt_isochrone_polys['schools'])])
             if type(intersect) == shapely.geometry.collection.GeometryCollection:
                 if not intersect.is_empty:
-                    intersect = [obj for obj in intersect if type(obj) == shapely.geometry.polygon.Polygon]
+                    try:
+                        intersect = [obj for obj in intersect if type(obj) == shapely.geometry.polygon.Polygon]
+                    except TypeError: #intersect is a GeometryCollection
+                        intersect = [obj for obj in intersect.geoms if type(obj) == shapely.geometry.polygon.Polygon]
                     intersect = shapely.geometry.MultiPolygon(intersect)
             hs_utm = gpd.GeoDataFrame(geometry = [intersect], crs=utm_crs)
             if hs_utm.geometry.area.sum() != 0:
