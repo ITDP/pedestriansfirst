@@ -135,7 +135,10 @@ def get_stop_frequencies(feed, headwaylim, folder_name, filename):
             except ValueError:
                 log(folder_name, "valueerror2,"+feed.agency.agency_name[0]+"\n")
     if not counts.empty:
-        log(folder_name,"success,"+feed.agency.agency_name[0]+"\n")
+        try:
+            log(folder_name,"success,"+feed.agency.agency_name[0]+"\n")
+        except AttributeError:
+            log(folder_name,"success,"+"Unknown Name"+"\n")
     else:
         log(folder_name,"counts.empty,"+feed.agency.agency_name[0]+"\n")
     return counts
