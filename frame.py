@@ -562,6 +562,7 @@ if __name__ == '__main__':
             divide_by = int(sys.argv[3])
             remainder = int(sys.argv[4])
         print (hdc, divide_by, remainder)
+        print(ucdb.loc[hdc,'UC_NM_MN'])
         if hdc % divide_by == remainder:
             if ucdb.loc[hdc,'UC_NM_MN'] != 'N/A':
                 if not os.path.exists(f'cities_out/ghsl_region_{hdc}/indicator_values.csv'):
