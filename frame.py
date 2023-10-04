@@ -413,10 +413,17 @@ def regional_analysis(hdc,
             
 def calculate_country_indicators(current_year=2022,
                                  rt_and_pop_years = [1975, 1980, 1985, 1990, 1995, 2000, 2005, 2010, 2015, 2020, 2022, 2025],
+                                 input_folder_prefix = 'cities_out/',
+                                 output_folder_prefix = 'countries_out/',
                                  #TODO add years for other indicators with more than one
                                  ):
     natural_earth = gpd.read_file('input_data/naturalearth_countries/ne_10m_admin_0_countries.shp')
     countries_ISO = list(natural_earth.ISO_A3.unique())
+    
+    if not input_folder_prefix[-1:] == '/':
+        input_folder_prefix = input_folder_prefix+'/'
+    if not output_folder_prefix[-1:] == '/':
+        output_folder_prefix = output_folder_prefix+'/'
     
     #list indicators
     current_year_indicators = [
@@ -487,11 +494,21 @@ def calculate_country_indicators(current_year=2022,
     country_totals = country_totals.replace(np.nan,0)
     country_weighted_avgs = country_totals.copy()
     
+    all_cities = pd.DataFrame(columns=full_indicator_names)
+    
     #get data from city-level output
     print('iterating through cities_out/')
-    for city_folder in tqdm(os.listdir('cities_out/')):
-        if os.path.exists(f'cities_out/{city_folder}/indicator_values.csv'):
-            city_results = pd.read_csv(f'cities_out/{city_folder}/indicator_values.csv')
+    for city_folder in tqdm(os.listdir(f'{input_folder_prefix}')):
+        if os.path.exists(f'{input_folder_prefix}{city_folder}/indicator_values.csv'):
+            city_results = pd.read_csv(f'{input_folder_prefix}{city_folder}/indicator_values.csv')
+            #first add to list of full cities
+            hdc = city_folder.split('_')[-1]
+            all_cities.loc[hdc, 'ID_HDC_G0'] = hdc
+            all_cities.loc[hdc, 'name'] = city_results.loc[0,'name']
+            for indicator in full_indicator_names:
+                all_cities.loc[hdc, indicator] = city_results.loc[0, indicator]
+            
+            #then calculate by country
             for country in city_results.country.unique():
                 if type(country) == type('this is a string, which means it is not np.nan'):
                     #indicators based on sums first
@@ -536,14 +553,15 @@ def calculate_country_indicators(current_year=2022,
                     #import pdb; pdb.set_trace()
                     country_weighted_avgs.loc[country, indicator] = weighted_avg    
     #save output
-    if not os.path.exists('country_results/'):
-        os.mkdir('country_results')
-    country_weighted_avgs.to_csv('country_results/country_results.csv')
+    if not os.path.exists(f'{output_folder_prefix}'):
+        os.mkdir(f'{output_folder_prefix}')
+    country_weighted_avgs.to_csv(f'{output_folder_prefix}country_results.csv')
     country_geometries = []
     for country in country_weighted_avgs.index:
         country_geometries.append(natural_earth[natural_earth.ISO_A3 == country].unary_union)
     country_gdf = gpd.GeoDataFrame(country_weighted_avgs, geometry=country_geometries, crs=4326)
-    country_gdf.to_file('country_results/country_results.geojson', driver='GeoJSON')
+    country_gdf.to_file(f'{output_folder_prefix}country_results.geojson', driver='GeoJSON')
+    all_cities.to_csv(f'{output_folder_prefix}all_cities.csv')
     
             
 
