@@ -530,7 +530,7 @@ def calculate_country_indicators(current_year=2022,
                         year = indicator[-4:]
                         if indicator in city_results.columns:
                             if not indicator[:-5] in rt_and_pop_indicators_sum:
-                                total_pop_year = country_totals.loc[country, f'total_pop_{year}']
+                                total_pop_year = city_results[city_results.country == country][f'total_pop_{year}'].sum()
                                 try:
                                     value = city_results[city_results.country == country][indicator].astype(float).sum() * total_pop_year
                                 except:
