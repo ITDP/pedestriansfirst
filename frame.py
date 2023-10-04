@@ -506,7 +506,7 @@ def calculate_country_indicators(current_year=2022,
             all_cities.loc[hdc, 'ID_HDC_G0'] = hdc
             all_cities.loc[hdc, 'name'] = city_results.loc[0,'name']
             for indicator in full_indicator_names:
-                if indicator in all_cities.columns:
+                if indicator in city_results.columns:
                     all_cities.loc[hdc, indicator] = city_results.loc[0, indicator]
             
             #then calculate by country
