@@ -573,14 +573,19 @@ if __name__ == '__main__':
     ox.utils.config(log_console = False)
     ucdb = gpd.read_file('input_data/old_ghsl/GHS_STAT_UCDB2015MT_GLOBE_R2019A_V1_2.gpkg')
     ucdb.index =  ucdb['ID_HDC_G0']
-    for hdc in ucdb[(int(sys.argv[2]) < ucdb.P15)&(ucdb.P15 < int(sys.argv[1]))].sort_values('P15', ascending=False).ID_HDC_G0:
+    #for hdc in ucdb[(int(sys.argv[2]) < ucdb.P15)&(ucdb.P15 < int(sys.argv[1]))].sort_values('P15', ascending=False).ID_HDC_G0:
+    for hdc in [456,
+                4608,
+                10076,
+                574,
+                13039]:
         hdc = int(hdc)
-        if len(sys.argv) == 1:
-            divide_by = 1
-            remainder = 1
-        else: 
-            divide_by = int(sys.argv[3])
-            remainder = int(sys.argv[4])
+        #if len(sys.argv) == 1:
+        divide_by = 1
+        remainder = 0
+        # else: 
+        #     divide_by = int(sys.argv[3])
+        #     remainder = int(sys.argv[4])
         print (f"{hdc}%{divide_by}={hdc % divide_by}, compare to {remainder}, {ucdb.loc[hdc,'UC_NM_MN']}")
         if hdc % divide_by == remainder and ucdb.loc[hdc,'UC_NM_MN'] != 'N/A':
             if not os.path.exists(f'cities_out/ghsl_region_{hdc}/indicator_values.csv'):
