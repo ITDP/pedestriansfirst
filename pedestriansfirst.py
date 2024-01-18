@@ -303,7 +303,7 @@ def spatial_analysis(boundaries,
         testing_services.append('pnab')
         
     if 'highways' in to_test:
-        all_highway_polys = []
+        all_highway_lines = []
 
     if 'special' in to_test:
         special = gpd.read_file(f'{folder_name}special.geojson')
@@ -523,9 +523,9 @@ def spatial_analysis(boundaries,
                     
                     
                     if 'highways' in to_test:
-                        highway_polys = get_service_locations.get_highways(G_allroads)
-                        if highway_polys is not None:
-                            all_highway_polys.append(highway_polys)
+                        highway_lines_gdf_ll = get_service_locations.get_highways(G_allroads)
+                        if highway_lines_gdf_ll is not None:
+                            all_highway_lines += list(highway_lines_gdf_ll.geometry)
                         
                     # if debug:
                     #     for node, data in G.nodes(data=True):
@@ -663,12 +663,12 @@ def spatial_analysis(boundaries,
             merged_allbike.to_file(f"{folder_name}geodata/allbike/allbike_latlon_{current_year}.geojson",driver='GeoJSON')
     
     if 'highways' in to_test:
-        all_hwys_poly = shapely.ops.unary_union(all_highway_polys)
-        all_hwys_gdf = gpd.GeoDataFrame(geometry=[all_hwys_poly], crs=utm_crs)
-        all_hwys_latlon = all_hwys_gdf.to_crs(4326)
+        all_hwys_multiline = shapely.ops.unary_union(all_highway_lines)
+        all_hwys_latlon = gpd.GeoDataFrame(geometry=[all_hwys_multiline], crs=4326)
+        all_hwys_utm = all_hwys_latlon.to_crs(utm_crs)
         all_hwys_latlon.to_file(f"{folder_name}geodata/allhwys/allhwys_latlon_{current_year}.geojson",driver='GeoJSON')
-        buffered_hwys = all_hwys_gdf.buffer(distances['highways'])
-        buffered_hwys_latlon = buffered_hwys.to_crs(4326)
+        buffered_hwys_utm = all_hwys_utm.buffer(distances['highways'])
+        buffered_hwys_latlon = buffered_hwys_utm.to_crs(4326)
         buffered_hwys_latlon.to_file(f"{folder_name}geodata/buffered_hwys/buffered_hwys_latlon_{current_year}.geojson",driver='GeoJSON')
         
         
@@ -1115,7 +1115,7 @@ def calculate_indicators(analysis_areas,
                 analysis_areas.loc[idx,f'people_not_near_highways_{current_year}'] = PNNH
                 if service_gdfs_utm['highways'] is not None:
                     selected_highways_gdf_utm = service_gdfs_utm['highways'].intersection(boundaries_utm)
-                    hwy_m = sum(selected_highways_gdf_utm.geometry.boundary.length) / 4 #divide by 4 because we're looking at divided highway polys, not lines :)
+                    hwy_m = sum(selected_highways_gdf_utm.geometry.length) 
                 else:
                     hwy_m = 0
                 analysis_areas.loc[idx,f'highway_km_{current_year}'] = hwy_m / 1000

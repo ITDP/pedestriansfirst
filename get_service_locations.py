@@ -11,7 +11,8 @@ import osmium
 import shapely.wkb
 
 def get_highways(simple_projected_G,
-                 min_length = 1500, #meters
+                 min_length = 1000, #meters
+                 min_lanes = 1,
                  ):
     #get the car-only network and the links of major (divided) roads
     nodes, edges = ox.graph_to_gdfs(simple_projected_G)
@@ -19,7 +20,8 @@ def get_highways(simple_projected_G,
                 'residential','living_street','service','road']
     for tag in car_tags.copy():
         car_tags.append(tag+'_link')
-    major_tags = ['motorway','trunk','primary','secondary']
+    major_tags = ['motorway','trunk','primary','secondary',
+                  'motorway_link','trunk_link','primary_link','secondary_link']
     car_roads = edges[edges.highway.isin(car_tags)]
     multi_car_G = ox.graph_from_gdfs(nodes, car_roads)
     major_roads = edges[(edges.highway.isin(major_tags)) & (edges.oneway == True)].copy()
@@ -47,15 +49,19 @@ def get_highways(simple_projected_G,
             lanes = float(lanes)
             if np.isnan(lanes):
                 lanes = 3 #if the number of lanes isn't given, we assume it's more than 2 per direction
-            if lanes < 2:
+            if lanes < min_lanes: 
                 major_roads.drop(idx, inplace=True)
     if len(major_roads) == 0:
         return None
             
+    #exclude long tunnels
+    major_roads_utm = ox.project_gdf(major_roads)
+    major_roads_utm.drop(major_roads_utm[(major_roads_utm.tunnel=='yes')&(major_roads_utm.length>300)].index, inplace=True)
+    
     # Identify all the nodes with no more than three neighbors 
     # ie, exclude four-way intersections
     major_nodes = set()
-    for idx in major_roads.index:
+    for idx in major_roads_utm.index:
         major_nodes.add(idx[0])
         major_nodes.add(idx[1])
     grade_separated_nodes = []
@@ -74,32 +80,45 @@ def get_highways(simple_projected_G,
             at_grade_nodes.append(center_node)
         else:
             grade_separated_nodes.append(center_node)
-    # find all the places with at least 1km between 4-way intersections
+            
+    # split up the highway lines at 4-way intersections
     separation_breakers = nodes.loc[at_grade_nodes]
+    separation_breakers = ox.project_gdf(separation_breakers)
     separation_break_poly = separation_breakers.buffer(2).unary_union
-    #major_roads_multiline = major_roads.unary_union
-    roads_poly = major_roads.buffer(0.5).unary_union
-    roads_poly_diff = roads_poly.difference(separation_break_poly)
-    if roads_poly_diff is None:
-        return None
-    try:
-        roads_poly_gdf = gpd.GeoDataFrame(crs = edges.crs, geometry = list(roads_poly_diff.geoms))
-    except:
-        return None
+    separation_break_gdf = gpd.GeoDataFrame(geometry = [separation_break_poly], crs = 4326)
     
-    #cut out polys that are too short
-    for idx in roads_poly_gdf.index:
-        maxdist = 0
-        poly = roads_poly_gdf.loc[idx, 'geometry'].convex_hull
-        for a in poly.exterior.coords:
-            for b in poly.exterior.coords:
-                dist = Point(a).distance(Point(b))
-                if dist > maxdist:
-                    maxdist = dist
-        if maxdist < min_length:
-            roads_poly_gdf.drop(idx, inplace=True)
-        
-    return roads_poly_gdf.unary_union
+    separated_major_roads = major_roads_utm.overlay(separation_break_gdf, how='difference').geometry
+    
+    #merge lines based on shared nodes
+    merged_lines = shapely.ops.linemerge(list(separated_major_roads.geometry))
+    merged_lines_gdf = gpd.GeoDataFrame(geometry=list(merged_lines.geoms), crs=major_roads_utm.crs)
+    
+    #see which line segments are part of a touching network with a total length greater than the minimum
+    real_highway_lineids = [] 
+    for idx in merged_lines_gdf.index:
+        #is it already accounted for?
+        if idx in real_highway_lineids:
+            continue
+        #is it, alone, long enough?
+        if merged_lines_gdf.loc[idx,'geometry'].length > min_length:
+            real_highway_lineids.append(idx)
+            continue
+        #or does it touch other segments that are cumulatively long enough?
+        contiguous_ids = [idx]
+        contiguous_length = merged_lines_gdf.loc[idx,'geometry'].length
+        for connecting_idx in contiguous_ids:
+            immediately_touching = list(merged_lines_gdf[merged_lines_gdf.geometry.touches(merged_lines_gdf.geometry[idx])].index)
+            for touching_idx in immediately_touching:
+                if not touching_idx in contiguous_ids:
+                    contiguous_ids.append(touching_idx)
+                    contiguous_length += merged_lines_gdf.loc[touching_idx,'geometry'].length
+            if contiguous_length > min_length:
+                real_highway_lineids += contiguous_ids
+                continue
+    real_highways_gdf_utm = merged_lines_gdf.loc[real_highway_lineids]
+    real_highways_gdf_ll = real_highways_gdf_utm.to_crs(4326)
+    
+    return real_highways_gdf_ll
     
 def bbox_from_shp(file_loc):
     with fiona.open(file_loc,'r') as source: 
