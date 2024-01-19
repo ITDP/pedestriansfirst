@@ -82,11 +82,10 @@ def get_highways(simple_projected_G,
             
     # split up the highway lines at 4-way intersections
     separation_breakers = nodes.loc[at_grade_nodes]
-    separation_breakers = ox.project_gdf(separation_breakers)
     separation_break_poly = separation_breakers.buffer(2).unary_union
-    separation_break_gdf = gpd.GeoDataFrame(geometry = [separation_break_poly], crs = 4326)
+    separation_break_gdf_utm = gpd.GeoDataFrame(geometry = [separation_break_poly], crs = separation_breakers.crs)
     
-    separated_major_roads = major_roads_utm.overlay(separation_break_gdf, how='difference').geometry
+    separated_major_roads = major_roads_utm.overlay(separation_break_gdf_utm, how='difference').geometry
     
     #merge lines based on shared nodes
     merged_lines = shapely.ops.linemerge(list(separated_major_roads.geometry))

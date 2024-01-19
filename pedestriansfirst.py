@@ -182,7 +182,7 @@ def spatial_analysis(boundaries,
                            'pnpb', #protected bikeways
                            'pnab', #all bikeways
                            'highways',
-                           'journey_gap',
+                           #'journey_gap',
                            #'access',
                            #'transport_performance',
                            #'special',
