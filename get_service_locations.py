@@ -99,21 +99,23 @@ def get_highways(simple_projected_G,
         if idx in real_highway_lineids:
             continue
         #is it, alone, long enough?
-        if merged_lines_gdf.loc[idx,'geometry'].length > min_length:
+        this_segment_termini = merged_lines_gdf.loc[idx,'geometry'].boundary.geoms
+        if this_segment_termini[0].distance(this_segment_termini[1]) > min_length:
             real_highway_lineids.append(idx)
             continue
         #or does it touch other segments that are cumulatively long enough?
         contiguous_ids = [idx]
-        contiguous_length = merged_lines_gdf.loc[idx,'geometry'].length
+        contiguous_termini = []
         for connecting_idx in contiguous_ids:
             immediately_touching = list(merged_lines_gdf[merged_lines_gdf.geometry.touches(merged_lines_gdf.geometry[idx])].index)
             for touching_idx in immediately_touching:
                 if not touching_idx in contiguous_ids:
                     contiguous_ids.append(touching_idx)
-                    contiguous_length += merged_lines_gdf.loc[touching_idx,'geometry'].length
-            if contiguous_length > min_length:
-                real_highway_lineids += contiguous_ids
-                continue
+                    contiguous_termini += list(merged_lines_gdf.loc[idx,'geometry'].boundary.geoms)
+            for terminus in contiguous_termini:
+                if terminus.distance(this_segment_termini[0]) or terminus.distance(this_segment_termini[1]):
+                    real_highway_lineids += contiguous_ids
+                    continue
     real_highways_gdf_utm = merged_lines_gdf.loc[real_highway_lineids]
     real_highways_gdf_ll = real_highways_gdf_utm.to_crs(4326)
     
