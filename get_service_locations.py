@@ -24,11 +24,11 @@ def get_highways(simple_projected_G,
                   'motorway_link','trunk_link','primary_link','secondary_link']
     car_roads = edges[edges.highway.isin(car_tags)]
     multi_car_G = ox.graph_from_gdfs(nodes, car_roads)
-    major_roads = edges[(edges.highway.isin(major_tags)) & (edges.oneway == True)].copy()
+    major_roads_utm = edges[(edges.highway.isin(major_tags)) & (edges.oneway == True)].copy()
     #only include major roads with at least 2 lanes per direction
-    if 'lanes' in major_roads.columns:
-        for idx in major_roads.index:
-            lanes = major_roads.loc[idx, 'lanes']
+    if 'lanes' in major_roads_utm.columns:
+        for idx in major_roads_utm.index:
+            lanes = major_roads_utm.loc[idx, 'lanes']
             if type(lanes) == type('string'):
                 lanes = lanes.split(';')
             if type(lanes) == type([]):
@@ -50,12 +50,11 @@ def get_highways(simple_projected_G,
             if np.isnan(lanes):
                 lanes = 3 #if the number of lanes isn't given, we assume it's more than 2 per direction
             if lanes < min_lanes: 
-                major_roads.drop(idx, inplace=True)
-    if len(major_roads) == 0:
+                major_roads_utm.drop(idx, inplace=True)
+    if len(major_roads_utm) == 0:
         return None
             
     #exclude long tunnels
-    major_roads_utm = ox.project_gdf(major_roads)
     major_roads_utm.drop(major_roads_utm[(major_roads_utm.tunnel=='yes')&(major_roads_utm.length>300)].index, inplace=True)
     
     # Identify all the nodes with no more than three neighbors 
