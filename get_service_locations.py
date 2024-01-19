@@ -55,7 +55,8 @@ def get_highways(simple_projected_G,
         return None
             
     #exclude long tunnels
-    major_roads_utm.drop(major_roads_utm[(major_roads_utm.tunnel=='yes')&(major_roads_utm.length>300)].index, inplace=True)
+    if 'tunnel' in major_roads_utm.columns:
+        major_roads_utm.drop(major_roads_utm[(major_roads_utm.tunnel=='yes')&(major_roads_utm.length>300)].index, inplace=True)
     
     # Identify all the nodes with no more than three neighbors 
     # ie, exclude four-way intersections
