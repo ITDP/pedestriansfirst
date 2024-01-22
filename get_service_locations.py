@@ -93,30 +93,46 @@ def get_highways(simple_projected_G,
     merged_lines_gdf = gpd.GeoDataFrame(geometry=list(merged_lines.geoms), crs=major_roads_utm.crs)
     
     #see which line segments are part of a touching network with a total length greater than the minimum
-    real_highway_lineids = [] 
+    real_highway_lineids = set()
     for idx in merged_lines_gdf.index:
         #is it already accounted for?
         if idx in real_highway_lineids:
             continue
         #is it, alone, long enough?
         this_segment_termini = merged_lines_gdf.loc[idx,'geometry'].boundary.geoms
+        if len(this_segment_termini) < 2: #it's a circle
+            if merged_lines_gdf.loc[idx,'geometry'].length > min_length:
+                real_highway_lineids.update([idx]) 
+            continue
         if this_segment_termini[0].distance(this_segment_termini[1]) > min_length:
-            real_highway_lineids.append(idx)
+            real_highway_lineids.update([idx]) 
             continue
         #or does it touch other segments that are cumulatively long enough?
         contiguous_ids = [idx]
         contiguous_termini = []
+        touches_a_line_thats_already_included = False
         for connecting_idx in contiguous_ids:
-            immediately_touching = list(merged_lines_gdf[merged_lines_gdf.geometry.touches(merged_lines_gdf.geometry[idx])].index)
+            immediately_touching = list(merged_lines_gdf[merged_lines_gdf.geometry.touches(merged_lines_gdf.geometry[connecting_idx])].index)
             for touching_idx in immediately_touching:
+                if touching_idx in real_highway_lineids:
+                    touches_a_line_thats_already_included = True
                 if not touching_idx in contiguous_ids:
+                    contiguous_termini += list(merged_lines_gdf.loc[touching_idx,'geometry'].boundary.geoms)
                     contiguous_ids.append(touching_idx)
-                    contiguous_termini += list(merged_lines_gdf.loc[idx,'geometry'].boundary.geoms)
-            for terminus in contiguous_termini:
-                if terminus.distance(this_segment_termini[0]) or terminus.distance(this_segment_termini[1]):
-                    real_highway_lineids += contiguous_ids
-                    continue
-    real_highways_gdf_utm = merged_lines_gdf.loc[real_highway_lineids]
+        if touches_a_line_thats_already_included:
+            real_highway_lineids.update(contiguous_ids) 
+            continue
+        
+        long_enough = False
+        for terminus in contiguous_termini:
+            if not long_enough:
+                if terminus.distance(this_segment_termini[0]) > min_length or terminus.distance(this_segment_termini[1]) > min_length:
+                    long_enough = True
+        if long_enough:
+            real_highway_lineids.update(contiguous_ids) 
+            continue
+        
+    real_highways_gdf_utm = merged_lines_gdf.loc[list(real_highway_lineids)]
     real_highways_gdf_ll = real_highways_gdf_utm.to_crs(4326)
     
     return real_highways_gdf_ll
