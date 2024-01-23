@@ -90,7 +90,11 @@ def get_highways(simple_projected_G,
     
     #merge lines based on shared nodes
     merged_lines = shapely.ops.linemerge(list(separated_major_roads.geometry))
-    merged_lines_gdf = gpd.GeoDataFrame(geometry=list(merged_lines.geoms), crs=major_roads_utm.crs)
+    try:
+        merged_lines_gdf = gpd.GeoDataFrame(geometry=list(merged_lines.geoms), crs=major_roads_utm.crs)
+    except AttributeError: #it's a single LineString
+        merged_lines_gdf = gpd.GeoDataFrame(geometry=list(merged_lines), crs=major_roads_utm.crs)
+        
     
     #see which line segments are part of a touching network with a total length greater than the minimum
     real_highway_lineids = set()
