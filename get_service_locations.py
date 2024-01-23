@@ -93,7 +93,7 @@ def get_highways(simple_projected_G,
     try:
         merged_lines_gdf = gpd.GeoDataFrame(geometry=list(merged_lines.geoms), crs=major_roads_utm.crs)
     except AttributeError: #it's a single LineString
-        merged_lines_gdf = gpd.GeoDataFrame(geometry=list(merged_lines), crs=major_roads_utm.crs)
+        merged_lines_gdf = gpd.GeoDataFrame(geometry=[merged_lines], crs=major_roads_utm.crs)
         
     
     #see which line segments are part of a touching network with a total length greater than the minimum

@@ -359,10 +359,16 @@ def spatial_analysis(boundaries,
             'Light Metro': 'lrt',
             'Heavy Rail': 'mrt',
             }
+        #get the data
         rt_lines = gpd.read_file('input_data/transit_explorer/geojson/lines.geojson')
         rt_stns = gpd.read_file('input_data/transit_explorer/geojson/stations.geojson')
+        #geospatial clip to boundaries
         rt_lines = rt_lines.overlay(boundaries_latlon, how='intersection')
         rt_stns = rt_stns.overlay(boundaries_latlon, how='intersection')
+        #remove lines/stations that are not public access
+        rt_lines = rt_lines[rt_lines['limited'] == 0]
+        rt_stns = rt_stns[rt_stns['limited'] == 0]
+        #include only the modes we care about
         rt_lines = rt_lines[rt_lines['mode'].isin(mode_classifications.keys())]
         rt_stns = rt_stns[rt_stns['mode'].isin(mode_classifications.keys())]
         for idx in rt_lines.index:
