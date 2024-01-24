@@ -52,6 +52,7 @@ def get_highways(simple_projected_G,
             if lanes < min_lanes: 
                 major_roads_utm.drop(idx, inplace=True)
     if len(major_roads_utm) == 0:
+        print('len(major_roads_utm) == 0:')
         return None
             
     #exclude long tunnels
