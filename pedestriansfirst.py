@@ -354,11 +354,11 @@ def spatial_analysis(boundaries,
         mode_classifications = {
             'Bus Rapid Transit':'brt',
             'Light Rail': 'lrt',
+            'Tramway': 'lrt',
             'Light Metro': 'mrt',
             'Metro': 'mrt',
             'Heavy Rail': 'mrt',
             'Regional Rail': 'mrt',
-            'Tramway': 'lrt',
             }
         #get the data
         rt_lines = gpd.read_file('input_data/transit_explorer/geojson/lines.geojson')
