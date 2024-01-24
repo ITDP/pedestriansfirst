@@ -153,9 +153,6 @@ def get_highways(simple_projected_G,
     real_highways_gdf_utm = merged_lines_gdf.loc[list(real_highway_lineids)]
     real_highways_gdf_ll = real_highways_gdf_utm.to_crs(4326)
     
-    if len(real_highway_lineids) < 1:
-        import pdb; pdb.set_trace()
-    
     return real_highways_gdf_ll
     
 def bbox_from_shp(file_loc):
