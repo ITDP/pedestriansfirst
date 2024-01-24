@@ -94,9 +94,9 @@ def get_highways(simple_projected_G,
     all_lines_and_multilines = list(separated_major_roads.geometry)
     lines_only = []
     for item in all_lines_and_multilines:
-        if type(item) == "LineString":
+        if type(item).__name__ == "LineString":
             lines_only.append(item)
-        elif type(item) == "MultiLineString":
+        elif type(item).__name__ == "MultiLineString":
             for subitem in item.explode():
                 lines_only.append(subitem)
     
@@ -150,9 +150,11 @@ def get_highways(simple_projected_G,
             real_highway_lineids.update(contiguous_ids) 
             continue
         
-    import pdb; pdb.set_trace()
     real_highways_gdf_utm = merged_lines_gdf.loc[list(real_highway_lineids)]
     real_highways_gdf_ll = real_highways_gdf_utm.to_crs(4326)
+    
+    if len(real_highway_lineids) < 1:
+        import pdb; pdb.set_trace()
     
     return real_highways_gdf_ll
     
