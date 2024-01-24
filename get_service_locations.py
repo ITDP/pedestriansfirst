@@ -87,10 +87,13 @@ def get_highways(simple_projected_G,
     separation_break_gdf_utm = gpd.GeoDataFrame(geometry = [separation_break_poly], crs = separation_breakers.crs)
     
     separated_major_roads = major_roads_utm.overlay(separation_break_gdf_utm, how='difference').geometry
-    separated_major_roads = separated_major_roads.explode() #boom
+    #separated_major_roads = separated_major_roads.explode() #boom
     
     #merge lines based on shared nodes
-    merged_lines = shapely.ops.linemerge(list(separated_major_roads.geometry))
+    try:
+        merged_lines = shapely.ops.linemerge(list(separated_major_roads.geometry))
+    except:
+        import pdb; pdb.set_trace()
     try:
         merged_lines_gdf = gpd.GeoDataFrame(geometry=list(merged_lines.geoms), crs=major_roads_utm.crs)
     except AttributeError: #it's a single LineString

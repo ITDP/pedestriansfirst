@@ -201,7 +201,6 @@ def spatial_analysis(boundaries,
                             },
                       years = [1975, 1980, 1985, 1990, 1995, 2000, 2005, 2010, 2015, 2020, 2022, 2025], #for PNRT and pop_dens. remember range(1,3) = [1,2]
                       current_year = 2022,
-                      overpass = False,
                       patch_length = 8000, #m
                       block_patch_length = 5000, #m
                       boundary_buffer = 500, #m
@@ -285,18 +284,14 @@ def spatial_analysis(boundaries,
             
     service_point_locations={}
     if len(testing_services) > 0:
-        if overpass:
-            raise RuntimeError
-            #haven't set this up yet, because I don't have a query for bikeshare or carfree
-        else:
-            handler = get_service_locations.ServiceHandler()
-            handler.apply_file(folder_name+'temp/city.o5m', locations=True)
-            for service in testing_services:
-                coords = handler.locationlist[service]
-                service_point_locations[service] = gpd.GeoDataFrame(
-                    geometry = [Point(coord) for coord in coords],
-                    crs=4326)
-            citywide_carfree = handler.carfreelist
+        handler = get_service_locations.ServiceHandler()
+        handler.apply_file(folder_name+'temp/city.o5m', locations=True)
+        for service in testing_services:
+            coords = handler.locationlist[service]
+            service_point_locations[service] = gpd.GeoDataFrame(
+                geometry = [Point(coord) for coord in coords],
+                crs=4326)
+        citywide_carfree = handler.carfreelist
                 
     if 'pnab' in to_test or 'pnpb' in to_test:
         testing_services.append('pnpb')
@@ -353,6 +348,9 @@ def spatial_analysis(boundaries,
         
             
     if 'pnrt' in to_test:
+        #TODO
+        #categorize both by "mode" and by "grade sep / no, bus/rail"
+        #BRT Std check
         mode_classifications = {
             'Bus Rapid Transit':'brt',
             'Light Rail': 'lrt',
@@ -424,73 +422,75 @@ def spatial_analysis(boundaries,
                 patchgdf.to_file('temp/patchbounds.geojson', driver='GeoJSON')
                 subprocess.run('python ogr2poly/ogr2poly.py temp/patchbounds.geojson > temp/patchbounds.poly', shell=True, check=True)
                 
-                if overpass:
-                    G = ox.graph_from_polygon(patch, 
-                                              custom_filter=walk_filter, 
-                                              simplify=True, 
-                                              retain_all=True)
-                else:
+                #get data
+                try:
+                    subprocess.check_call(['osmconvert',
+                                           str(folder_name)+'temp/cityhighways.o5m',
+                                           "-B=temp/patchbounds.poly",
+                                           #'--complete-ways',  #was commented
+                                           '--drop-broken-refs',  #was uncommented
+                                           '-o=temp/patch_allroads.osm'])
+                    G_allroads_unsimplified = ox.graph_from_xml('temp/patch_allroads.osm', simplify=False, retain_all=True)
+                    os.remove('temp/patch_allroads.osm')
+                    
+                    
+                    # TESTING using the same graph for everything. 
+                    # A little more efficient, avoids some problems with cycleways
+                    # But implies that people can walk along motorways.
+                    # Hopefully not a problem since those are usually divided.
+                    # If I wanted to get really fancy I could take them out 
+                    # entirely, before doing isochrones, I guess
+                    
+                    # subprocess.check_call(['osmconvert',
+                    #                        str(folder_name)+'temp/citywalk.o5m',
+                    #                        "-B=temp/patchbounds.poly",
+                    #                        #'--complete-ways',  #was commented
+                    #                        '--drop-broken-refs',  #was uncommented
+                    #                        '-o=temp/patch.osm'])
+                    # G = ox.graph_from_xml('temp/patch.osm', simplify=True, retain_all=True)
+                    # os.remove('temp/patch.osm')
+                except TypeError: #something to do with clipping, seems to happen once in a while
+                    #pdb.set_trace()
+                    #this is a very stupid band-aid, but it works for now
+                    #TODO either figure this out or make the patch more efficient somehow? idk
+                    #I think right now it's getting EVERYTHING, not just highways. Except not highways that are abandoned :)
+                    print ('TYPEERROR FROM CLIPPING PATCH', p_idx)
+                    with open(str(folder_name)+"patcherrorlog.txt", "a") as patcherrorlog:
+                        patcherrorlog.write('TYPEERROR FROM CLIPPING PATCH '+str(p_idx))
+                    G_allroads_unsimplified = ox.graph_from_polygon(patch, 
+                                          #custom_filter=walk_filter, 
+                                          simplify=False, 
+                                          retain_all=True)
+                except ValueError: #something to do with clipping, seems to happen once in a while
+                    #pdb.set_trace()
+                    #this is a very stupid band-aid, but it works for now
+                    #TODO either figure this out or make the patch more efficient somehow? idk
+                    #I think right now it's getting EVERYTHING, not just highways. Except not highways that are abandoned :)
+                    print ('ValueError FROM CLIPPING PATCH', p_idx)
+                    with open(str(folder_name)+"patcherrorlog.txt", "a") as patcherrorlog:
+                        patcherrorlog.write('ValueError FROM CLIPPING PATCH '+str(p_idx))
                     try:
-                        subprocess.check_call(['osmconvert',
-                                               str(folder_name)+'temp/cityhighways.o5m',
-                                               "-B=temp/patchbounds.poly",
-                                               #'--complete-ways',  #was commented
-                                               '--drop-broken-refs',  #was uncommented
-                                               '-o=temp/patch_allroads.osm'])
-                        G_allroads = ox.graph_from_xml('temp/patch_allroads.osm', simplify=True, retain_all=True)
-                        os.remove('temp/patch_allroads.osm')
+                        G_allroads_unsimplified = ox.graph_from_polygon(patch, 
+                                          #custom_filter=walk_filter, 
+                                          simplify=False, 
+                                          retain_all=True)
+                    except ValueError:
+                        raise ox._errors.InsufficientResponseError()
+                       
+                #label links that are not in tunnels
+                #so highway identification works properly later
+                #
+                for x in G_allroads_unsimplified.edges:
+                    if 'tunnel' not in G_allroads_unsimplified.edges[x].keys():
+                        G_allroads_unsimplified.edges[x]['tunnel'] = "no" 
                         
-                        # TESTING using the same graph for everything. 
-                        # A little more efficient, avoids some problems with cycleways
-                        # But implies that people can walk along motorways.
-                        # Hopefully not a problem since those are usually divided.
-                        # If I wanted to get really fancy I could take them out 
-                        # entirely, before doing isochrones, I guess
-                        G = G_allroads
-                        
-                        # subprocess.check_call(['osmconvert',
-                        #                        str(folder_name)+'temp/citywalk.o5m',
-                        #                        "-B=temp/patchbounds.poly",
-                        #                        #'--complete-ways',  #was commented
-                        #                        '--drop-broken-refs',  #was uncommented
-                        #                        '-o=temp/patch.osm'])
-                        # G = ox.graph_from_xml('temp/patch.osm', simplify=True, retain_all=True)
-                        # os.remove('temp/patch.osm')
-                    except TypeError: #something to do with clipping, seems to happen once in a while
-                        #pdb.set_trace()
-                        #this is a very stupid band-aid, but it works for now
-                        #TODO either figure this out or make the patch more efficient somehow? idk
-                        #I think right now it's getting EVERYTHING, not just highways. Except not highways that are abandoned :)
-                        print ('TYPEERROR FROM CLIPPING PATCH', p_idx)
-                        with open(str(folder_name)+"patcherrorlog.txt", "a") as patcherrorlog:
-                            patcherrorlog.write('TYPEERROR FROM CLIPPING PATCH '+str(p_idx))
-                        G_allroads = ox.graph_from_polygon(patch, 
-                                              #custom_filter=walk_filter, 
-                                              simplify=True, 
-                                              retain_all=True)
-                        G = G_allroads
-                    except ValueError: #something to do with clipping, seems to happen once in a while
-                        #pdb.set_trace()
-                        #this is a very stupid band-aid, but it works for now
-                        #TODO either figure this out or make the patch more efficient somehow? idk
-                        #I think right now it's getting EVERYTHING, not just highways. Except not highways that are abandoned :)
-                        print ('ValueError FROM CLIPPING PATCH', p_idx)
-                        with open(str(folder_name)+"patcherrorlog.txt", "a") as patcherrorlog:
-                            patcherrorlog.write('ValueError FROM CLIPPING PATCH '+str(p_idx))
-                        try:
-                            G_allroads = ox.graph_from_polygon(patch, 
-                                              #custom_filter=walk_filter, 
-                                              simplify=True, 
-                                              retain_all=True)
-                            G = G_allroads
-                        except ValueError:
-                            raise ox._errors.InsufficientResponseError()
+                #then simplify
+                G_allroads = ox.simplify_graph(G_allroads_unsimplified)
                 os.remove('temp/patchbounds.poly')
                         
-                G.remove_nodes_from(list(nx.isolates(G)))
+                G_allroads.remove_nodes_from(list(nx.isolates(G_allroads)))
                 
-                if len(G.edges) > 0 and len(G.nodes) > 0:
-                    G = ox.project_graph(G, to_crs=utm_crs)
+                if len(G_allroads.edges) > 0 and len(G_allroads.nodes) > 0:
                     G_allroads = ox.project_graph(G_allroads, to_crs=utm_crs)
                     
                     center_nodes = {}
@@ -548,7 +548,7 @@ def spatial_analysis(boundaries,
                                                                 &(patch_points_utm.geometry!=None)]
                             if len(patch_points) > 0:
                                 center_nodes[service]  = ox.distance.nearest_nodes(
-                                    G, 
+                                    G_allroads, 
                                     patch_points_utm.geometry.x, 
                                     patch_points_utm.geometry.y,
                                     return_dist=False)
@@ -570,7 +570,7 @@ def spatial_analysis(boundaries,
                         if service in center_nodes.keys():
                             print(f'getting polygons for {service}, {len(center_nodes[service])} center_nodes')
                             isochrone_polys[service] = isochrones.proper_iso_polys(
-                                G, 
+                                G_allroads, 
                                 center_nodes[service],
                                 distance=distances[service],                                           
                                 buffer=buffer_dist, 
@@ -592,12 +592,12 @@ def spatial_analysis(boundaries,
                             if unbuffered_patch.contains(rt_stns.loc[stn_idx, 'geometry']):
                                 stn_utm = rt_stns_utm.loc[stn_idx, 'geometry']
                                 center_node = ox.distance.nearest_nodes(
-                                    G, 
+                                    G_allroads, 
                                     stn_utm.x, 
                                     stn_utm.y,
                                     return_dist=False)
                                 iso_poly = isochrones.proper_iso_polys(
-                                    G, 
+                                    G_allroads, 
                                     [center_node],
                                     distance=distances['pnrt'],                                           
                                     buffer=buffer_dist, 
@@ -773,24 +773,22 @@ def spatial_analysis(boundaries,
             unbuf_patch_utm = unbuf_patches_utm.loc[patch_idx, 'geometry']
             
             print("patch"+str(patch_idx)+" of "+str(len(patches_latlon)), name )
-            if overpass:
-                G = ox.graph_from_polygon(patch, custom_filter=walk_filter, simplify=True, retain_all=True)
-            else:
-                boundingarg = '-b='
-                boundingarg += str(patch_latlon.bounds[0])+','
-                boundingarg += str(patch_latlon.bounds[1])+','
-                boundingarg += str(patch_latlon.bounds[2])+','
-                boundingarg += str(patch_latlon.bounds[3])
-                subprocess.check_call(['osmconvert',
-                                       folder_name+'temp/citywalk.o5m',
-                                       boundingarg,
-                                       #'--complete-ways',
-                                       '--drop-broken-refs',
-                                       '-o=patch.osm'])
-                try:
-                    G = ox.graph_from_xml('patch.osm', simplify=True, retain_all=True)
-                except:
-                    G = False
+        else:
+            boundingarg = '-b='
+            boundingarg += str(patch_latlon.bounds[0])+','
+            boundingarg += str(patch_latlon.bounds[1])+','
+            boundingarg += str(patch_latlon.bounds[2])+','
+            boundingarg += str(patch_latlon.bounds[3])
+            subprocess.check_call(['osmconvert',
+                                   folder_name+'temp/citywalk.o5m',
+                                   boundingarg,
+                                   #'--complete-ways',
+                                   '--drop-broken-refs',
+                                   '-o=patch.osm'])
+            try:
+                G = ox.graph_from_xml('patch.osm', simplify=True, retain_all=True)
+            except:
+                G = False
             
             if G and len(G.edges) > 0:
                 G = ox.project_graph(G, to_crs=utm_crs)
