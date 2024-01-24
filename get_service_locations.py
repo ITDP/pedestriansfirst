@@ -90,8 +90,17 @@ def get_highways(simple_projected_G,
     #separated_major_roads = separated_major_roads.explode() #boom
     
     #merge lines based on shared nodes
+    all_lines_and_multilines = list(separated_major_roads.geometry)
+    lines_only = []
+    for item in all_lines_and_multilines:
+        if type(item) == "LineString":
+            lines_only.append(item)
+        elif type(item) == "MultiLineString":
+            for subitem in item.explode():
+                lines_only.append(subitem)
+    
     try:
-        merged_lines = shapely.ops.linemerge(list(separated_major_roads.geometry))
+        merged_lines = shapely.ops.linemerge(lines_only)
     except:
         import pdb; pdb.set_trace()
     try:
