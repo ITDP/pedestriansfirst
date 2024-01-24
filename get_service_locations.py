@@ -102,8 +102,9 @@ def get_highways(simple_projected_G,
     
     try:
         merged_lines = shapely.ops.linemerge(list(separated_major_roads.geometry))
-    except:
-        import pdb; pdb.set_trace()
+    except: #if one if the rows has a multilinestring
+        merged_lines = shapely.ops.linemerge(list(separated_major_roads.explode().geometry))
+        
     try:
         merged_lines_gdf = gpd.GeoDataFrame(geometry=list(merged_lines.geoms), crs=major_roads_utm.crs)
     except AttributeError: #it's a single LineString
