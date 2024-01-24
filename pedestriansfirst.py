@@ -177,7 +177,7 @@ def spatial_analysis(boundaries,
                            'carfree',
                            'blocks',
                            'density',
-                           'pnft',
+                           #'pnft',
                            'pnrt',
                            'pnpb', #protected bikeways
                            'pnab', #all bikeways
@@ -354,8 +354,11 @@ def spatial_analysis(boundaries,
         mode_classifications = {
             'Bus Rapid Transit':'brt',
             'Light Rail': 'lrt',
-            'Light Metro': 'lrt',
+            'Light Metro': 'mrt',
+            'Metro': 'mrt',
             'Heavy Rail': 'mrt',
+            'Regional Rail': 'mrt',
+            'Tramway': 'lrt',
             }
         #get the data
         rt_lines = gpd.read_file('input_data/transit_explorer/geojson/lines.geojson')
@@ -370,9 +373,19 @@ def spatial_analysis(boundaries,
         rt_lines = rt_lines[rt_lines['mode'].isin(mode_classifications.keys())]
         rt_stns = rt_stns[rt_stns['mode'].isin(mode_classifications.keys())]
         for idx in rt_lines.index:
-            rt_lines.loc[idx,'rt_mode'] = mode_classifications[rt_lines.loc[idx,'mode']]
+            mode = mode_classifications[rt_lines.loc[idx,'mode']]
+            if rt_lines.loc[idx,'mode'] == "at grade":
+                grade = "at_grade"
+            else:
+                grade = "grade_sep"
+            rt_lines.loc[idx,'rt_mode'] = f"{mode}_{grade}"
         for idx in rt_stns.index:
-            rt_stns.loc[idx,'rt_mode'] = mode_classifications[rt_stns.loc[idx,'mode']]
+            mode = mode_classifications[rt_stns.loc[idx,'mode']]
+            if "at grade" in rt_stns.loc[idx,'mode']:
+                grade = "at_grade"
+            else:
+                grade = "grade_sep"
+            rt_stns.loc[idx,'rt_mode'] = f"{mode}_{grade}"
         rt_isochrones = rt_stns.copy()
         rt_stns_utm = rt_stns.to_crs(utm_crs)
         rt_isochrones_utm = rt_isochrones.to_crs(utm_crs)
@@ -532,6 +545,7 @@ def spatial_analysis(boundaries,
                         highway_lines_gdf_ll = get_service_locations.get_highways(G_allroads)
                         if highway_lines_gdf_ll is not None:
                             all_highway_lines += list(highway_lines_gdf_ll.geometry)
+                        import pdb; pdb.set_trace()
                         
                     # if debug:
                     #     for node, data in G.nodes(data=True):
