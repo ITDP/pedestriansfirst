@@ -150,6 +150,7 @@ def get_highways(simple_projected_G,
             real_highway_lineids.update(contiguous_ids) 
             continue
         
+    import pdb; pdb.set_trace()
     real_highways_gdf_utm = merged_lines_gdf.loc[list(real_highway_lineids)]
     real_highways_gdf_ll = real_highways_gdf_utm.to_crs(4326)
     

@@ -545,7 +545,6 @@ def spatial_analysis(boundaries,
                         highway_lines_gdf_ll = get_service_locations.get_highways(G_allroads)
                         if highway_lines_gdf_ll is not None:
                             all_highway_lines += list(highway_lines_gdf_ll.geometry)
-                        import pdb; pdb.set_trace()
                         
                     # if debug:
                     #     for node, data in G.nodes(data=True):
