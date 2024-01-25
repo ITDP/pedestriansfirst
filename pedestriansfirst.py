@@ -202,7 +202,7 @@ def spatial_analysis(boundaries,
                             },
                       years = [1975, 1980, 1985, 1990, 1995, 2000, 2005, 2010, 2015, 2020, 2022, 2025], #for PNRT and pop_dens. remember range(1,3) = [1,2]
                       current_year = 2022,
-                      patch_length = 15000, #m
+                      patch_length = 16000, #m
                       block_patch_length = 5000, #m
                       boundary_buffer = 1000, #m
                       blocks_simplification = 0.0001, #topo-simplification
@@ -785,6 +785,9 @@ def spatial_analysis(boundaries,
                     select_lines.to_file(f'{folder_name}geodata/rapid_transit/{year}/{mode}_lines_ll.geojson', driver='GeoJSON')
                
         if 'pnst' in to_test:
+            if not os.path.exists(f'{folder_name}geodata/pnst/'):
+                os.mkdir(f'{folder_name}geodata/pnst/')
+                
             try:
                 protectedbike = gpd.read_file(f"{folder_name}geodata/pnpb/pnpb_latlon_{current_year}.geojson")
             except:
