@@ -777,6 +777,7 @@ def spatial_analysis(boundaries,
                     mode_selector = line_mode_selectors[mode]
                     opened_before = rt_lines['year_open'] <= year
                     not_closed = (np.isnan(rt_lines.year_clos) | (rt_lines.year_clos>year))
+                    import pdb; pdb.set_trace()
                     selector = mode_selector & opened_before & not_closed
                     select_lines = gpd.GeoDataFrame(
                         geometry=[rt_lines[selector].unary_union],
