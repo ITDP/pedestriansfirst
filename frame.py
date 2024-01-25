@@ -575,6 +575,7 @@ if __name__ == '__main__':
     ucdb.index =  ucdb['ID_HDC_G0']
     #for hdc in ucdb[(int(sys.argv[2]) < ucdb.P15)&(ucdb.P15 < int(sys.argv[1]))].sort_values('P15', ascending=False).ID_HDC_G0:
     for hdc in [#5134,
+                1445,
                 1406,
                 154,
                 ]:

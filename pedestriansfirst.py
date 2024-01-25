@@ -741,6 +741,8 @@ def spatial_analysis(boundaries,
                     'mrt_atgrade': rt_isochrones_latlon['rt_mode'] == 'mrt_atgrade',
                     'mrt_gradesep': rt_isochrones_latlon['rt_mode'] == 'mrt_gradesep',
                     'mrt': rt_isochrones_latlon['rt_mode'].isin(['mrt_atgrade','mrt_gradesep']),
+                    'all_atgrade': rt_isochrones_latlon['rt_mode'].isin(['brt_atgrade','lrt_atgrade','mrt_atgrade']),
+                    'all_gradesep': rt_isochrones_latlon['rt_mode'].isin(['brt_gradesep','lrt_gradesep','mrt_gradesep']),
                     'all': rt_isochrones_latlon,
                     }
                 for mode in list():
@@ -767,6 +769,8 @@ def spatial_analysis(boundaries,
                     'mrt_atgrade': rt_lines['rt_mode'] == 'mrt_atgrade',
                     'mrt_gradesep': rt_lines['rt_mode'] == 'mrt_gradesep',
                     'mrt': rt_lines['rt_mode'].isin(['mrt_atgrade','mrt_gradesep']),
+                    'all_atgrade': rt_lines['rt_mode'].isin(['brt_atgrade','lrt_atgrade','mrt_atgrade']),
+                    'all_gradesep': rt_lines['rt_mode'].isin(['brt_gradesep','lrt_gradesep','mrt_gradesep']),
                     'all': rt_lines,
                     }
                 for mode in ['brt','lrt','mrt','all']:
@@ -1010,7 +1014,7 @@ def calculate_indicators(analysis_areas,
         has_rt = False
         if os.path.exists(geodata_path):
             has_rt = True
-            modes = ['all','mrt','mrt_atgrade','mrt_gradesep','lrt','lrt_atgrade','lrt_gradesep','brt','brt_atgrade','brt_gradesep',]
+            modes = ['all','all_atgrade','all_gradesep','mrt','mrt_atgrade','mrt_gradesep','lrt','lrt_atgrade','lrt_gradesep','brt','brt_atgrade','brt_gradesep',]
             rt_isochrones = {}
             rt_lines = {}
             rt_stns = {}
