@@ -181,6 +181,7 @@ def spatial_analysis(boundaries,
                            'pnrt',
                            'pnpb', #protected bikeways
                            'pnab', #all bikeways
+                           'pnst', #combo transit + bike
                            'highways',
                            #'journey_gap',
                            #'access',
@@ -969,6 +970,7 @@ def calculate_indicators(analysis_areas,
                            'pnrt',
                            'pnpb', #protected bikeways
                            'pnab', #all bikeways
+                           'pnst',
                            'highways',
                            #'special',
                            #'transport_performance',
