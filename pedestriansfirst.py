@@ -743,9 +743,9 @@ def spatial_analysis(boundaries,
                     'mrt': rt_isochrones_latlon['rt_mode'].isin(['mrt_atgrade','mrt_gradesep']),
                     'all_atgrade': rt_isochrones_latlon['rt_mode'].isin(['brt_atgrade','lrt_atgrade','mrt_atgrade']),
                     'all_gradesep': rt_isochrones_latlon['rt_mode'].isin(['brt_gradesep','lrt_gradesep','mrt_gradesep']),
-                    'all': rt_isochrones_latlon,
+                    'all': rt_isochrones_latlon['rt_mode'] != None,
                     }
-                for mode in list():
+                for mode in list(mode_selectors.keys()):
                     mode_selector = mode_selectors[mode]
                     opened_before = rt_isochrones_latlon['year_open'] <= year
                     not_closed = (np.isnan(rt_isochrones_latlon.year_clos) | (rt_isochrones_latlon.year_clos>year))
@@ -771,9 +771,9 @@ def spatial_analysis(boundaries,
                     'mrt': rt_lines['rt_mode'].isin(['mrt_atgrade','mrt_gradesep']),
                     'all_atgrade': rt_lines['rt_mode'].isin(['brt_atgrade','lrt_atgrade','mrt_atgrade']),
                     'all_gradesep': rt_lines['rt_mode'].isin(['brt_gradesep','lrt_gradesep','mrt_gradesep']),
-                    'all': rt_lines,
+                    'all': rt_lines['rt_mode'] != None,
                     }
-                for mode in ['brt','lrt','mrt','all']:
+                for mode in list(line_mode_selectors.keys()):
                     mode_selector = line_mode_selectors[mode]
                     opened_before = rt_lines['year_open'] <= year
                     not_closed = (np.isnan(rt_lines.year_clos) | (rt_lines.year_clos>year))
