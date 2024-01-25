@@ -202,9 +202,9 @@ def spatial_analysis(boundaries,
                             },
                       years = [1975, 1980, 1985, 1990, 1995, 2000, 2005, 2010, 2015, 2020, 2022, 2025], #for PNRT and pop_dens. remember range(1,3) = [1,2]
                       current_year = 2022,
-                      patch_length = 8000, #m
+                      patch_length = 15000, #m
                       block_patch_length = 5000, #m
-                      boundary_buffer = 500, #m
+                      boundary_buffer = 1000, #m
                       blocks_simplification = 0.0001, #topo-simplification
                       services_simplification = 10, #m TODO replace with gpd simplification?
                       access_resolution = 2000, #m
@@ -1251,10 +1251,6 @@ def calculate_indicators(analysis_areas,
                                 analysis_areas.loc[idx,f'km_{mode}_{year}'] = km
                                 analysis_areas.loc[idx,f'stns_{mode}_{year}'] = n_stns
                                 analysis_areas.loc[idx,f'rtr_{mode}_{year}'] = km / (analysis_areas.loc[idx,f'total_pop_{year}']/1000000)
-          
-            if 'pnst' in to_test:
-                #have already loaded 
-                pass
           
             if 'blocks' in to_test:
                 if blocks is not None:
