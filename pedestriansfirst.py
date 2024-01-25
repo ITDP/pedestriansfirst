@@ -375,16 +375,16 @@ def spatial_analysis(boundaries,
         for idx in rt_lines.index:
             mode = mode_classifications[rt_lines.loc[idx,'mode']]
             if rt_lines.loc[idx,'mode'] == "at grade":
-                grade = "at_grade"
+                grade = "atgrade"
             else:
-                grade = "grade_sep"
+                grade = "gradesep"
             rt_lines.loc[idx,'rt_mode'] = f"{mode}_{grade}"
         for idx in rt_stns.index:
             mode = mode_classifications[rt_stns.loc[idx,'mode']]
             if "at grade" in rt_stns.loc[idx,'mode']:
-                grade = "at_grade"
+                grade = "atgrade"
             else:
-                grade = "grade_sep"
+                grade = "gradesep"
             rt_stns.loc[idx,'rt_mode'] = f"{mode}_{grade}"
         rt_isochrones = rt_stns.copy()
         rt_stns_utm = rt_stns.to_crs(utm_crs)
@@ -732,12 +732,18 @@ def spatial_analysis(boundaries,
                     os.mkdir(f'{folder_name}geodata/rapid_transit/{year}/')
                 #this could probably be more elegant
                 mode_selectors = {
-                    'brt': rt_isochrones_latlon['rt_mode'] == 'brt',
-                    'lrt': rt_isochrones_latlon['rt_mode'] == 'lrt',
-                    'mrt': rt_isochrones_latlon['rt_mode'] == 'mrt',
-                    'all': rt_isochrones_latlon['rt_mode'].isin(['brt','lrt','mrt']),
+                    'brt_atgrade': rt_isochrones_latlon['rt_mode'] == 'brt_atgrade',
+                    'brt_gradesep': rt_isochrones_latlon['rt_mode'] == 'brt_gradesep',
+                    'brt': rt_isochrones_latlon['rt_mode'].isin(['brt_atgrade','brt_gradesep']),
+                    'lrt_atgrade': rt_isochrones_latlon['rt_mode'] == 'lrt_atgrade',
+                    'lrt_gradesep': rt_isochrones_latlon['rt_mode'] == 'lrt_gradesep',
+                    'lrt': rt_isochrones_latlon['rt_mode'].isin(['lrt_atgrade','lrt_gradesep']),
+                    'mrt_atgrade': rt_isochrones_latlon['rt_mode'] == 'mrt_atgrade',
+                    'mrt_gradesep': rt_isochrones_latlon['rt_mode'] == 'mrt_gradesep',
+                    'mrt': rt_isochrones_latlon['rt_mode'].isin(['mrt_atgrade','mrt_gradesep']),
+                    'all': rt_isochrones_latlon,
                     }
-                for mode in ['brt','lrt','mrt','all']:
+                for mode in list():
                     mode_selector = mode_selectors[mode]
                     opened_before = rt_isochrones_latlon['year_open'] <= year
                     not_closed = (np.isnan(rt_isochrones_latlon.year_closed) | (rt_isochrones_latlon.year_closed>year))
@@ -750,14 +756,21 @@ def spatial_analysis(boundaries,
                         geometry=[rt_stns[selector].unary_union],
                         crs=4326)
                     select_stns.to_file(f'{folder_name}geodata/rapid_transit/{year}/{mode}_stations_ll.geojson', driver='GeoJSON')
+                    
                 line_mode_selectors = {
-                    'brt': rt_lines['rt_mode'] == 'brt',
-                    'lrt': rt_lines['rt_mode'] == 'lrt',
-                    'mrt': rt_lines['rt_mode'] == 'mrt',
-                    'all': rt_lines['rt_mode'].isin(['brt','lrt','mrt']),
+                    'brt_atgrade': rt_lines['rt_mode'] == 'brt_atgrade',
+                    'brt_gradesep': rt_lines['rt_mode'] == 'brt_gradesep',
+                    'brt': rt_lines['rt_mode'].isin(['brt_atgrade','brt_gradesep']),
+                    'lrt_atgrade': rt_lines['rt_mode'] == 'lrt_atgrade',
+                    'lrt_gradesep': rt_lines['rt_mode'] == 'lrt_gradesep',
+                    'lrt': rt_lines['rt_mode'].isin(['lrt_atgrade','lrt_gradesep']),
+                    'mrt_atgrade': rt_lines['rt_mode'] == 'mrt_atgrade',
+                    'mrt_gradesep': rt_lines['rt_mode'] == 'mrt_gradesep',
+                    'mrt': rt_lines['rt_mode'].isin(['mrt_atgrade','mrt_gradesep']),
+                    'all': rt_lines,
                     }
                 for mode in ['brt','lrt','mrt','all']:
-                    mode_selector = mode_selectors[mode]
+                    mode_selector = line_mode_selectors[mode]
                     opened_before = rt_lines['year_open'] <= year
                     not_closed = (np.isnan(rt_lines.year_closed) | (rt_lines.year_closed>year))
                     selector = mode_selector & opened_before & not_closed
@@ -997,7 +1010,7 @@ def calculate_indicators(analysis_areas,
         has_rt = False
         if os.path.exists(geodata_path):
             has_rt = True
-            modes = ['all','mrt','lrt','brt']
+            modes = ['all','mrt','mrt_atgrade','mrt_gradesep','lrt','lrt_atgrade','lrt_gradesep','brt','brt_atgrade','brt_gradesep',]
             rt_isochrones = {}
             rt_lines = {}
             rt_stns = {}
