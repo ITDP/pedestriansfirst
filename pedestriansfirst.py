@@ -1259,6 +1259,7 @@ def calculate_indicators(analysis_areas,
           
             if 'pnst' in to_test:
                 #have already loaded 
+                pass
           
             if 'blocks' in to_test:
                 if blocks is not None:
