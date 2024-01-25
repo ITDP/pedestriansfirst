@@ -786,7 +786,7 @@ def spatial_analysis(boundaries,
             unbuf_patch_utm = unbuf_patches_utm.loc[patch_idx, 'geometry']
             
             print("patch"+str(patch_idx)+" of "+str(len(patches_latlon)), name )
-        else:
+
             boundingarg = '-b='
             boundingarg += str(patch_latlon.bounds[0])+','
             boundingarg += str(patch_latlon.bounds[1])+','
@@ -802,6 +802,7 @@ def spatial_analysis(boundaries,
                 G = ox.graph_from_xml('patch.osm', simplify=True, retain_all=True)
             except:
                 G = False
+                print("G=False")
             
             if G and len(G.edges) > 0:
                 G = ox.project_graph(G, to_crs=utm_crs)
