@@ -748,7 +748,7 @@ def spatial_analysis(boundaries,
                 for mode in list():
                     mode_selector = mode_selectors[mode]
                     opened_before = rt_isochrones_latlon['year_open'] <= year
-                    not_closed = (np.isnan(rt_isochrones_latlon.year_closed) | (rt_isochrones_latlon.year_closed>year))
+                    not_closed = (np.isnan(rt_isochrones_latlon.year_clos) | (rt_isochrones_latlon.year_clos>year))
                     selector = mode_selector & opened_before & not_closed
                     total_isochrone = gpd.GeoDataFrame(
                         geometry=[rt_isochrones_latlon[selector].unary_union],
@@ -776,12 +776,43 @@ def spatial_analysis(boundaries,
                 for mode in ['brt','lrt','mrt','all']:
                     mode_selector = line_mode_selectors[mode]
                     opened_before = rt_lines['year_open'] <= year
-                    not_closed = (np.isnan(rt_lines.year_closed) | (rt_lines.year_closed>year))
+                    not_closed = (np.isnan(rt_lines.year_clos) | (rt_lines.year_clos>year))
                     selector = mode_selector & opened_before & not_closed
                     select_lines = gpd.GeoDataFrame(
                         geometry=[rt_lines[selector].unary_union],
                         crs=4326)
                     select_lines.to_file(f'{folder_name}geodata/rapid_transit/{year}/{mode}_lines_ll.geojson', driver='GeoJSON')
+               
+        if 'pnst' in to_test:
+            try:
+                protectedbike = gpd.read_file(f"{folder_name}geodata/pnpb/pnpb_latlon_{current_year}.geojson")
+            except:
+                protectedbike = gpd.GeoDataFrame(geometry = [], crs=4326)
+            try:
+                rapidtransport = gpd.read_file(f'{folder_name}geodata/rapid_transit/{current_year}/all_isochrones_ll.geojson')
+            except:
+                rapidtransport = gpd.GeoDataFrame(geometry = [], crs=4326)
+            try:
+                frequenttransport = gpd.read_file('f"{folder_name}geodata/pnft/pnft_latlon_{current_year}.geojson"')
+            except:
+                frequenttransport = gpd.GeoDataFrame(geometry = [], crs=4326)
+            
+            
+            
+                intersect = shapely.ops.unary_union([quilt_isochrone_polys['healthcare'].intersection(quilt_isochrone_polys['schools'])])
+                if type(intersect) == shapely.geometry.collection.GeometryCollection:
+                    if not intersect.is_empty:
+                        try:
+                            intersect = [obj for obj in intersect if type(obj) == shapely.geometry.polygon.Polygon]
+                        except TypeError: #intersect is a GeometryCollection
+                            intersect = [obj for obj in intersect.geoms if type(obj) == shapely.geometry.polygon.Polygon]
+                        intersect = shapely.geometry.MultiPolygon(intersect)
+                hs_utm = gpd.GeoDataFrame(geometry = [intersect], crs=utm_crs)
+                if hs_utm.geometry.area.sum() != 0:
+                    hs_utm = gpd.overlay(hs_utm ,boundaries_utm, how='intersection')
+                    hs_utm.geometry = hs_utm.geometry.simplify(services_simplification)
+                    hs_latlon = hs_utm.to_crs(epsg=4326)
+                    hs_latlon.to_file(f"{folder_name}geodata/{service}/{service}_latlon_{current_year}.geojson", driver='GeoJSON') 
                
     if 'blocks' in to_test:
         print("getting blocks")
@@ -1225,6 +1256,9 @@ def calculate_indicators(analysis_areas,
                                 analysis_areas.loc[idx,f'km_{mode}_{year}'] = km
                                 analysis_areas.loc[idx,f'stns_{mode}_{year}'] = n_stns
                                 analysis_areas.loc[idx,f'rtr_{mode}_{year}'] = km / (analysis_areas.loc[idx,f'total_pop_{year}']/1000000)
+          
+            if 'pnst' in to_test:
+                #have already loaded 
           
             if 'blocks' in to_test:
                 if blocks is not None:
