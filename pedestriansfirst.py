@@ -797,22 +797,15 @@ def spatial_analysis(boundaries,
             except:
                 frequenttransport = gpd.GeoDataFrame(geometry = [], crs=4326)
             
+            rapid_or_frequent = rapidtransport.overlay(frequenttransport, how="union")
+            transport_and_bike_latlon = rapid_or_frequent.overlay(protectedbike, how="intersection")
             
-            
-                intersect = shapely.ops.unary_union([quilt_isochrone_polys['healthcare'].intersection(quilt_isochrone_polys['schools'])])
-                if type(intersect) == shapely.geometry.collection.GeometryCollection:
-                    if not intersect.is_empty:
-                        try:
-                            intersect = [obj for obj in intersect if type(obj) == shapely.geometry.polygon.Polygon]
-                        except TypeError: #intersect is a GeometryCollection
-                            intersect = [obj for obj in intersect.geoms if type(obj) == shapely.geometry.polygon.Polygon]
-                        intersect = shapely.geometry.MultiPolygon(intersect)
-                hs_utm = gpd.GeoDataFrame(geometry = [intersect], crs=utm_crs)
-                if hs_utm.geometry.area.sum() != 0:
-                    hs_utm = gpd.overlay(hs_utm ,boundaries_utm, how='intersection')
-                    hs_utm.geometry = hs_utm.geometry.simplify(services_simplification)
-                    hs_latlon = hs_utm.to_crs(epsg=4326)
-                    hs_latlon.to_file(f"{folder_name}geodata/{service}/{service}_latlon_{current_year}.geojson", driver='GeoJSON') 
+            transport_and_bike_utm = transport_and_bike_latlon.to_crs(utm_crs)
+            if transport_and_bike_utm.geometry.area.sum() != 0:
+                transport_and_bike_utm = gpd.overlay(transport_and_bike_utm ,boundaries_utm, how='intersection')
+                transport_and_bike_utm.geometry = transport_and_bike_utm.geometry.simplify(services_simplification)
+                transport_and_bike_latlon = transport_and_bike_utm.to_crs(epsg=4326)
+                transport_and_bike_latlon.to_file(f"{folder_name}geodata/pnst/pnst_latlon_{current_year}.geojson", driver='GeoJSON') 
                
     if 'blocks' in to_test:
         print("getting blocks")
@@ -1145,7 +1138,7 @@ def calculate_indicators(analysis_areas,
                         
             # 2.2 People Near Services
             services = ['healthcare','schools','h+s','libraries','bikeshare','pnab','pnpb',
-                        'pnft','carfree','highways','special']
+                        'pnft','pnst','carfree','highways','special']
             for service in services:
                 if service in to_test:
                     total_PNS = people_near_x(
