@@ -590,7 +590,7 @@ if __name__ == '__main__':
         if hdc % divide_by == remainder and ucdb.loc[hdc,'UC_NM_MN'] != 'N/A':
             if not os.path.exists(f'cities_out/ghsl_region_{hdc}/indicator_values.csv'):
                 if os.path.exists(f'cities_out/ghsl_region_{hdc}/geodata/blocks/blocks_latlon_2022.geojson'):
-                    regional_analysis(hdc, analyze=False)
+                    regional_analysis(hdc)#, analyze=False)
                     calculate_country_indicators()
                 else:
                     regional_analysis(hdc)
