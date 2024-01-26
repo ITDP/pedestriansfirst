@@ -533,7 +533,8 @@ def spatial_analysis(boundaries,
                         quilt_protectedbike = pd.concat([quilt_protectedbike, total_protectedbike])
                         
                         #TODO: exclude tiny, unconnected segments that aren't near larger ones
-                        
+                        if total_protectedbike.length > 0:
+                            import pdb; pdb.set_trace()
                         
                         center_nodes['pnpb'] = set()
                         center_nodes['pnab'] = set()
