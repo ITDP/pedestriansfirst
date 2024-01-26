@@ -536,8 +536,7 @@ def spatial_analysis(boundaries,
                         
                         
                         total_protectedbike['in_real_network'] = "unknown"
-                        for idx in total_protectedbike:
-                            import pdb; pdb.set_trace()
+                        for idx in total_protectedbike.index:
                             if total_protectedbike.loc[idx,'in_real_network'] == "unknown":
                                 connected_indices = [idx]
                                 for i in range(0,1000):
