@@ -1050,7 +1050,10 @@ def calculate_indicators(analysis_areas,
         
     #to see if we should put NA instead of 0 for pnft and journey_gap
     if 'pnft' in to_test or 'journey gap' in to_test:
-        gtfs_filenames = os.listdir(folder_name+'temp/gtfs/')
+        try:
+            gtfs_filenames = os.listdir(folder_name+'temp/gtfs/')
+        except:
+            gtfs_filenames = []
     
     analysis_areas_utm = ox.project_gdf(analysis_areas)
     utm_crs = analysis_areas_utm.crs
