@@ -544,7 +544,7 @@ def spatial_analysis(boundaries,
                                     connected_network = total_protectedbike.loc[connected_indices,'geometry'].unary_union
                                     nearby = total_protectedbike[total_protectedbike.distance(connected_network) < max_jump]
                                     if set(connected_indices) == set(nearby.index):
-                                        if shapely.minimum_bounding_radius(total_protectedbike.loc[connected_indices,'geometry']) > min_radius:
+                                        if shapely.minimum_bounding_radius(total_protectedbike.loc[connected_indices,'geometry'].unary_union) > min_radius:
                                             total_protectedbike.loc[connected_indices,'in_real_network'] = "yes"
                                         else:
                                             total_protectedbike.loc[connected_indices,'in_real_network'] = "no"
