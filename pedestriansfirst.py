@@ -175,7 +175,7 @@ def spatial_analysis(boundaries,
                            #'libraries',
                            'bikeshare',
                            'carfree',
-                           'blocks',
+                           #'blocks',
                            'density',
                            #'pnft',
                            'pnrt',
@@ -531,6 +531,9 @@ def spatial_analysis(boundaries,
                         
                         quilt_allbike = pd.concat([quilt_allbike, total_allbike])
                         quilt_protectedbike = pd.concat([quilt_protectedbike, total_protectedbike])
+                        
+                        #TODO: exclude tiny, unconnected segments that aren't near larger ones
+                        
                         
                         center_nodes['pnpb'] = set()
                         center_nodes['pnab'] = set()
@@ -967,7 +970,7 @@ def calculate_indicators(analysis_areas,
                            #'libraries',
                            'bikeshare',
                            'carfree',
-                           'blocks',
+                           #'blocks',
                            'density',
                            'pnft',
                            'pnrt',
@@ -992,7 +995,8 @@ def calculate_indicators(analysis_areas,
         
         
     #to see if we should put NA instead of 0 for pnft and journey_gap
-    gtfs_filenames = os.listdir(folder_name+'temp/gtfs/')
+    if 'pnft' in to_test or 'journey gap' in to_test:
+        gtfs_filenames = os.listdir(folder_name+'temp/gtfs/')
     
     analysis_areas_utm = ox.project_gdf(analysis_areas)
     utm_crs = analysis_areas_utm.crs
