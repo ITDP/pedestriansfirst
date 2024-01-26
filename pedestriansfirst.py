@@ -542,7 +542,10 @@ def spatial_analysis(boundaries,
                         #remove isolated small lanes from protected network
                         total_protectedbike['in_real_network'] = "unknown"
                         for idx in total_protectedbike.index:
-                            if total_protectedbike.loc[idx,'in_real_network'] == "unknown":
+                            already_identified = total_protectedbike.loc[idx,'in_real_network'] == "unknown"
+                            if type(already_identified).__name__ == 'Series':
+                                already_identified = already_identified.any()
+                            if already_identified:
                                 connected_indices = [idx]
                                 for i in range(0,1000): #just so we don't end up in an infinite loop somehow
                                     connected_network = total_protectedbike.loc[connected_indices,'geometry'].unary_union
@@ -562,7 +565,10 @@ def spatial_analysis(boundaries,
                         total_allbike['in_real_network'] = "unknown"
                         for idx in total_allbike.index:
                             try:
-                                if total_allbike.loc[idx,'in_real_network'] == "unknown":
+                                already_identified = total_allbike.loc[idx,'in_real_network'] == "unknown"
+                                if type(already_identified).__name__ == 'Series':
+                                    already_identified = already_identified.any()
+                                if already_identified:
                                     connected_indices = [idx]
                                     for i in range(0,1000): #just so we don't end up in an infinite loop somehow
                                         connected_network = total_allbike.loc[connected_indices,'geometry'].unary_union
