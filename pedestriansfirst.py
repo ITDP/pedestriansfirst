@@ -520,7 +520,12 @@ def spatial_analysis(boundaries,
                         on_street_tracks = ways_gdf[(ways_gdf['cycleway:right'] == 'track') |
                                                        (ways_gdf['cycleway:left'] == 'track') |
                                                        (ways_gdf['cycleway:both'] == 'track') |
-                                                       (ways_gdf['cycleway'] == 'track')]
+                                                       (ways_gdf['cycleway'] == 'track') |
+                                                       (ways_gdf['cycleway:right'] == 'opposite_track') |
+                                                        (ways_gdf['cycleway:left'] == 'opposite_track') |
+                                                        (ways_gdf['cycleway:both'] == 'opposite_track') |
+                                                        (ways_gdf['cycleway'] == 'opposite_track')
+                                                       ]
                         on_street_lanes = ways_gdf[(ways_gdf['cycleway:right'] == 'lane') |
                                                        (ways_gdf['cycleway:left'] == 'lane') |
                                                        (ways_gdf['cycleway:both'] == 'lane') |
@@ -537,7 +542,7 @@ def spatial_analysis(boundaries,
                         #remove isolated small lanes from protected network
                         total_protectedbike['in_real_network'] = "unknown"
                         for idx in total_protectedbike.index:
-                            if total_protectedbike.loc[idx,'in_real_network'] == "unknown":
+                            if (total_protectedbike.loc[idx,'in_real_network'] == "unknown").any():
                                 connected_indices = [idx]
                                 for i in range(0,1000): #just so we don't end up in an infinite loop somehow
                                     connected_network = total_protectedbike.loc[connected_indices,'geometry'].unary_union
@@ -557,7 +562,7 @@ def spatial_analysis(boundaries,
                         total_allbike['in_real_network'] = "unknown"
                         for idx in total_allbike.index:
                             try:
-                                if total_allbike.loc[idx,'in_real_network'] == "unknown":
+                                if (total_allbike.loc[idx,'in_real_network'] == "unknown").any():
                                     connected_indices = [idx]
                                     for i in range(0,1000): #just so we don't end up in an infinite loop somehow
                                         connected_network = total_allbike.loc[connected_indices,'geometry'].unary_union
