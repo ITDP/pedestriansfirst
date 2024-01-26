@@ -177,7 +177,7 @@ def spatial_analysis(boundaries,
                            'carfree',
                            #'blocks',
                            'density',
-                           #'pnft',
+                           'pnft',
                            'pnrt',
                            'pnpb', #protected bikeways
                            'pnab', #all bikeways
