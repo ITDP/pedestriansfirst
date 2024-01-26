@@ -540,7 +540,6 @@ def spatial_analysis(boundaries,
                         min_radius = 1000
                         
                         #remove isolated small lanes from protected network
-                        total_protectedbike.reset_index(drop=True, inplace=True)
                         total_protectedbike['in_real_network'] = "unknown"
                         for idx in total_protectedbike.index:
                             if total_protectedbike.loc[idx,'in_real_network'] == "unknown":
@@ -560,7 +559,6 @@ def spatial_analysis(boundaries,
                         total_protectedbike = total_protectedbike[total_protectedbike.in_real_network == "yes"]
                         
                         #remove isolated small lanes from allbike network
-                        total_allbike.reset_index(drop=True, inplace=True)
                         total_allbike['in_real_network'] = "unknown"
                         for idx in total_allbike.index:
                             try:
