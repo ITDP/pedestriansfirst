@@ -529,12 +529,32 @@ def spatial_analysis(boundaries,
                         total_protectedbike = pd.concat([tagged_cycleways, cycle_paths, on_street_tracks])
                         total_allbike = pd.concat([total_protectedbike, on_street_lanes])
                         
-                        quilt_allbike = pd.concat([quilt_allbike, total_allbike])
-                        quilt_protectedbike = pd.concat([quilt_protectedbike, total_protectedbike])
                         
                         #TODO: exclude tiny, unconnected segments that aren't near larger ones
-                        if total_protectedbike.geometry.length.sum() > 0:
-                            import pdb; pdb.set_trace()
+                        max_jump = 300
+                        min_radius = 1000
+                        
+                        
+                        total_protectedbike['in_real_network'] = "unknown"
+                        for idx in total_protectedbike:
+                            if total_protectedbike.loc[idx,'in_real_network'] == "unknown":
+                                connected_indices = [idx]
+                                for i in range(0,1000):
+                                    print("bikedebug",i)
+                                    connected_network = total_protectedbike.loc[connected_indices,'geometry'].unary_union
+                                    nearby = total_protectedbike[total_protectedbike.distance(connected_network) < max_jump]
+                                    if set(connected_indices) == set(nearby.index):
+                                        if shapely.minimum_bounding_radius(total_protectedbike.loc[connected_indices,'geometry']) > min_radius:
+                                            total_protectedbike.loc[connected_indices,'in_real_network'] = "yes"
+                                        else:
+                                            total_protectedbike.loc[connected_indices,'in_real_network'] = "no"
+                                        break
+                                    else:
+                                        connected_indices = list(nearby.index)
+                        total_protectedbike = total_protectedbike[total_protectedbike.in_real_network == "yes"]
+                                
+                        quilt_allbike = pd.concat([quilt_allbike, total_allbike])
+                        quilt_protectedbike = pd.concat([quilt_protectedbike, total_protectedbike])
                         
                         center_nodes['pnpb'] = set()
                         center_nodes['pnab'] = set()
