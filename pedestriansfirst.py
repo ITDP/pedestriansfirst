@@ -556,20 +556,23 @@ def spatial_analysis(boundaries,
                         #remove isolated small lanes from allbike network
                         total_allbike['in_real_network'] = "unknown"
                         for idx in total_allbike.index:
-                            if total_allbike.loc[idx,'in_real_network'] == "unknown":
-                                connected_indices = [idx]
-                                for i in range(0,1000): #just so we don't end up in an infinite loop somehow
-                                    connected_network = total_allbike.loc[connected_indices,'geometry'].unary_union
-                                    nearby = total_allbike[total_allbike.distance(connected_network) < max_jump]
-                                    if set(connected_indices) == set(nearby.index):
-                                        if shapely.minimum_bounding_radius(total_allbike.loc[connected_indices,'geometry'].unary_union) > min_radius:
-                                            total_allbike.loc[connected_indices,'in_real_network'] = "yes"
+                            try:
+                                if total_allbike.loc[idx,'in_real_network'] == "unknown":
+                                    connected_indices = [idx]
+                                    for i in range(0,1000): #just so we don't end up in an infinite loop somehow
+                                        connected_network = total_allbike.loc[connected_indices,'geometry'].unary_union
+                                        nearby = total_allbike[total_allbike.distance(connected_network) < max_jump]
+                                        if set(connected_indices) == set(nearby.index):
+                                            if shapely.minimum_bounding_radius(total_allbike.loc[connected_indices,'geometry'].unary_union) > min_radius:
+                                                total_allbike.loc[connected_indices,'in_real_network'] = "yes"
+                                            else:
+                                                total_allbike.loc[connected_indices,'in_real_network'] = "no"
+                                                print ("EXCLUDING", total_allbike.loc[idx, 'osmid'])
+                                            break
                                         else:
-                                            total_allbike.loc[connected_indices,'in_real_network'] = "no"
-                                            print ("EXCLUDING", total_allbike.loc[idx, 'osmid'])
-                                        break
-                                    else:
-                                        connected_indices = list(nearby.index)
+                                            connected_indices = list(nearby.index)
+                            except:
+                                import pdb; pdb.set_trace()
                         total_allbike = total_allbike[total_allbike.in_real_network == "yes"]
                                 
                         quilt_allbike = pd.concat([quilt_allbike, total_allbike])
