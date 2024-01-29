@@ -555,7 +555,6 @@ def spatial_analysis(boundaries,
                                             total_protectedbike.loc[connected_indices,'in_real_network'] = "yes"
                                         else:
                                             total_protectedbike.loc[connected_indices,'in_real_network'] = "no"
-                                            print ("EXCLUDING", total_protectedbike.loc[idx, 'osmid'])
                                         break
                                     else:
                                         connected_indices = list(nearby.index)
@@ -564,26 +563,22 @@ def spatial_analysis(boundaries,
                         #remove isolated small lanes from allbike network
                         total_allbike['in_real_network'] = "unknown"
                         for idx in total_allbike.index:
-                            try:
-                                already_identified = total_allbike.loc[idx,'in_real_network'] == "unknown"
-                                if type(already_identified).__name__ == 'Series':
-                                    already_identified = already_identified.any()
-                                if already_identified:
-                                    connected_indices = [idx]
-                                    for i in range(0,1000): #just so we don't end up in an infinite loop somehow
-                                        connected_network = total_allbike.loc[connected_indices,'geometry'].unary_union
-                                        nearby = total_allbike[total_allbike.distance(connected_network) < max_jump]
-                                        if set(connected_indices) == set(nearby.index):
-                                            if shapely.minimum_bounding_radius(total_allbike.loc[connected_indices,'geometry'].unary_union) > min_radius:
-                                                total_allbike.loc[connected_indices,'in_real_network'] = "yes"
-                                            else:
-                                                total_allbike.loc[connected_indices,'in_real_network'] = "no"
-                                                print ("EXCLUDING", total_allbike.loc[idx, 'osmid'])
-                                            break
+                            already_identified = total_allbike.loc[idx,'in_real_network'] == "unknown"
+                            if type(already_identified).__name__ == 'Series':
+                                already_identified = already_identified.any()
+                            if already_identified:
+                                connected_indices = [idx]
+                                for i in range(0,1000): #just so we don't end up in an infinite loop somehow
+                                    connected_network = total_allbike.loc[connected_indices,'geometry'].unary_union
+                                    nearby = total_allbike[total_allbike.distance(connected_network) < max_jump]
+                                    if set(connected_indices) == set(nearby.index):
+                                        if shapely.minimum_bounding_radius(total_allbike.loc[connected_indices,'geometry'].unary_union) > min_radius:
+                                            total_allbike.loc[connected_indices,'in_real_network'] = "yes"
                                         else:
-                                            connected_indices = list(nearby.index)
-                            except:
-                                import pdb; pdb.set_trace()
+                                            total_allbike.loc[connected_indices,'in_real_network'] = "no"
+                                        break
+                                    else:
+                                        connected_indices = list(nearby.index)
                         total_allbike = total_allbike[total_allbike.in_real_network == "yes"]
                                 
                         quilt_allbike = pd.concat([quilt_allbike, total_allbike])
@@ -1064,7 +1059,7 @@ def calculate_indicators(analysis_areas,
     # 1. Load data files for each indicator
     # 1.1: Services (People Near X, except for rapid transit)
     services = ['healthcare','schools','h+s','libraries','bikeshare','pnab','pnpb',
-                'pnft','carfree','special', 'highways']
+                'pnft','pnst','carfree','special', 'highways']
     service_gdfs_utm = {}
     for service in services:
         if service in to_test:
