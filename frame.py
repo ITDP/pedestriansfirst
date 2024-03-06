@@ -186,7 +186,7 @@ def get_jurisdictions(hdc,
 
     # add country-specific analysis areas
     for idx in country_overlaps.index:
-        analysis_areas.loc[new_id,'country'] = country_overlaps.loc[idx,'ISO_A3']
+        analysis_areas.loc[new_id,'country'] = country_overlaps.loc[idx,'shapeGroup']
         analysis_areas.loc[:,'geometry'].loc[new_id] = country_overlaps.loc[idx,'geometry']
         new_id += 1
     
