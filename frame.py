@@ -127,10 +127,10 @@ def download_ghsl(proj='mw', resolution='1000'):
 #TODO: make this cut out water!
 #TODO -- consider customizing this for the USA? an extra buffer or something?
 def get_jurisdictions(hdc,
-                      minimum_portion = 0.6, #portion of a jurisdiction that has to be within the poly
+                      minimum_portion = 0.5, #portion of a jurisdiction that has to be within the poly
                       level_min_mean_area = 2,# min size in km2 for the mean area of a unit at an admin_level
                       level_min_coverage = .0000002, #min coverage of an admin_level of the poly_latlon
-                      buffer = 2000, #in m
+                      buffer = 4000, #in m
                       ): 
     
     ucdb = gpd.read_file('input_data/ghsl/SMOD_V1s6_opr_P2023_v1_2020_labelUC_DB_release.gpkg')
@@ -138,11 +138,11 @@ def get_jurisdictions(hdc,
     ghsl_boundaries_mw = ucdb.loc[hdc,'geometry']
     name_full = ucdb.loc[hdc,'NAME_LIST']
     all_names = name_full.split('; ')
-    name_long = "The " + " / ".join(all_names[:3]) + ' area'
-    if len(name_long) >= 50:
-        name_long = "The " + " / ".join(all_names[:1]) + ' area'
-        if name_long >= 50:
-            name_long = "The " + all_names[0] + ' area'
+    name = "The " + " / ".join(all_names[:3]) + ' area'
+    if len(name) >= 50:
+        name = "The " + " / ".join(all_names[:1]) + ' area'
+        if name >= 50:
+            name = "The " + all_names[0] + ' area'
     name_short = "The " + all_names[0] + ' area'
     
     poly_mw_gdf = gpd.GeoDataFrame(geometry=[ghsl_boundaries_mw], crs="ESRI:54009")
@@ -156,7 +156,7 @@ def get_jurisdictions(hdc,
     
     analysis_areas = gpd.GeoDataFrame()
     new_id = 0
-    analysis_areas.loc[new_id, 'name_long'] = name_long
+    analysis_areas.loc[new_id, 'name'] = name
     analysis_areas.loc[new_id, 'name_short'] = name_short
     analysis_areas.loc[new_id, 'geometry'] = ghsl_boundaries
     analysis_areas.loc[new_id, 'hdc'] = hdc
@@ -207,7 +207,7 @@ def get_jurisdictions(hdc,
         select_metro_areas_utm = brazil_metros_utm[selection]
         select_metro_areas_latlon = select_metro_areas_utm.to_crs(4326)
         for area in select_metro_areas_latlon.iterrows():
-            analysis_areas.loc[new_id,'name'] = area[1].name_muni
+            analysis_areas.loc[new_id, 'name_long'] = area[1].name_muni
             analysis_areas.loc[new_id, 'geometry'] = area[1].geometry
             analysis_areas.loc[new_id, 'hdc'] = None
             analysis_areas.loc[new_id, 'osmid'] = None
@@ -229,15 +229,13 @@ def get_jurisdictions(hdc,
     
     #First, get all the sub-jusisdictions at least minimum_portion within the buffered_poly_latlon,
     #then buffer the total_boundaries to the union of those and the original poly
-    print('getting sub-jurisdictions for', name_long)
+    print('getting sub-jurisdictions for', name)
     admin_lvls = [str(x) for x in range(4,11)]
     try:
         jurisdictions_latlon = ox.geometries_from_polygon(buffered_poly_latlon, tags={'admin_level':admin_lvls})
     except:
         jurisdictions_latlon = gpd.GeoDataFrame()
     if 'admin_level' in jurisdictions_latlon.columns:
-        #jurisdictions_latlon = jurisdictions_latlon.loc[('relation',)]
-        #I forget what that was doing
         print(f'found {len(jurisdictions_latlon)} on first pass')
         jurisdictions_utm = jurisdictions_latlon.to_crs(buffered_poly_utm_gdf.crs)
         jurisdictions_utm = gpd.clip(jurisdictions_utm, nearby_land_gdf_utm.unary_union)
@@ -276,6 +274,7 @@ def get_jurisdictions(hdc,
         selected_levels = []
         for admin_level in select_jurisdictions_utm.admin_level.unique():
             selection = select_jurisdictions_utm[select_jurisdictions_utm.admin_level==admin_level]
+            import pdb; pdb.set_trace()
             if selection.area.mean() >= level_min_mean_area*1000000:
                 if selection.unary_union.area >= (level_min_coverage * buffered_poly_utm.area):
                     selected_levels.append(admin_level)
@@ -306,6 +305,7 @@ def get_jurisdictions(hdc,
                 analysis_areas.loc[new_id,attr] = final_jurisdictions_latlon.loc[osmid,attr]
                 analysis_areas.loc[new_id, 'hdc'] = hdc
             level_number = final_jurisdictions_latlon.loc[osmid,'admin_level']
+            
             try:
                 level_name_eng = level_names_eng.loc[main_country, f'{level_number}']
             except KeyError:
@@ -569,8 +569,8 @@ if __name__ == '__main__':
     ucdb = gpd.read_file('input_data/ghsl/SMOD_V1s6_opr_P2023_v1_2020_labelUC_DB_release.gpkg')
     ucdb.index =  ucdb['ID_UC_G0']
     #for hdc in ucdb[(int(sys.argv[2]) < ucdb.P15)&(ucdb.P15 < int(sys.argv[1]))].sort_values('P15', ascending=False).ID_HDC_G0:
-    for hdc in [#5134,
-                9792,
+    for hdc in [
+                10752,
                 ]:
         hdc = int(hdc)
         #if len(sys.argv) == 1:
