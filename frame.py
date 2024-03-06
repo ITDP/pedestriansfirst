@@ -579,8 +579,8 @@ if __name__ == '__main__':
         # else: 
         #     divide_by = int(sys.argv[3])
         #     remainder = int(sys.argv[4])
-        print (f"{hdc}%{divide_by}={hdc % divide_by}, compare to {remainder}, {ucdb.loc[hdc,'UC_NM_MN']}")
-        if hdc % divide_by == remainder and ucdb.loc[hdc,'UC_NM_MN'] != 'N/A':
+        print (f"{hdc}%{divide_by}={hdc % divide_by}, compare to {remainder}, {ucdb.loc[hdc,'NAME_MAIN']}")
+        if hdc % divide_by == remainder and ucdb.loc[hdc,'NAME_MAIN'] != 'N/A':
             if not os.path.exists(f'cities_out/ghsl_region_{hdc}/indicator_values.csv'):
                 if os.path.exists(f'cities_out/ghsl_region_{hdc}/geodata/blocks/blocks_latlon_2022.geojson'):
                     regional_analysis(hdc)#, analyze=False)
