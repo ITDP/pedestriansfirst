@@ -31,15 +31,6 @@ def poly_from_osm_cityid(osmid):
     name = admin_area.display_name[0]
     return boundaries, name
 
-def poly_from_ghsl_hdc(hdc):
-    #select city from ID number, return shapely polygon
-    ucdb = gpd.read_file('input_data/old_ghsl/GHS_STAT_UCDB2015MT_GLOBE_R2019A_V1_2.gpkg')
-    ucdb.index =  ucdb['ID_HDC_G0']
-    boundaries = ucdb.loc[hdc,'geometry']
-    name = ucdb.loc[hdc,'UC_NM_MN']
-    main_country = ucdb.loc[hdc,'CTR_MN_ISO']
-    return boundaries, name, main_country
-
 def prep_from_poly(poly, folder_name, boundary_buffer = 500):
     #save city geometry so that I can take an extract from planet.pbf within it
     #return True if overpass will be needed (planet.pbf unavailable), False otherwise
@@ -104,34 +95,34 @@ def download_ghsl(proj='mw', resolution='1000'):
             f.extractall(f'input_data/ghsl/{name}')
     
     
-def from_id_hdc(hdc, folder_prefix = 'cities_out', boundary_buffer = 500, kwargs = {}):
-    if folder_prefix:
-        folder_name = folder_prefix+'/ghsl_'+str(hdc)
-    else:
-        folder_name = str(hdc)
-    poly, name, main_country = poly_from_ghsl_hdc(hdc)
-    overpass = prep_from_poly(poly, folder_name, boundary_buffer)
-    kwargs['overpass'] = overpass
-    calctime = pedestriansfirst.spatial_analysis(poly, hdc, name, folder_name, **kwargs)
-    results = pedestriansfirst.calculate_indicators(poly, folder_name)
-    results['calctime'] = calctime
-    print(results)
+# def from_id_hdc(hdc, folder_prefix = 'cities_out', boundary_buffer = 500, kwargs = {}):
+#     if folder_prefix:
+#         folder_name = folder_prefix+'/ghsl_'+str(hdc)
+#     else:
+#         folder_name = str(hdc)
+#     poly, name_long, name_short = poly_from_ghsl_hdc(hdc)
+#     overpass = prep_from_poly(poly, folder_name, boundary_buffer)
+#     kwargs['overpass'] = overpass
+#     calctime = pedestriansfirst.spatial_analysis(poly, hdc, name, folder_name, **kwargs)
+#     results = pedestriansfirst.calculate_indicators(poly, folder_name)
+#     results['calctime'] = calctime
+#     print(results)
     
-def from_id_osm(osmid, folder_prefix = 'cities_out', boundary_buffer = 500, kwargs = {}):
-    if folder_prefix:
-        folder_name = folder_prefix+'/osm_'+str(osmid)
-    else:
-        folder_name = str(osmid)
-    poly, name = poly_from_osm_cityid(osmid)
-    overpass = prep_from_poly(poly, folder_name, boundary_buffer)
-    kwargs['overpass'] = overpass
-    calctime = pedestriansfirst.spatial_analysis(poly, osmid, name, folder_name, **kwargs)
-    results = pedestriansfirst.calculate_indicators(poly, folder_name)
-    results['calctime'] = calctime
-    print(results)
+# def from_id_osm(osmid, folder_prefix = 'cities_out', boundary_buffer = 500, kwargs = {}):
+#     if folder_prefix:
+#         folder_name = folder_prefix+'/osm_'+str(osmid)
+#     else:
+#         folder_name = str(osmid)
+#     poly, name = poly_from_osm_cityid(osmid)
+#     overpass = prep_from_poly(poly, folder_name, boundary_buffer)
+#     kwargs['overpass'] = overpass
+#     calctime = pedestriansfirst.spatial_analysis(poly, osmid, name, folder_name, **kwargs)
+#     results = pedestriansfirst.calculate_indicators(poly, folder_name)
+#     results['calctime'] = calctime
+#     print(results)
 
-def get_pop_ghsl(city):
-    return city['properties']['P15']
+# def get_pop_ghsl(city):
+#     return city['properties']['P15']
 
 #TODO: make this cut out water!
 #TODO -- consider customizing this for the USA? an extra buffer or something?
@@ -142,7 +133,17 @@ def get_jurisdictions(hdc,
                       buffer = 2000, #in m
                       ): 
     
-    ghsl_boundaries, name, main_country = poly_from_ghsl_hdc(hdc)
+    ucdb = gpd.read_file('input_data/ghsl/SMOD_V1s6_opr_P2023_v1_2020_labelUC_DB_release.gpkg')
+    ucdb.index =  ucdb['ID_UC_G0']
+    ghsl_boundaries = ucdb.loc[hdc,'geometry']
+    name_full = ucdb.loc[hdc,'NAME_LIST']
+    all_names = name_full.split('; ')
+    name_long = "The " + " / ".join(all_names[:3]) + ' area'
+    if len(name_long) >= 50:
+        name_long = "The " + " / ".join(all_names[:1]) + ' area'
+        if name_long >= 50:
+            name_long = "The " + all_names[0] + ' area'
+    name_short = "The " + all_names[0] + ' area'
     
     poly_utm_gdf = ox.projection.project_gdf(gpd.GeoDataFrame(geometry=[ghsl_boundaries], crs=4326))
     buffered_poly_utm_gdf = poly_utm_gdf.buffer(buffer)
@@ -152,13 +153,43 @@ def get_jurisdictions(hdc,
     
     analysis_areas = gpd.GeoDataFrame()
     new_id = 0
-    analysis_areas.loc[new_id,'name'] = name
+    analysis_areas.loc[new_id, 'name_long'] = name_long
+    analysis_areas.loc[new_id, 'name_short'] = name_short
     analysis_areas.loc[new_id, 'geometry'] = ghsl_boundaries
     analysis_areas.loc[new_id, 'hdc'] = hdc
     analysis_areas.loc[new_id, 'osmid'] = None
     analysis_areas.loc[new_id, 'level_name'] = 'Agglomeration'
     analysis_areas.crs=4326
     new_id += 1
+    
+    #figure out what country it's in
+    #and while we're at it, set up country-specific analysis areas
+    
+        
+    #get natural_earth data here, both to use it for clipping coastline
+    #and for countries later
+    country_bounds = gpd.read_file('input_data/CGAZ/geoBoundariesCGAZ_ADM0.gpkg')
+    country_bounds.crs=4326
+    earth_utm = country_bounds.to_crs(crs = poly_utm_gdf.crs)
+    #get land within 10km
+    area_for_land_ll = buffered_poly_utm_gdf.buffer(100000).to_crs(4326).unary_union
+    if country_bounds.intersection(area_for_land_ll).area.sum() >= area_for_land_ll.area * 0.95:
+        nearby_land_gdf_utm = buffered_poly_utm_gdf.buffer(100000)
+        nearby_land_gdf_ll = buffered_poly_utm_gdf.to_crs(4326)
+    else:
+        nearby_land_gdf_ll = gpd.clip(country_bounds, area_for_land_ll)
+        nearby_land_gdf_utm = nearby_land_gdf_ll.to_crs(buffered_poly_utm_gdf.crs)
+            
+    country_overlaps = country_bounds.overlay(gpd.GeoDataFrame(geometry=[ghsl_boundaries], crs=4326), how='intersection')
+    import pdb; pdb.set_trace()
+    
+    #put this later
+    for idx in country_overlaps.index:
+        analysis_areas.loc[new_id,'country'] = country_overlaps.loc[idx,'ISO_A3']
+        analysis_areas.loc[:,'geometry'].loc[new_id] = country_overlaps.loc[idx,'geometry']
+        new_id += 1
+    
+    
     
     #first, for Brazil only, we check which 'metropolitan areas' it's in
     #based on data from ITDP Brazil
@@ -193,19 +224,7 @@ def get_jurisdictions(hdc,
             buffered_poly_utm
             ])
         buffered_poly_utm_gdf = gpd.GeoDataFrame(geometry = [buffered_poly_utm], crs = poly_utm_gdf.crs)
-        
-    #get natural_earth data here, both to use it for clipping coastline
-    #and for countries later
-    natural_earth = gpd.read_file('input_data/naturalearth_countries/ne_10m_admin_0_countries.shp')
-    earth_utm = natural_earth.to_crs(crs = poly_utm_gdf.crs)
-    #get land within 10km
-    area_for_land_ll = buffered_poly_utm_gdf.buffer(100000).to_crs(4326).unary_union
-    if natural_earth.intersection(area_for_land_ll).area.sum() >= area_for_land_ll.area * 0.95:
-        nearby_land_gdf_utm = buffered_poly_utm_gdf.buffer(100000)
-        nearby_land_gdf_ll = buffered_poly_utm_gdf.to_crs(4326)
-    else:
-        nearby_land_gdf_ll = gpd.clip(natural_earth, area_for_land_ll)
-        nearby_land_gdf_utm = nearby_land_gdf_ll.to_crs(buffered_poly_utm_gdf.crs)
+    
         
     
     #First, get all the sub-jusisdictions at least minimum_portion within the buffered_poly_latlon,
@@ -305,12 +324,7 @@ def get_jurisdictions(hdc,
                 level_name_full = f'{level_name_eng} ({level_name_local})'
             analysis_areas.loc[new_id, 'level_name_full'] = level_name_full
             new_id += 1
-            
-    country_overlaps = natural_earth.overlay(gpd.GeoDataFrame(geometry=[ghsl_boundaries], crs=4326), how='intersection')
-    for idx in country_overlaps.index:
-        analysis_areas.loc[new_id,'country'] = country_overlaps.loc[idx,'ISO_A3']
-        analysis_areas.loc[:,'geometry'].loc[new_id] = country_overlaps.loc[idx,'geometry']
-        new_id += 1
+    
         
     return analysis_areas
 
@@ -392,25 +406,6 @@ def regional_analysis(hdc,
     #import pdb; pdb.set_trace()
         
 
-#all cities in descending order
-#TODO: make use gpd instead of fiona lol
-# def all_cities():
-#     with fiona.open('GHS_STAT_UCDB2015MT_GLOBE_R2019A_V1_0.shp','r') as ucdb:
-#         cities = list(ucdb)
-#     cities.sort(key=get_pop_ghsl, reverse = True)
-#     for city in cities:
-#         if os.path.exists('all_results.json'):
-#             with open('all_results.json','r') as in_file:
-#                 all_results = json.load(in_file)
-#         else:
-#             all_results = {}
-#         if not str(city['properties']['ID_HDC_G0']) in all_results.keys():
-#             if not str(city['properties']['ID_HDC_G0']) == '4541': #there's one city in south sudan that doesn't work right.
-#                 results = from_id_hdc(city['properties']['ID_HDC_G0'])
-#                 all_results.update({city['properties']['ID_HDC_G0']:results})
-#                 with open('all_results.json','w') as out_file:
-#                     json.dump(all_results, out_file)
-            
 def calculate_country_indicators(current_year=2022,
                                  rt_and_pop_years = [1975, 1980, 1985, 1990, 1995, 2000, 2005, 2010, 2015, 2020, 2022, 2025],
                                  input_folder_prefix = 'cities_out/',
