@@ -295,7 +295,7 @@ def get_jurisdictions(hdc,
     if len(final_jurisdictions_latlon) > 0:
         for osmid in final_jurisdictions_latlon.index:
             try:
-                analysis_areas.loc[new_id,'osmid'] = osmid[1]
+                analysis_areas.loc[new_id,'osmid'] = osmid
             except:
                 import pdb; pdb.set_trace()
             analysis_areas.loc[:,'geometry'].loc[new_id] = final_jurisdictions_latlon.loc[osmid,'geometry']
