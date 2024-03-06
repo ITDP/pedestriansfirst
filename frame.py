@@ -566,13 +566,11 @@ if __name__ == '__main__':
     warnings.simplefilter(action='ignore', category=FutureWarning)
     warnings.simplefilter(action='ignore', category=pd.errors.PerformanceWarning)
     ox.utils.config(log_console = False)
-    ucdb = gpd.read_file('input_data/old_ghsl/GHS_STAT_UCDB2015MT_GLOBE_R2019A_V1_2.gpkg')
-    ucdb.index =  ucdb['ID_HDC_G0']
+    ucdb = gpd.read_file('input_data/ghsl/SMOD_V1s6_opr_P2023_v1_2020_labelUC_DB_release.gpkg')
+    ucdb.index =  ucdb['ID_UC_G0']
     #for hdc in ucdb[(int(sys.argv[2]) < ucdb.P15)&(ucdb.P15 < int(sys.argv[1]))].sort_values('P15', ascending=False).ID_HDC_G0:
     for hdc in [#5134,
-                1445,
-                1406,
-                154,
+                67
                 ]:
         hdc = int(hdc)
         #if len(sys.argv) == 1:
