@@ -262,8 +262,7 @@ def get_jurisdictions(hdc,
     if not 'admin_level' in jurisdictions_latlon.columns:
         final_jurisdictions_latlon = []
     else:
-        #jurisdictions_latlon = jurisdictions_latlon.loc[('relation',)]
-        #I forget what that was doing
+        jurisdictions_latlon = jurisdictions_latlon.loc[('relation',)]
         print(f'found {len(jurisdictions_latlon)} on second pass')
         jurisdictions_utm = jurisdictions_latlon.to_crs(buffered_poly_utm_gdf.crs)
         jurisdictions_utm = gpd.clip(jurisdictions_utm, nearby_land_gdf_utm.unary_union)
