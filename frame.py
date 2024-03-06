@@ -164,12 +164,10 @@ def get_jurisdictions(hdc,
     analysis_areas.crs=4326
     new_id += 1
     
-    #figure out what country it's in
+    #now figure out what country it's in
     #and while we're at it, set up country-specific analysis areas
     
-        
-    #get natural_earth data here, both to use it for clipping coastline
-    #and for countries later
+    #get CGAZ data here, also use it for clipping coastline
     country_bounds = gpd.read_file('input_data/CGAZ/geoBoundariesCGAZ_ADM0.gpkg')
     country_bounds.crs=4326
     earth_utm = country_bounds.to_crs(crs = poly_utm_gdf.crs)
@@ -182,16 +180,15 @@ def get_jurisdictions(hdc,
         nearby_land_gdf_ll = gpd.clip(country_bounds, area_for_land_ll)
         nearby_land_gdf_utm = nearby_land_gdf_ll.to_crs(buffered_poly_utm_gdf.crs)
             
-    country_overlaps = country_bounds.overlay(gpd.GeoDataFrame(geometry=[ghsl_boundaries], crs=4326), how='intersection')
-    import pdb; pdb.set_trace()
-    
-    #put this later
+    country_overlaps = country_bounds.overlay(poly_ll_gdf, how='intersection')
+    country_overlaps['land_area'] = country_overlaps.to_crs(poly_utm_gdf.crs).area
+    main_country = country_overlaps.sort_values('land_area', ascending=False).iloc[0]['shapeGroup']
+
+    # add country-specific analysis areas
     for idx in country_overlaps.index:
         analysis_areas.loc[new_id,'country'] = country_overlaps.loc[idx,'ISO_A3']
         analysis_areas.loc[:,'geometry'].loc[new_id] = country_overlaps.loc[idx,'geometry']
         new_id += 1
-    
-    
     
     #first, for Brazil only, we check which 'metropolitan areas' it's in
     #based on data from ITDP Brazil
@@ -231,7 +228,7 @@ def get_jurisdictions(hdc,
     
     #First, get all the sub-jusisdictions at least minimum_portion within the buffered_poly_latlon,
     #then buffer the total_boundaries to the union of those and the original poly
-    print('getting sub-jurisdictions for', name)
+    print('getting sub-jurisdictions for', name_long)
     admin_lvls = [str(x) for x in range(4,11)]
     try:
         jurisdictions_latlon = ox.geometries_from_polygon(buffered_poly_latlon, tags={'admin_level':admin_lvls})
@@ -572,7 +569,7 @@ if __name__ == '__main__':
     ucdb.index =  ucdb['ID_UC_G0']
     #for hdc in ucdb[(int(sys.argv[2]) < ucdb.P15)&(ucdb.P15 < int(sys.argv[1]))].sort_values('P15', ascending=False).ID_HDC_G0:
     for hdc in [#5134,
-                67
+                9792,
                 ]:
         hdc = int(hdc)
         #if len(sys.argv) == 1:
