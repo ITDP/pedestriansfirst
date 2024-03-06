@@ -135,7 +135,7 @@ def get_jurisdictions(hdc,
     
     ucdb = gpd.read_file('input_data/ghsl/SMOD_V1s6_opr_P2023_v1_2020_labelUC_DB_release.gpkg')
     ucdb.index =  ucdb['ID_UC_G0']
-    ghsl_boundaries = ucdb.loc[hdc,'geometry']
+    ghsl_boundaries_mw = ucdb.loc[hdc,'geometry']
     name_full = ucdb.loc[hdc,'NAME_LIST']
     all_names = name_full.split('; ')
     name_long = "The " + " / ".join(all_names[:3]) + ' area'
@@ -145,8 +145,9 @@ def get_jurisdictions(hdc,
             name_long = "The " + all_names[0] + ' area'
     name_short = "The " + all_names[0] + ' area'
     
-    poly_mw_gdf = gpd.GeoDataFrame(geometry=[ghsl_boundaries], crs="ESRI:54009")
+    poly_mw_gdf = gpd.GeoDataFrame(geometry=[ghsl_boundaries_mw], crs="ESRI:54009")
     poly_ll_gdf = poly_mw_gdf.to_crs(4326)
+    ghsl_boundaries = poly_ll_gdf.unary_union
     poly_utm_gdf = ox.project_gdf(poly_ll_gdf)
     buffered_poly_utm_gdf = poly_utm_gdf.buffer(buffer)
     buffered_poly_latlon_gdf = buffered_poly_utm_gdf.to_crs(4326)
