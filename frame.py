@@ -145,7 +145,7 @@ def get_jurisdictions(hdc,
             name_long = "The " + all_names[0] + ' area'
     name_short = "The " + all_names[0] + ' area'
     
-    poly_mw_gdf = ox.projection.project_gdf(gpd.GeoDataFrame(geometry=[ghsl_boundaries], crs=54009))
+    poly_mw_gdf = ox.projection.project_gdf(gpd.GeoDataFrame(geometry=[ghsl_boundaries], crs="ESRI:54009"))
     poly_utm_gdf = ox.project_gdf(poly_mw_gdf)
     buffered_poly_utm_gdf = poly_utm_gdf.buffer(buffer)
     buffered_poly_latlon_gdf = buffered_poly_utm_gdf.to_crs(4326)
