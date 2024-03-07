@@ -184,6 +184,10 @@ def get_jurisdictions(hdc,
     country_overlaps = country_bounds.overlay(poly_ll_gdf, how='intersection')
     country_overlaps['land_area'] = country_overlaps.to_crs(poly_utm_gdf.crs).area
     main_country = country_overlaps.sort_values('land_area', ascending=False).iloc[0]['shapeGroup']
+    
+    countries = list(country_overlaps.sort_values('shapeGroup', ascending=True).shapeGroup)
+    agglomeration_country_name = ' / '.join(countries)
+    analysis_areas.loc[0, 'agglomeration_country_name'] = 'agglomeration_country_name'
 
     # add country-specific analysis areas
     for idx in country_overlaps.index:
@@ -273,7 +277,6 @@ def get_jurisdictions(hdc,
         selected_levels = []
         for admin_level in select_jurisdictions_utm.admin_level.unique():
             selection = select_jurisdictions_utm[select_jurisdictions_utm.admin_level==admin_level]
-            import pdb; pdb.set_trace()
             if selection.area.mean() >= level_min_mean_area*1000000:
                 if selection.unary_union.area >= (level_min_coverage * buffered_poly_utm.area):
                     selected_levels.append(admin_level)
@@ -284,7 +287,6 @@ def get_jurisdictions(hdc,
         final_jurisdictions_utm = select_jurisdictions_utm[select_jurisdictions_utm.admin_level.isin(selected_levels)]
         final_jurisdictions_latlon = final_jurisdictions_utm.to_crs(4326)
         print(f'found {len(final_jurisdictions_latlon)} in acceptable admin levels {selected_levels}')
-    
     
     # get admin_level names, add to dataframe
     level_names_eng = pd.read_csv('input_data/admin_level_names_eng.csv')
