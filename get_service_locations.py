@@ -312,16 +312,14 @@ class ServiceHandler(osmium.SimpleHandler): #newer
                 self.locationlist['healthcare'].append((centroid.x, centroid.y))
                 
             carfree = False
-            if 'leisure' in a.tags and a.tags['leisure'] in ['park', 'playground']:
-                if not('foot' in a.tags and a.tags['foot'] == 'no'):
-                    if not('service' in a.tags and a.tags['service'] == 'private'):
-                            if not('access' in a.tags and a.tags['access'] == 'private'):
-                                carfree = True
-            if 'highway' in a.tags and a.tags['highway'] == 'pedestrian':
-                if not('foot' in a.tags and a.tags['foot'] == 'no'):
-                    if not('service' in a.tags and a.tags['service'] == 'private'):
-                            if not('access' in a.tags and a.tags['access'] == 'private'):
-                                carfree = True
+            if 'leisure' in a.tags and a.tags['leisure'] in ['park', 'playground', 'sports_pitch']:
+                if 'access' not in a.tags or a.tags['access'] != 'private':
+                    carfree = True
+        
+            # Check for forests and recreation grounds
+            if 'landuse' in a.tags and a.tags['landuse'] in ['forest', 'recreation_ground']:
+                if 'access' not in a.tags or a.tags['access'] != 'private':
+                    carfree = True
             if carfree:
                 wkb = wkbfab.create_multipolygon(a)
                 poly = shapely.wkb.loads(wkb, hex=True)
@@ -333,18 +331,10 @@ class ServiceHandler(osmium.SimpleHandler): #newer
     def way(self, a):
         try:
             carfree = False
-            if 'leisure' in a.tags and a.tags['leisure'] in ['park', 'playground']:
-                if not('foot' in a.tags and a.tags['foot'] == 'no'):
-                    if not('service' in a.tags and a.tags['service'] == 'private'):
-                            if not('access' in a.tags and a.tags['access'] == 'private'):
-                                carfree = True
-            if 'highway' in a.tags and a.tags['highway'] in ['pedestrian', 'path','steps','footway']:
-                if not('foot' in a.tags and a.tags['foot'] == 'no'):
-                    if 'crossing' not in a.tags and 'sidewalk' not in a.tags:
-                        if not('footway' in a.tags and a.tags['footway'] in ['sidewalk','crossing']):
-                            if not('service' in a.tags and a.tags['service'] == 'private'):
-                                if not('access' in a.tags and a.tags['access'] == 'private'):
-                                    carfree = True
+            if 'highway' in a.tags and a.tags['highway'] in ['pedestrian', 'path', 'footway', 'cycleway']:
+                if 'access' not in a.tags or a.tags['access'] != 'private':
+                    if 'footway' not in a.tags or a.tags['footway'] not in ['sidewalk', 'crossing']:
+                        carfree = True
             if carfree:
                 wkb = wkbfab.create_linestring(a)
                 poly = shapely.wkb.loads(wkb, hex=True)
