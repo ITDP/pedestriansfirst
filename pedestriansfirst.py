@@ -111,50 +111,6 @@ def cut(line, distance):
                 LineString([(cp.x, cp.y)] + coords[i:])],
                 cp]
 
-def add_intermediate_nodes(G, maxdist, exceptionsize=1000, debug=False, folder_name=''): #TODO CUT?
-    start_time = datetime.datetime.now()
-    print(f'adding nodes to a max edge length of {maxdist}')
-    nodes, edges = ox.graph_to_gdfs(G)
-    newnode_baseid = nodes.index.max()+1
-    nodes_added = 0
-    # new_nodes = gpd.GeoDataFrame(crs=nodes.crs, geometry=[])
-    # new_edges = gpd.GeoDataFrame(crs=nodes.crs, geometry=[])
-    # new_edges.index.astype(edges.index.dtype, copy=False)
-    too_long = edges[(edges.geometry.length>maxdist) &
-                     (edges.geometry.length<exceptionsize)] # we leave out ways > 1km
-    for to_shorten in tqdm(too_long.iterrows(), total = len(too_long)):
-        to_shorten = to_shorten[1]
-        old_leg = to_shorten.geometry
-        
-        while old_leg.length > maxdist:
-            new_legs, new_node = cut(old_leg, maxdist/2)
-        
-            new_node_id = newnode_baseid + nodes_added
-            nodes_added += 1
-            nodes.loc[new_node_id, 'y'] = new_node.y
-            nodes.loc[new_node_id, 'x'] = new_node.x
-            nodes.loc[new_node_id,'osmid'] = f'NEW_NODE_{new_node_id}'
-            
-            first_leg_id = (to_shorten.name[0], new_node_id, to_shorten.name[2])
-            edges.loc[first_leg_id,'length'] = new_legs[0].length
-            edges.loc[first_leg_id,'geometry'] = new_legs[0]
-            edges.loc[first_leg_id,'osmid'] = f'NEW_EDGE_{new_node_id}'
-            
-            old_leg = new_legs[1]
-            
-        second_leg_id = (new_node_id, to_shorten.name[1], to_shorten.name[2])
-        edges.loc[second_leg_id,'geometry'] = new_legs[1]
-        edges.loc[second_leg_id,'length'] = new_legs[1].length
-        edges.loc[second_leg_id,'osmid'] = f'NEW_EDGE_{new_node_id+1}'
-        
-        edges = edges.drop(to_shorten.name)
-        
-    
-    end_time = datetime.datetime.now()
-    print(f"added {nodes_added} nodes in {end_time - start_time}")
-    return ox.graph_from_gdfs(nodes, edges)
-
-        
 
 def weighted_pop_density(array):
     total = 0
@@ -217,7 +173,7 @@ def spatial_analysis(boundaries,
                       transport_performance_times = [30,45,60], #mins
                       gtfs_files = [],
                       ghsl_projection = 'mw', #TODO make this do something
-                      ghsl_resolution = '1000',
+                      ghsl_resolution = '100',
                       #max_edge_length = , #should not be bigger than 2xbuffer_dist
                       debug = True,
                       ):   
@@ -262,9 +218,9 @@ def spatial_analysis(boundaries,
     for year in years:
         if year % 5 == 0:
             if year < current_year:
-                in_file = f'input_data/ghsl/GHS_POP_E{year}_GLOBE_R2022A_54009_{ghsl_resolution}/GHS_POP_E{year}_GLOBE_R2022A_54009_{ghsl_resolution}_V1_0.tif'
+                in_file = f'input_data/ghsl_data_100m_mw/GHS_POP_E{year}_GLOBE_R2023A_54009_{ghsl_resolution}/GHS_POP_E{year}_GLOBE_R2023A_54009_{ghsl_resolution}_V1_0.tif'
             else:
-                in_file = f'input_data/ghsl/GHS_POP_P{year}_GLOBE_R2022A_54009_{ghsl_resolution}/GHS_POP_P{year}_GLOBE_R2022A_54009_{ghsl_resolution}_V1_0.tif'
+                in_file = f'input_data/ghsl_data_100m_mw/GHS_POP_P{year}_GLOBE_R2023A_54009_{ghsl_resolution}/GHS_POP_P{year}_GLOBE_R2023A_54009_{ghsl_resolution}_V1_0.tif'
             with rasterio.open(in_file) as dataset:
                 out_image, out_transform = rasterio.mask.mask(dataset, [boundaries_mw.unary_union], crop=True)
                 out_meta = dataset.meta
@@ -1035,7 +991,7 @@ def calculate_indicators(analysis_areas,
                       #years = range(1975,2031),
                       years = [1975, 1980, 1985, 1990, 1995, 2000, 2005, 2010, 2015, 2020, 2022, 2025],
                       current_year = 2022,
-                      ghsl_resolution = '1000',
+                      ghsl_resolution = '100',
                       debug = True,
                       ):   
 

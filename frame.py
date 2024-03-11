@@ -79,8 +79,8 @@ def prep_from_poly(poly, folder_name, boundary_buffer = 500):
 def download_ghsl(proj='mw', resolution='100'):
     if not os.path.exists('input_data/'):
         os.mkdir('input_data/')
-    if not os.path.exists('input_data/ghsl/'):
-        os.mkdir('input_data/ghsl/')
+    if not os.path.exists('input_data/ghsl_data_100m_mw/'):
+        os.mkdir('input_data/ghsl_data_100m_mw/')
     for year in tqdm(range(1975, 2031, 5)): 
         if year <= 2020:
             letter='E'
@@ -92,7 +92,7 @@ def download_ghsl(proj='mw', resolution='100'):
             raise ValueError
         zippath, _ = urllib.request.urlretrieve(f'https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL/GHS_POP_GLOBE_R2023A/{name}/V1-0/{name}_V1_0.zip')
         with zipfile.ZipFile(zippath, "r") as f:
-            f.extractall(f'input_data/ghsl/{name}')
+            f.extractall(f'input_data/ghsl_data_100m_mw/{name}')
     
     
 # def from_id_hdc(hdc, folder_prefix = 'cities_out', boundary_buffer = 500, kwargs = {}):
@@ -571,7 +571,14 @@ if __name__ == '__main__':
     ucdb.index =  ucdb['ID_UC_G0']
     #for hdc in ucdb[(int(sys.argv[2]) < ucdb.P15)&(ucdb.P15 < int(sys.argv[1]))].sort_values('P15', ascending=False).ID_HDC_G0:
     for hdc in [
-                1001,
+                1001, #montreal
+                168, #CDMX
+                6312, #delhi
+                2269, #toulon
+                2184, #stavanger
+                1397, #flz
+                1099, #ciudad este
+                24, #SD
                 ]:
         hdc = int(hdc)
         #if len(sys.argv) == 1:
