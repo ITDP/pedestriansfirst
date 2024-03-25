@@ -88,11 +88,10 @@ def download_ghsl(proj='mw', resolution='100'):
             letter='P'
         if proj == 'mw':
             name = f'GHS_POP_{letter}{year}_GLOBE_R2023A_54009_{resolution}'
-        else:
-            raise ValueError
-        zippath, _ = urllib.request.urlretrieve(f'https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL/GHS_POP_GLOBE_R2023A/{name}/V1-0/{name}_V1_0.zip')
-        with zipfile.ZipFile(zippath, "r") as f:
-            f.extractall(f'input_data/ghsl_data_100m_mw/{name}')
+        if not os.path.exists(f'input_data/ghsl_data_100m_mw/{name}/{name}_V1_0.tif'):
+            zippath, _ = urllib.request.urlretrieve(f'https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL/GHS_POP_GLOBE_R2023A/{name}/V1-0/{name}_V1_0.zip')
+            with zipfile.ZipFile(zippath, "r") as f:
+                f.extractall(f'input_data/ghsl_data_100m_mw/{name}')
     
     
 # def from_id_hdc(hdc, folder_prefix = 'cities_out', boundary_buffer = 500, kwargs = {}):
