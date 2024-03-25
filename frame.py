@@ -567,10 +567,11 @@ if __name__ == '__main__':
     ucdb.index =  ucdb['ID_UC_G0']
     #for hdc in ucdb[(int(sys.argv[2]) < ucdb.P15)&(ucdb.P15 < int(sys.argv[1]))].sort_values('P15', ascending=False).ID_HDC_G0:
     for hdc in [
-                1001, #montreal
+                1031, #quebec
                 168, #CDMX
                 6312, #delhi
                 2269, #toulon
+                2038, #dunkirk
                 2184, #stavanger
                 1397, #flz
                 1099, #ciudad este
