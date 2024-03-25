@@ -82,10 +82,7 @@ def download_ghsl(proj='mw', resolution='100'):
     if not os.path.exists('input_data/ghsl_data_100m_mw/'):
         os.mkdir('input_data/ghsl_data_100m_mw/')
     for year in tqdm(range(1975, 2031, 5)): 
-        if year <= 2020:
-            letter='E'
-        else:
-            letter='P'
+        letter='E'
         if proj == 'mw':
             name = f'GHS_POP_{letter}{year}_GLOBE_R2023A_54009_{resolution}'
         if not os.path.exists(f'input_data/ghsl_data_100m_mw/{name}/{name}_V1_0.tif'):
