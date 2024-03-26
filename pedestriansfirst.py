@@ -212,7 +212,7 @@ def spatial_analysis(boundaries,
     boundaries_mw = boundaries_utm.to_crs("ESRI:54009")
     boundaries = boundaries_latlon.geometry.unary_union
     
-    print('Calculating geodata for Pedestrians First indicators in',name)
+    print('Calculating geodata for Pedestrians First indicators in',name, "id",id_code)
     print('Measuring',str(to_test))
     
     for year in years:
@@ -791,6 +791,7 @@ def spatial_analysis(boundaries,
                         geometry=[rt_lines[selector].unary_union],
                         crs=4326)
                     select_lines.to_file(f'{folder_name}geodata/rapid_transit/{year}/{mode}_lines_ll.geojson', driver='GeoJSON')
+                import pdb; pdb.set_trace()
                
         if 'pnst' in to_test:
             if not os.path.exists(f'{folder_name}geodata/pnst/'):
