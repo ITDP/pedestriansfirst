@@ -220,7 +220,7 @@ def spatial_analysis(boundaries,
             if year < current_year:
                 in_file = f'input_data/ghsl_data_100m_mw/GHS_POP_E{year}_GLOBE_R2023A_54009_{ghsl_resolution}/GHS_POP_E{year}_GLOBE_R2023A_54009_{ghsl_resolution}_V1_0.tif'
             else:
-                in_file = f'input_data/ghsl_data_100m_mw/GHS_POP_P{year}_GLOBE_R2023A_54009_{ghsl_resolution}/GHS_POP_P{year}_GLOBE_R2023A_54009_{ghsl_resolution}_V1_0.tif'
+                in_file = f'input_data/ghsl_data_100m_mw/GHS_POP_E{year}_GLOBE_R2023A_54009_{ghsl_resolution}/GHS_POP_E{year}_GLOBE_R2023A_54009_{ghsl_resolution}_V1_0.tif'
             with rasterio.open(in_file) as dataset:
                 out_image, out_transform = rasterio.mask.mask(dataset, [boundaries_mw.unary_union], crop=True)
                 out_meta = dataset.meta
