@@ -791,7 +791,6 @@ def spatial_analysis(boundaries,
                         geometry=[rt_lines[selector].unary_union],
                         crs=4326)
                     select_lines.to_file(f'{folder_name}geodata/rapid_transit/{year}/{mode}_lines_ll.geojson', driver='GeoJSON')
-                import pdb; pdb.set_trace()
                
         if 'pnst' in to_test:
             if not os.path.exists(f'{folder_name}geodata/pnst/'):
@@ -799,14 +798,22 @@ def spatial_analysis(boundaries,
                 
             try:
                 protectedbike = gpd.read_file(f"{folder_name}geodata/pnpb/pnpb_latlon_{current_year}.geojson")
+                if protectedbike.unary_union is None:
+                    protectedbike = gpd.GeoDataFrame(geometry = [], crs=4326)
             except:
                 protectedbike = gpd.GeoDataFrame(geometry = [], crs=4326)
+            
             try:
                 rapidtransport = gpd.read_file(f'{folder_name}geodata/rapid_transit/{current_year}/all_isochrones_ll.geojson')
+                if rapidtransport.unary_union is None:
+                    rapidtransport = gpd.GeoDataFrame(geometry = [], crs=4326)
             except:
                 rapidtransport = gpd.GeoDataFrame(geometry = [], crs=4326)
+            
             try:
                 frequenttransport = gpd.read_file('f"{folder_name}geodata/pnft/pnft_latlon_{current_year}.geojson"')
+                if frequenttransport.unary_union is None:
+                    frequenttransport = gpd.GeoDataFrame(geometry = [], crs=4326)
             except:
                 frequenttransport = gpd.GeoDataFrame(geometry = [], crs=4326)
             
