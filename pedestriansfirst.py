@@ -811,7 +811,7 @@ def spatial_analysis(boundaries,
                 rapidtransport = gpd.GeoDataFrame(geometry = [], crs=4326)
             
             try:
-                frequenttransport = gpd.read_file('f"{folder_name}geodata/pnft/pnft_latlon_{current_year}.geojson"')
+                frequenttransport = gpd.read_file(f"{folder_name}geodata/pnft/pnft_latlon_{current_year}.geojson")
                 if frequenttransport.unary_union is None:
                     frequenttransport = gpd.GeoDataFrame(geometry = [], crs=4326)
             except:
