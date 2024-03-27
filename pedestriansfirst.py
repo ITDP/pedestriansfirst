@@ -817,8 +817,6 @@ def spatial_analysis(boundaries,
             except:
                 frequenttransport = gpd.GeoDataFrame(geometry = [], crs=4326)
             
-            import pdb; pdb.set_trace()
-            
             if protectedbike.unary_union is None: 
                 #no bike
                 transport_and_bike_latlon = gpd.GeoDataFrame(geometry = [], crs=4326)
