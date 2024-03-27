@@ -817,6 +817,8 @@ def spatial_analysis(boundaries,
             except:
                 frequenttransport = gpd.GeoDataFrame(geometry = [], crs=4326)
             
+            import pdb; pdb.set_trace()
+            
             rapid_or_frequent = rapidtransport.overlay(frequenttransport, how="union")
             transport_and_bike_latlon = rapid_or_frequent.overlay(protectedbike, how="intersection")
             
