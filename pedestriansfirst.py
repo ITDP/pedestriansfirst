@@ -819,8 +819,22 @@ def spatial_analysis(boundaries,
             
             import pdb; pdb.set_trace()
             
-            rapid_or_frequent = rapidtransport.overlay(frequenttransport, how="union")
-            transport_and_bike_latlon = rapid_or_frequent.overlay(protectedbike, how="intersection")
+            if protectedbike.unary_union is None: 
+                #no bike
+                transport_and_bike_latlon = gpd.GeoDataFrame(geometry = [], crs=4326)
+            elif rapidtransport.unary_union is None and frequenttransport.unary_union is None:
+                #bike, but neither kind of transit
+                transport_and_bike_latlon = gpd.GeoDataFrame(geometry = [], crs=4326)
+            elif rapidtransport.unary_union is None:
+                #only frequent, no rapid
+                transport_and_bike_latlon = frequenttransport.overlay(protectedbike, how="intersection")
+            elif frequenttransport.unary_union is None:
+                #only rapid, no frequent
+                transport_and_bike_latlon = rapidtransport.overlay(protectedbike, how="intersection")
+            else:
+                #all of the above
+                rapid_or_frequent = rapidtransport.overlay(frequenttransport, how="union")
+                transport_and_bike_latlon = rapid_or_frequent.overlay(protectedbike, how="intersection")
             
             transport_and_bike_utm = transport_and_bike_latlon.to_crs(utm_crs)
             if transport_and_bike_utm.geometry.area.sum() != 0:
