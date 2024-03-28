@@ -948,7 +948,6 @@ def people_near_x(service_gdf_utm, folder_name, boundaries_utm, year, sqkm_per_p
         return 0
     if len(service_gdf_utm) > 1:
         service_gdf_utm = gpd.GeoDataFrame(geometry = [service_gdf_utm.unary_union], crs = service_gdf_utm.crs)
-        import pdb; pdb.set_trace()
     else:
         sel_service_utm = service_gdf_utm.intersection(boundaries_utm)
         sel_service_mw = sel_service_utm.to_crs('ESRI:54009')
