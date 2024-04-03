@@ -165,7 +165,7 @@ def get_jurisdictions(hdc,
     #and while we're at it, set up country-specific analysis areas
     
     #get CGAZ data here, also use it for clipping coastline
-    country_bounds = gpd.read_file('input_data/CGAZ/geoBoundaries_ITDPv2.gpkg')
+    country_bounds = gpd.read_file('input_data/CGAZ/geoBoundaries_ITDPv4.gpkg')
     country_bounds.crs=4326
     earth_utm = country_bounds.to_crs(crs = poly_utm_gdf.crs)
     #get land within 10km
@@ -409,7 +409,7 @@ def calculate_country_indicators(current_year=2022,
                                  output_folder_prefix = 'countries_out/',
                                  #TODO add years for other indicators with more than one
                                  ):
-    country_bounds = gpd.read_file('input_data/CGAZ/geoBoundaries_ITDPv2.gpkg')
+    country_bounds = gpd.read_file('input_data/CGAZ/geoBoundaries_ITDPv4.gpkg')
     countries_ISO = list(country_bounds.shapeGroup.unique())
     
     if not input_folder_prefix[-1:] == '/':
@@ -551,7 +551,10 @@ def calculate_country_indicators(current_year=2022,
                 
                 if indicator[:-5] in all_avg:
                     if indicator[:-5] in gtfs_dependent_indicators_avg:
-                        weighted_avg = country_totals.loc[country, indicator] / country_totals.loc[country, f'total_pop_gtfs_cities_only_{year}']
+                        if country_totals.loc[country, f'total_pop_gtfs_cities_only_{year}'] > 0:
+                            weighted_avg = country_totals.loc[country, indicator] / country_totals.loc[country, f'total_pop_gtfs_cities_only_{year}']
+                        else: 
+                            weighted_avg = "n/a"
                     else: #not gtfs-dependent
                         weighted_avg = country_totals.loc[country, indicator] / country_totals.loc[country, f'total_pop_{year}']
                     #import pdb; pdb.set_trace()
