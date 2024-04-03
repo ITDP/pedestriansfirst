@@ -403,7 +403,7 @@ def regional_analysis(hdc,
     #import pdb; pdb.set_trace()
         
 
-def calculate_country_indicators(current_year=2022,
+def calculate_country_indicators(current_year=2024,
                                  rt_and_pop_years = [1975, 1980, 1985, 1990, 1995, 2000, 2005, 2010, 2015, 2020, 2022,],
                                  input_folder_prefix = 'cities_out/',
                                  output_folder_prefix = 'countries_out/',
