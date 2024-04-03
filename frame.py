@@ -523,10 +523,10 @@ def calculate_country_indicators(current_year=2022,
                         if indicator[:-5] in all_sum:
                             if not indicator[:9] == 'total_pop':
                                 if indicator in city_results.columns:
-                                    indicator_total = city_results[city_results.country == country][f'{indicator}_{year}'].sum()
+                                    indicator_total = city_results[city_results.country == country][f'{indicator}'].sum()
                                 else:
                                     indicator_total = 0
-                                country_totals.loc[country, f'{indicator}_{year}'] += indicator_total
+                                country_totals.loc[country, f'{indicator}'] += indicator_total
                     #then indicators based on averages
                     for indicator in full_indicator_names:
                         year = indicator[-4:]
