@@ -165,7 +165,7 @@ def get_jurisdictions(hdc,
     #and while we're at it, set up country-specific analysis areas
     
     #get CGAZ data here, also use it for clipping coastline
-    country_bounds = gpd.read_file('input_data/CGAZ/geoBoundariesCGAZ_ADM0.gpkg')
+    country_bounds = gpd.read_file('input_data/CGAZ/geoBoundaries_ITDPv2.gpkg')
     country_bounds.crs=4326
     earth_utm = country_bounds.to_crs(crs = poly_utm_gdf.crs)
     #get land within 10km
@@ -403,22 +403,23 @@ def regional_analysis(hdc,
     #import pdb; pdb.set_trace()
         
 
-def calculate_country_indicators(current_year=2022,
-                                 rt_and_pop_years = [1975, 1980, 1985, 1990, 1995, 2000, 2005, 2010, 2015, 2020, 2022, 2025],
+def calculate_country_indicators(current_year=2024,
+                                 rt_and_pop_years = [1975, 1980, 1985, 1990, 1995, 2000, 2005, 2010, 2015, 2020, 2024,],
                                  input_folder_prefix = 'cities_out/',
                                  output_folder_prefix = 'countries_out/',
                                  #TODO add years for other indicators with more than one
                                  ):
-    natural_earth = gpd.read_file('input_data/naturalearth_countries/ne_10m_admin_0_countries.shp')
-    countries_ISO = list(natural_earth.ISO_A3.unique())
+    country_bounds = gpd.read_file('input_data/CGAZ/geoBoundaries_ITDPv2.gpkg')
+    countries_ISO = list(country_bounds.shapeGroup.unique())
     
     if not input_folder_prefix[-1:] == '/':
         input_folder_prefix = input_folder_prefix+'/'
     if not output_folder_prefix[-1:] == '/':
         output_folder_prefix = output_folder_prefix+'/'
     
-    #list indicators
-    current_year_indicators = [
+    #list indicators    
+    
+    current_year_indicators_avg = [
         'healthcare',
         'schools',
         'h+s',
@@ -426,24 +427,27 @@ def calculate_country_indicators(current_year=2022,
         'pnab',
         'pnpb',
         'carfree',
-        'highways',
+        'people_not_near_highways',
+        'block_density',
+        ]
+
+    current_year_indicators_sum = [
         'n_points_healthcare',
         'n_points_schools',
         'n_points_bikeshare',
-        'people_not_near_highways',
         'highway_km',
         'all_bikeways_km',
         'protected_bikeways_km',
-        'block_density',
         ]
     
-    gtfs_dependent_indicators = [
+    gtfs_dependent_indicators_avg = [
         'pnft',
-        'n_points_pnft',
         'journey_gap',
         ]
     
-    current_year_indicators += gtfs_dependent_indicators
+    gtfs_dependent_indicators_sum = [
+        'n_points_pnft',
+        ]
     
     rt_and_pop_indicators_avg = [
         'density',
@@ -469,22 +473,26 @@ def calculate_country_indicators(current_year=2022,
         'km_brt',
         'stns_brt',
         ]
+    
+    all_gtfs_dependent = gtfs_dependent_indicators_avg + gtfs_dependent_indicators_sum
+    all_currentyear = current_year_indicators_avg + current_year_indicators_sum + gtfs_dependent_indicators_avg + gtfs_dependent_indicators_sum
+    all_multiyear = rt_and_pop_indicators_avg + rt_and_pop_indicators_sum
+    all_avg = current_year_indicators_avg + gtfs_dependent_indicators_avg + rt_and_pop_indicators_avg
+    all_sum = current_year_indicators_sum + gtfs_dependent_indicators_sum + rt_and_pop_indicators_sum
      
     
     full_indicator_names = []
-    for indicator in current_year_indicators:
+    for indicator in all_currentyear:
         full_indicator_names.append(f'{indicator}_{current_year}')
     for year in rt_and_pop_years:
-        for indicator in rt_and_pop_indicators_avg:
-            full_indicator_names.append(f'{indicator}_{year}')
-        for indicator in rt_and_pop_indicators_sum:
+        for indicator in all_multiyear:
             full_indicator_names.append(f'{indicator}_{year}')
         
             
     #set up dataframes for results
     country_totals = pd.DataFrame(index=countries_ISO, columns=full_indicator_names)
     country_totals = country_totals.replace(np.nan,0)
-    country_weighted_avgs = country_totals.copy()
+    country_final_values = country_totals.copy()
     
     all_cities = pd.DataFrame(columns=full_indicator_names)
     
@@ -504,24 +512,26 @@ def calculate_country_indicators(current_year=2022,
             #then calculate by country
             for country in city_results.country.unique():
                 if type(country) == type('this is a string, which means it is not np.nan'):
-                    #indicators based on sums first
+                    #first total population
                     for year in rt_and_pop_years:
                         total_pop_year = city_results[city_results.country == country][f'total_pop_{year}'].sum()
                         country_totals.loc[country, f'total_pop_{year}'] += total_pop_year
                         if city_results[city_results.country == country]['has_gtfs'].iloc[0] == 'True':
                             country_totals.loc[country, f'total_pop_gtfs_cities_only_{year}'] += total_pop_year
-                        for indicator in rt_and_pop_indicators_sum:
+                    #then indicators based on sums
+                    for indicator in full_indicator_names:
+                        if indicator[:-5] in all_sum:
                             if not indicator[:9] == 'total_pop':
                                 if indicator in city_results.columns:
                                     indicator_total = city_results[city_results.country == country][f'{indicator}_{year}'].sum()
                                 else:
                                     indicator_total = 0
                                 country_totals.loc[country, f'{indicator}_{year}'] += indicator_total
-                    #then the other indicators
+                    #then indicators based on averages
                     for indicator in full_indicator_names:
                         year = indicator[-4:]
                         if indicator in city_results.columns:
-                            if not indicator[:-5] in rt_and_pop_indicators_sum:
+                            if indicator[:-5] in all_avg:
                                 total_pop_year = city_results[city_results.country == country][f'total_pop_{year}'].sum()
                                 try:
                                     value = city_results[city_results.country == country][indicator].astype(float).sum() * total_pop_year
@@ -535,29 +545,34 @@ def calculate_country_indicators(current_year=2022,
         for indicator in full_indicator_names:
             year = indicator[-4:]
             if indicator in country_totals.columns:
-                if indicator[:9] == 'total_pop':
-                    country_weighted_avgs.loc[country, indicator] = country_totals.loc[country, indicator]
-                elif indicator[:-4] in gtfs_dependent_indicators:
-                    weighted_avg = country_totals.loc[country, indicator] / country_totals.loc[country, f'total_pop_gtfs_cities_only_{year}']
+                
+                if indicator[:-5] in all_sum: #don't need to weight
+                    country_final_values.loc[country, indicator] = country_totals.loc[country, indicator]
+                
+                if indicator[:-5] in all_avg:
+                    if indicator[:-5] in gtfs_dependent_indicators_avg:
+                        weighted_avg = country_totals.loc[country, indicator] / country_totals.loc[country, f'total_pop_gtfs_cities_only_{year}']
+                    else: #not gtfs-dependent
+                        weighted_avg = country_totals.loc[country, indicator] / country_totals.loc[country, f'total_pop_{year}']
                     #import pdb; pdb.set_trace()
-                    country_weighted_avgs.loc[country, indicator] = weighted_avg
-                else:   
+                    country_final_values.loc[country, indicator] = weighted_avg
+                elif indicator[:-4] in current_year_indicators_avg:   
                     weighted_avg = country_totals.loc[country, indicator] / country_totals.loc[country, f'total_pop_{year}']
                     #import pdb; pdb.set_trace()
-                    country_weighted_avgs.loc[country, indicator] = weighted_avg    
+                    country_final_values.loc[country, indicator] = weighted_avg    
     #save output
     if not os.path.exists(f'{output_folder_prefix}'):
         os.mkdir(f'{output_folder_prefix}')
-    country_weighted_avgs.to_csv(f'{output_folder_prefix}country_results.csv')
+    country_final_values.to_csv(f'{output_folder_prefix}country_results.csv')
     country_geometries = []
-    for country in country_weighted_avgs.index:
-        country_geometries.append(natural_earth[natural_earth.ISO_A3 == country].unary_union)
-    country_gdf = gpd.GeoDataFrame(country_weighted_avgs, geometry=country_geometries, crs=4326)
+    for country in country_final_values.index:
+        country_geometries.append(country_bounds[country_bounds.shapeGroup == country].unary_union)
+    country_gdf = gpd.GeoDataFrame(country_final_values, geometry=country_geometries, crs=4326)
     country_gdf.to_file(f'{output_folder_prefix}country_results.geojson', driver='GeoJSON')
     all_cities.to_csv(f'{output_folder_prefix}all_cities.csv')
     
-            
-
+    #now calculate regional values
+    
     
 if __name__ == '__main__':
     warnings.simplefilter(action='ignore', category=FutureWarning)
