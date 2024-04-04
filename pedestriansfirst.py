@@ -6,6 +6,7 @@ import numpy
 import math
 import statistics
 import rasterstats
+import rasterio
 import rasterio.mask
 import subprocess
 import json
@@ -969,14 +970,17 @@ def people_near_x(service_gdf_utm, folder_name, boundaries_utm, year, sqkm_per_p
                 return 0
             earlier_dens = earlier_mean / sqkm_per_pixel 
             if modulo > 0:
-                later_stats = rasterstats.zonal_stats(
-                    sel_service_mw,
-                    f"{folder_name}geodata/population/pop_{later}.tif", 
-                    stats=['mean'], 
-                    all_touched=True
-                    ) 
-                
-                later_mean = later_stats[0]['mean']
+                try:
+                    later_stats = rasterstats.zonal_stats(
+                        sel_service_mw,
+                        f"{folder_name}geodata/population/pop_{later}.tif", 
+                        stats=['mean'], 
+                        all_touched=True
+                        ) 
+                    
+                    later_mean = later_stats[0]['mean']
+                except rasterio.errors.RasterioIOError:
+                    later_mean = earlier_mean
                 if later_mean is None:
                     return 0
                 later_dens = later_mean / sqkm_per_pixel 
