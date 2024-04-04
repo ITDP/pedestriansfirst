@@ -112,6 +112,13 @@ def cut(line, distance):
                 LineString([(cp.x, cp.y)] + coords[i:])],
                 cp]
 
+def is_brt(mode, brt_rating):
+    
+def is_lrt(mode):
+    
+def is_metro(mode):
+    #df['col_3'] = df.apply(lambda x: f(x.col_1, x.col_2), axis=1)
+
 
 def weighted_pop_density(array):
     total = 0
@@ -157,7 +164,7 @@ def spatial_analysis(boundaries,
                             'pnab': 250,
                             'highways':500,
                             },
-                      years = [1975, 1980, 1985, 1990, 1995, 2000, 2005, 2010, 2015, 2020, 2022, 2024], #for PNRT and pop_dens. remember range(1,3) = [1,2]
+                      years = [1975, 1980, 1985, 1990, 1995, 2000, 2005, 2010, 2015, 2020, 2022, 2024, 2025], #for PNRT and pop_dens. remember range(1,3) = [1,2]
                       current_year = 2024,
                       patch_length = 16000, #m
                       block_patch_length = 5000, #m
