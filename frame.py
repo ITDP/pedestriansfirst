@@ -333,6 +333,7 @@ def regional_analysis(hdc,
                       summarize=True,
                       simplification=0.001, #toposimplification factor
                       cleanup=True,
+                      current_year=2024,
                       ):
     
     if not os.path.isdir('temp/'):
@@ -350,7 +351,9 @@ def regional_analysis(hdc,
     if not os.path.isdir(str(folder_name)+'/temp/'):
         os.mkdir(str(folder_name)+'/temp/')
     
-    #this should happen in get_jurisdictions
+    if os.path.isfile(f"{folder_name}geodata/blocks/blocks_latlon_{current_year}.geojson"):
+        analyze = False
+        
     analysis_areas = get_jurisdictions(
         hdc, 
         minimum_portion=minimum_portion
