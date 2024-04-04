@@ -132,7 +132,7 @@ def spatial_analysis(boundaries,
                            #'libraries',
                            'bikeshare',
                            'carfree',
-                           #'blocks',
+                           'blocks',
                            'density',
                            'pnft',
                            'pnrt',
@@ -1001,7 +1001,7 @@ def calculate_indicators(analysis_areas,
                            #'libraries',
                            'bikeshare',
                            'carfree',
-                           #'blocks',
+                           'blocks',
                            'density',
                            'pnft',
                            'pnrt',
@@ -1167,11 +1167,10 @@ def calculate_indicators(analysis_areas,
                 if (year % 5) != 0:
                     earlier = year - (year % 5)
                     later = year + (5 - (year % 5))
+                    if later > current_year:
+                        later = current_year
                     earlier_pop = analysis_areas.loc[idx, f'total_pop_{earlier}']
-                    if later <= years [-1]:
-                        later_pop = analysis_areas.loc[idx, f'total_pop_{later}']
-                    else:
-                        later_pop = earlier_pop
+                    later_pop = analysis_areas.loc[idx, f'total_pop_{later}']
                     peryear_diff_pop = (later_pop - earlier_pop) / 5
                     total_pop = earlier_pop + ((year % 5) * peryear_diff_pop)
                     analysis_areas.loc[idx, f'total_pop_{year}'] = total_pop
