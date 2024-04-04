@@ -877,8 +877,7 @@ def spatial_analysis(boundaries,
             try:
                 G = ox.graph_from_xml('patch.osm', simplify=True, retain_all=True)
             except:
-                G = False
-                print("G=False")
+                import pdb; pdb.set_trace()
             
             if G and len(G.edges) > 0:
                 G = ox.project_graph(G, to_crs=utm_crs)
@@ -1015,7 +1014,7 @@ def calculate_indicators(analysis_areas,
                            'journey_gap',
                            ],
                       #years = range(1975,2031),
-                      years = [1975, 1980, 1985, 1990, 1995, 2000, 2005, 2010, 2015, 2020, 2024],
+                      years = [1975, 1980, 1985, 1990, 1995, 2000, 2005, 2010, 2015, 2020, 2024, 2025],
                       current_year = 2024,
                       ghsl_resolution = '100',
                       debug = True,
@@ -1167,8 +1166,8 @@ def calculate_indicators(analysis_areas,
                 if (year % 5) != 0:
                     earlier = year - (year % 5)
                     later = year + (5 - (year % 5))
-                    if later > current_year:
-                        later = current_year
+                    if later > max(years):
+                        later = earlier
                     earlier_pop = analysis_areas.loc[idx, f'total_pop_{earlier}']
                     later_pop = analysis_areas.loc[idx, f'total_pop_{later}']
                     peryear_diff_pop = (later_pop - earlier_pop) / 5
