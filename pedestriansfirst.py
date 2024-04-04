@@ -1011,7 +1011,7 @@ def calculate_indicators(analysis_areas,
                            'journey_gap',
                            ],
                       #years = range(1975,2031),
-                      years = [1975, 1980, 1985, 1990, 1995, 2000, 2005, 2010, 2015, 2020, 2022,],
+                      years = [1975, 1980, 1985, 1990, 1995, 2000, 2005, 2010, 2015, 2020,],
                       current_year = 2024,
                       ghsl_resolution = '100',
                       debug = True,
@@ -1164,7 +1164,10 @@ def calculate_indicators(analysis_areas,
                     earlier = year - (year % 5)
                     later = year + (5 - (year % 5))
                     earlier_pop = analysis_areas.loc[idx, f'total_pop_{earlier}']
-                    later_pop = analysis_areas.loc[idx, f'total_pop_{later}']
+                    if later <= years [-1]:
+                        later_pop = analysis_areas.loc[idx, f'total_pop_{later}']
+                    else:
+                        later_pop = earlier_pop
                     peryear_diff_pop = (later_pop - earlier_pop) / 5
                     total_pop = earlier_pop + ((year % 5) * peryear_diff_pop)
                     analysis_areas.loc[idx, f'total_pop_{year}'] = total_pop
