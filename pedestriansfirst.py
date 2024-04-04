@@ -113,12 +113,14 @@ def cut(line, distance):
                 cp]
 
 def is_brt(mode, brt_rating):
+    pass
     
 def is_lrt(mode):
+    pass
     
 def is_metro(mode):
     #df['col_3'] = df.apply(lambda x: f(x.col_1, x.col_2), axis=1)
-
+    pass
 
 def weighted_pop_density(array):
     total = 0
