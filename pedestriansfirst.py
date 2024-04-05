@@ -112,15 +112,30 @@ def cut(line, distance):
                 LineString([(cp.x, cp.y)] + coords[i:])],
                 cp]
 
-def is_brt(mode, brt_rating):
-    pass
-    
-def is_lrt(mode):
-    pass
-    
-def is_metro(mode):
-    #df['col_3'] = df.apply(lambda x: f(x.col_1, x.col_2), axis=1)
-    pass
+def get_line_mode(mode, name, agency, region, grade, brt_rating, mannydata):
+    itdp_mode = None
+    if mode in ['Light Rail','Tramway']:
+        itdp_mode = 'lrt'
+    if mode in ['Light Metro','Metro']:
+        itdp_mode = 'mrt'
+    if mode == 'Regional Rail':
+        if 'YES' in mannydata[
+                (mannydata['name'] == name) & 
+                (mannydata['agency'] == agency) & 
+                (mannydata['region'] == region)]['ADD?'].values:
+            itdp_mode = 'mrt'
+    if mode == 'Bus Rapid Transit':
+        if brt_rating is not None:
+            if brt_rating not in ['','Not BRT']:
+                itdp_mode ='brt'
+    grades = grade.split('; ')
+    if 'at-grade' in grades or 'at grade' in grades:
+        itdp_grade = 'atgrade'
+    else:
+        itdp_grade = 'gradesep'
+    if itdp_mode:
+        return itdp_mode + '_' + itdp_grade
+        
 
 def weighted_pop_density(array):
     total = 0
@@ -337,22 +352,17 @@ def spatial_analysis(boundaries,
         rt_lines = rt_lines[rt_lines['limited'] == 0]
         rt_stns = rt_stns[rt_stns['limited'] == 0]
         #include only the modes we care about
-        rt_lines = rt_lines[rt_lines['mode'].isin(mode_classifications.keys())]
-        rt_stns = rt_stns[rt_stns['mode'].isin(mode_classifications.keys())]
-        for idx in rt_lines.index:
-            mode = mode_classifications[rt_lines.loc[idx,'mode']]
-            if rt_lines.loc[idx,'mode'] == "at grade":
-                grade = "atgrade"
-            else:
-                grade = "gradesep"
-            rt_lines.loc[idx,'rt_mode'] = f"{mode}_{grade}"
-        for idx in rt_stns.index:
-            mode = mode_classifications[rt_stns.loc[idx,'mode']]
-            if "at grade" in rt_stns.loc[idx,'mode']:
-                grade = "atgrade"
-            else:
-                grade = "gradesep"
-            rt_stns.loc[idx,'rt_mode'] = f"{mode}_{grade}"
+        
+        mannydata = pd.read_csv('input_data/transit_explorer/mannyregionalrail.csv')
+        
+        itdp_modes = rt_lines.apply(lambda z: get_line_mode(z['mode'], z['name'], z['agency'], z['region'], z['grade'], z['brt_rating'], mannydata), axis=1)        
+        rt_lines['rt_mode'] = itdp_modes
+        rt_lines = rt_lines[rt_lines.rt_mode.isna() != False]
+        for lineidx in rt_lines.index:
+            selected_stns = rt_stns[rt_stns.intersects(rt_lines.loc[lineidx,'geometry'])]
+            rt_stns.loc[selected_stns.index,'rt_mode'] = rt_lines.loc[lineidx,'rt_mode']
+        rt_stns = rt_stns[rt_stns.rt_mode.isna() != False]
+            
         rt_isochrones = rt_stns.copy()
         rt_stns_utm = rt_stns.to_crs(utm_crs)
         rt_isochrones_utm = rt_isochrones.to_crs(utm_crs)
@@ -880,7 +890,7 @@ def spatial_analysis(boundaries,
             subprocess.check_call(['osmconvert', folder_name+'temp/citywalk.o5m', boundingarg, '--complete-ways', '--drop-broken-refs', '-o=patch.osm'])
             try:
                 G = ox.graph_from_xml('patch.osm', simplify=True, retain_all=True)
-            except ox.InsufficientResponseError:
+            except ox._errors.InsufficientResponseError:
                 G = False
                 print("G=False")    
                 
