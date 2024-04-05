@@ -877,17 +877,13 @@ def spatial_analysis(boundaries,
             boundingarg += str(patch_latlon.bounds[1])+','
             boundingarg += str(patch_latlon.bounds[2])+','
             boundingarg += str(patch_latlon.bounds[3])
-            subprocess.check_call(['osmconvert',
-                                   folder_name+'temp/citywalk.o5m',
-                                   boundingarg,
-                                   #'--complete-ways',
-                                   '--drop-broken-refs',
-                                   '-o=patch.osm'])
+            subprocess.check_call(['osmconvert', folder_name+'temp/citywalk.o5m', boundingarg, '--complete-ways', '--drop-broken-refs', '-o=patch.osm'])
             try:
                 G = ox.graph_from_xml('patch.osm', simplify=True, retain_all=True)
-            except:
-                import pdb; pdb.set_trace()
-            
+            except ox.InsufficientResponseError:
+                G = False
+                print("G=False")    
+                
             if G and len(G.edges) > 0:
                 G = ox.project_graph(G, to_crs=utm_crs)
                 
@@ -910,7 +906,11 @@ def spatial_analysis(boundaries,
                                 if blocks_simplification:
                                     block = block.simplify(blocks_simplification)
                                 all_blocks.append((block, area, perim, lemgth))
-                                if (lemgth < 50) and (1000 < area < 1000000):
+                                if (lemgth > 75) and (1000 > area or area > 1000000): #obvious outliers
+                                    pass
+                                elif (lemgth > 30 ) and (3000 > area):
+                                    pass
+                                else:
                                     selected_areas.append(area)
                     outblocks += all_blocks
                     print(f'cut {len(all_blocks)} blocks')
