@@ -292,9 +292,11 @@ def get_jurisdictions(hdc,
     
     if len(final_jurisdictions_latlon) > 0:
         for osmid in final_jurisdictions_latlon.index:
-            
+            this_admin_level = final_jurisdictions_latlon.loc[osmid, 'admin_level']
             this_poly = final_jurisdictions_latlon.loc[osmid, 'geometry']
-            containers = final_jurisdictions_latlon[final_jurisdictions_latlon.contains(this_poly)]
+            containers = final_jurisdictions_latlon[
+                (final_jurisdictions_latlon.contains(this_poly)) & 
+                (final_jurisdictions_latlon.admin_level == this_admin_level)]
             if len(containers) > 1:
                 import pdb; pdb.set_trace()
             
