@@ -292,6 +292,12 @@ def get_jurisdictions(hdc,
     
     if len(final_jurisdictions_latlon) > 0:
         for osmid in final_jurisdictions_latlon.index:
+            
+            this_poly = final_jurisdictions_latlon.loc[osmid, 'geometry']
+            containers = final_jurisdictions_latlon[final_jurisdictions_latlon.contains(this_poly)]
+            if len(containers) > 1:
+                import pdb; pdb.set_trace()
+            
             try:
                 analysis_areas.loc[new_id,'osmid'] = osmid
             except:
