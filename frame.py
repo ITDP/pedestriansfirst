@@ -415,7 +415,7 @@ def regional_analysis(hdc,
         
 
 def calculate_country_indicators(current_year=2024,
-                                 rt_and_pop_years = [1975, 1980, 1985, 1990, 1995, 2000, 2005, 2010, 2015, 2020, 2025,],
+                                 rt_and_pop_years = [1975, 1980, 1985, 1990, 1995, 2000, 2005, 2010, 2015, 2020, 2024, 2025,],
                                  input_folder_prefix = 'cities_out/',
                                  output_folder_prefix = 'countries_out/',
                                  #TODO add years for other indicators with more than one
@@ -593,6 +593,7 @@ if __name__ == '__main__':
     #for hdc in ucdb[(int(sys.argv[2]) < ucdb.P15)&(ucdb.P15 < int(sys.argv[1]))].sort_values('P15', ascending=False).ID_HDC_G0:
     for hdc in [
                 1031, #quebec
+                1001, #mtl
                 11, #SF
                 168, #CDMX
                 6312, #delhi
