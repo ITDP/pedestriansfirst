@@ -298,37 +298,37 @@ def get_jurisdictions(hdc,
                 (final_jurisdictions_latlon.contains(this_poly)) & 
                 (final_jurisdictions_latlon.admin_level == this_admin_level)]
             if len(containers) > 1:
-                import pdb; pdb.set_trace()
-            
-            try:
-                analysis_areas.loc[new_id,'osmid'] = osmid
-            except:
-                import pdb; pdb.set_trace()
-            analysis_areas.loc[:,'geometry'].loc[new_id] = final_jurisdictions_latlon.loc[osmid,'geometry']
-            #the above hack is necessary because sometimes geometry is a multipolygon
-            for attr in ['name','admin_level']:
-                analysis_areas.loc[new_id,attr] = final_jurisdictions_latlon.loc[osmid,attr]
-                analysis_areas.loc[new_id, 'hdc'] = hdc
-            level_number = final_jurisdictions_latlon.loc[osmid,'admin_level']
-            
-            try:
-                level_name_eng = level_names_eng.loc[main_country, f'{level_number}']
-            except KeyError:
-                level_name_eng = f'admin_level_{level_number}'
-            if type(level_name_eng) != type('string'):
-                level_name_eng = f"admin_level {level_number}"
-            try:
-                level_name_local = level_names_local.loc[main_country, f'{level_number}']
-            except KeyError:
-                level_name_local = None
-            analysis_areas.loc[new_id, 'level_name_eng'] = level_name_eng
-            analysis_areas.loc[new_id, 'level_name_local'] = level_name_local
-            if type(level_name_local) != type('string'):
-                level_name_full = level_name_eng
+                final_jurisdictions_latlon.drop(osmid)
             else:
-                level_name_full = f'{level_name_eng} ({level_name_local})'
-            analysis_areas.loc[new_id, 'level_name_full'] = level_name_full
-            new_id += 1
+                try:
+                    analysis_areas.loc[new_id,'osmid'] = osmid
+                except:
+                    import pdb; pdb.set_trace()
+                analysis_areas.loc[:,'geometry'].loc[new_id] = final_jurisdictions_latlon.loc[osmid,'geometry']
+                #the above hack is necessary because sometimes geometry is a multipolygon
+                for attr in ['name','admin_level']:
+                    analysis_areas.loc[new_id,attr] = final_jurisdictions_latlon.loc[osmid,attr]
+                    analysis_areas.loc[new_id, 'hdc'] = hdc
+                level_number = final_jurisdictions_latlon.loc[osmid,'admin_level']
+                
+                try:
+                    level_name_eng = level_names_eng.loc[main_country, f'{level_number}']
+                except KeyError:
+                    level_name_eng = f'admin_level_{level_number}'
+                if type(level_name_eng) != type('string'):
+                    level_name_eng = f"admin_level {level_number}"
+                try:
+                    level_name_local = level_names_local.loc[main_country, f'{level_number}']
+                except KeyError:
+                    level_name_local = None
+                analysis_areas.loc[new_id, 'level_name_eng'] = level_name_eng
+                analysis_areas.loc[new_id, 'level_name_local'] = level_name_local
+                if type(level_name_local) != type('string'):
+                    level_name_full = level_name_eng
+                else:
+                    level_name_full = f'{level_name_eng} ({level_name_local})'
+                analysis_areas.loc[new_id, 'level_name_full'] = level_name_full
+                new_id += 1
     
         
     return analysis_areas
