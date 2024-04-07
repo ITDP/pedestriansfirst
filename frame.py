@@ -63,7 +63,7 @@ def prep_from_poly(poly, folder_name, boundary_buffer = 500):
             command = f"osmconvert {str(folder_name)}temp/city.pbf -o={str(folder_name)}temp/city.o5m"
             print(command)
             subprocess.check_call(command.split(' '))
-            command = f'osmfilter {str(folder_name)}temp/city.o5m --keep="highway=" -o={str(folder_name)}temp/cityhighways.o5m'
+            command = f'osmfilter {str(folder_name)}temp/city.o5m --keep="highway=" --keep-tags="all type= highway= cycleway= bicycle= cycleway:left= cycleway:right= cycleway:both= area= service= foot= bridge= tunnel= oneway= lanes= ref= name= maxspeed= access= landuse= width= est_width= junction=" -o={str(folder_name)}temp/cityhighways.o5m'
             print(command)
             subprocess.check_call(command, shell=True)
             #todo -- read both bikeways and walkways direct from a patch'd cityhighways.osm; do walking/cycling selection logic in here.
@@ -614,7 +614,7 @@ if __name__ == '__main__':
         print (f"{hdc}%{divide_by}={hdc % divide_by}, compare to {remainder}, {ucdb.loc[hdc,'NAME_MAIN']}")
         if hdc % divide_by == remainder and ucdb.loc[hdc,'NAME_MAIN'] != 'N/A':
             if not os.path.exists(f'cities_out/ghsl_region_{hdc}/indicator_values.csv'):
-                if os.path.exists(f'cities_out/ghsl_region_{hdc}/geodata/blocks/blocks_latlon_2022.geojson'):
+                if os.path.exists(f'cities_out/ghsl_region_{hdc}/geodata/blocks/blocks_latlon_2024.geojson'):
                     regional_analysis(hdc)#, analyze=False)
                     calculate_country_indicators()
                 else:

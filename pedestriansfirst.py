@@ -366,6 +366,7 @@ def spatial_analysis(boundaries,
         rt_isochrones = rt_stns.copy()
         rt_stns_utm = rt_stns.to_crs(utm_crs)
         rt_isochrones_utm = rt_isochrones.to_crs(utm_crs)
+        import pbd; pdb.set_trace()
     
     
     if 'journey_gap' in to_test and len(gtfs_filenames) > 0 and len(gtfs_wednesdays) > 0: #ie, it has GTFS
@@ -1278,9 +1279,7 @@ def calculate_indicators(analysis_areas,
                     protected_m = 0
                 analysis_areas.loc[idx,f'protected_bikeways_km_{current_year}'] = protected_m / 1000
             
-                                
-                geodata_path = f'{folder_name}geodata/rapid_transit/{current_year}/all_isochrones_ll.geojson'
-            
+                
             if 'pnrt' in to_test and has_rt: 
                 for mode in ['brt','lrt','mrt','all']:
                     check_iso = rt_isochrones[mode][current_year]
