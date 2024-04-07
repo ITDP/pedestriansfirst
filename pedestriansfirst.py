@@ -366,7 +366,7 @@ def spatial_analysis(boundaries,
         rt_isochrones = rt_stns.copy()
         rt_stns_utm = rt_stns.to_crs(utm_crs)
         rt_isochrones_utm = rt_isochrones.to_crs(utm_crs)
-        import pbd; pdb.set_trace()
+        import pdb; pdb.set_trace()
     
     
     if 'journey_gap' in to_test and len(gtfs_filenames) > 0 and len(gtfs_wednesdays) > 0: #ie, it has GTFS
