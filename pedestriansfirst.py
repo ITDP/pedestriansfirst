@@ -343,7 +343,7 @@ def spatial_analysis(boundaries,
             'Heavy Rail': 'mrt',
             'Regional Rail': 'mrt',
             }
-        #get the data
+        #get the dataitdp_modes = rt_lines.apply(lambda z: get_line_mode(z['mode'], z['name'], z['agency'], z['region'], z['grade'], z['brt_rating']), axis=1)        
         rt_lines = gpd.read_file('input_data/transit_explorer/geojson/lines.geojson')
         rt_stns = gpd.read_file('input_data/transit_explorer/geojson/stations.geojson')
         #geospatial clip to boundaries
@@ -357,15 +357,11 @@ def spatial_analysis(boundaries,
         #itdp_modes = rt_lines.apply(lambda z: get_line_mode(z['mode'], z['name'], z['agency'], z['region'], z['grade'], z['brt_rating']), axis=1)        
         #rt_lines['rt_mode'] = itdp_modes
         for lineidx in rt_lines.index:
-            itdp_mode = get_line_mode(rt_lines.loc[lineidx,'mode'],
-                                      rt_lines.loc[lineidx,'name'],
-                                      rt_lines.loc[lineidx,'agency'],
-                                      rt_lines.loc[lineidx,'region'],
-                                      rt_lines.loc[lineidx,'grade'],
-                                      rt_lines.loc[lineidx,'brt_rating'],)
+            itdp_mode = get_line_mode(rt_lines.loc[lineidx,'mode'], rt_lines.loc[lineidx,'name'], rt_lines.loc[lineidx,'agency'], rt_lines.loc[lineidx,'region'], rt_lines.loc[lineidx,'grade'], rt_lines.loc[lineidx,'brt_rating'],)
             rt_lines.loc[lineidx,'rt_mode'] = itdp_mode
         
-        rt_lines = rt_lines[rt_lines.rt_mode.isna() != False]
+        #rt_lines = rt_lines[rt_lines.rt_mode.isna() != False]
+        import pdb; pdb.set_trace()
         
         for lineidx in rt_lines.index:
             selected_stns = rt_stns[rt_stns.intersects(rt_lines.loc[lineidx,'geometry'])]
@@ -375,7 +371,7 @@ def spatial_analysis(boundaries,
         rt_isochrones = rt_stns.copy()
         rt_stns_utm = rt_stns.to_crs(utm_crs)
         rt_isochrones_utm = rt_isochrones.to_crs(utm_crs)
-        import pdb; pdb.set_trace()
+        
     
     
     if 'journey_gap' in to_test and len(gtfs_filenames) > 0 and len(gtfs_wednesdays) > 0: #ie, it has GTFS
