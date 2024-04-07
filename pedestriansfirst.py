@@ -112,7 +112,8 @@ def cut(line, distance):
                 LineString([(cp.x, cp.y)] + coords[i:])],
                 cp]
 
-def get_line_mode(mode, name, agency, region, grade, brt_rating, mannydata):
+def get_line_mode(mode, name, agency, region, grade, brt_rating):
+    mannydata = pd.read_csv('input_data/transit_explorer/mannyregionalrail.csv')
     itdp_mode = None
     if mode in ['Light Rail','Tramway']:
         itdp_mode = 'lrt'
@@ -353,9 +354,8 @@ def spatial_analysis(boundaries,
         rt_stns = rt_stns[rt_stns['limited'] == 0]
         #include only the modes we care about
         
-        mannydata = pd.read_csv('input_data/transit_explorer/mannyregionalrail.csv')
         
-        itdp_modes = rt_lines.apply(lambda z: get_line_mode(z['mode'], z['name'], z['agency'], z['region'], z['grade'], z['brt_rating'], mannydata), axis=1)        
+        itdp_modes = rt_lines.apply(lambda z: get_line_mode(z['mode'], z['name'], z['agency'], z['region'], z['grade'], z['brt_rating']), axis=1)        
         rt_lines['rt_mode'] = itdp_modes
         rt_lines = rt_lines[rt_lines.rt_mode.isna() != False]
         for lineidx in rt_lines.index:
