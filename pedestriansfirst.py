@@ -366,7 +366,7 @@ def spatial_analysis(boundaries,
         for lineidx in rt_lines.index:
             selected_stns = rt_stns[rt_stns.intersects(rt_lines.loc[lineidx,'geometry'])]
             rt_stns.loc[selected_stns.index,'rt_mode'] = rt_lines.loc[lineidx,'rt_mode']
-        rt_stns = rt_stns[rt_stns.rt_mode.isna() != False]
+        rt_stns = rt_stns[rt_stns.rt_mode.isna() == False]
             
         rt_isochrones = rt_stns.copy()
         rt_stns_utm = rt_stns.to_crs(utm_crs)
