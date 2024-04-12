@@ -136,8 +136,8 @@ def get_jurisdictions(hdc,
     all_names = name_full.split('; ')
     name = "The " + " / ".join(all_names[:3]) + ' area'
     if len(name) >= 50:
-        name = "The " + " / ".join(all_names[:1]) + ' area'
-        if name >= 50:
+        name = "The " + " / ".join(all_names[:2]) + ' area'
+        if len(name) >= 50:
             name = "The " + all_names[0] + ' area'
     name_short = "The " + all_names[0] + ' area'
     
