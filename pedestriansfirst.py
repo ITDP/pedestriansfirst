@@ -352,6 +352,10 @@ def spatial_analysis(boundaries,
         #remove lines/stations that are not public access
         rt_lines = rt_lines[rt_lines['limited'] == 0]
         rt_stns = rt_stns[rt_stns['limited'] == 0]
+        
+        rt_lines['rt_mode'] = None
+        rt_stns['rt_mode'] = None
+        
         #include only the modes we care about
         
         #itdp_modes = rt_lines.apply(lambda z: get_line_mode(z['mode'], z['name'], z['agency'], z['region'], z['grade'], z['brt_rating']), axis=1)        
