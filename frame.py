@@ -590,28 +590,15 @@ if __name__ == '__main__':
     ox.utils.config(log_console = False)
     ucdb = gpd.read_file('input_data/ghsl/SMOD_V1s6_opr_P2023_v1_2020_labelUC_DB_release.gpkg')
     ucdb.index =  ucdb['ID_UC_G0']
-    #for hdc in ucdb[(int(sys.argv[2]) < ucdb.P15)&(ucdb.P15 < int(sys.argv[1]))].sort_values('P15', ascending=False).ID_HDC_G0:
-    for hdc in [
-                #1031, #quebec
-                #1001, #mtl
-                #11, #SF
-                168, #CDMX
-                2039, #barcelona
-                6312, #delhi
-                2269, #toulon
-                2038, #dunkirk
-                2184, #stavanger
-                1397, #flz
-                1099, #ciudad este
-                24, #SD
-                ]:
+    for hdc in ucdb[(int(sys.argv[2]) < ucdb['POP_2020'])&(ucdb['POP_2020'] < int(sys.argv[1]))].sort_values('POP_2020', ascending=False).ID_UC_G0:
+    #for hdc in []:
         hdc = int(hdc)
         #if len(sys.argv) == 1:
-        divide_by = 1
-        remainder = 0
+        #divide_by = 1
+        #remainder = 0
         # else: 
-        #     divide_by = int(sys.argv[3])
-        #     remainder = int(sys.argv[4])
+        divide_by = int(sys.argv[3])
+        remainder = int(sys.argv[4])
         print (f"{hdc}%{divide_by}={hdc % divide_by}, compare to {remainder}, {ucdb.loc[hdc,'NAME_MAIN']}")
         if hdc % divide_by == remainder and ucdb.loc[hdc,'NAME_MAIN'] != 'N/A':
             if not os.path.exists(f'cities_out/ghsl_region_{hdc}/indicator_values.csv'):
