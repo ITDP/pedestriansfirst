@@ -331,18 +331,6 @@ def spatial_analysis(boundaries,
         
             
     if 'pnrt' in to_test:
-        #TODO
-        #categorize both by "mode" and by "grade sep / no, bus/rail"
-        #BRT Std check
-        mode_classifications = {
-            'Bus Rapid Transit':'brt',
-            'Light Rail': 'lrt',
-            'Tramway': 'lrt',
-            'Light Metro': 'mrt',
-            'Metro': 'mrt',
-            'Heavy Rail': 'mrt',
-            'Regional Rail': 'mrt',
-            }
         #get the dataitdp_modes = rt_lines.apply(lambda z: get_line_mode(z['mode'], z['name'], z['agency'], z['region'], z['grade'], z['brt_rating']), axis=1)        
         rt_lines = gpd.read_file('input_data/transit_explorer/geojson/lines.geojson')
         rt_stns = gpd.read_file('input_data/transit_explorer/geojson/stations.geojson')
@@ -994,47 +982,48 @@ def people_near_x(service_gdf_utm, folder_name, boundaries_utm, year, sqkm_per_p
         return 0
     if len(service_gdf_utm) > 1:
         service_gdf_utm = gpd.GeoDataFrame(geometry = [service_gdf_utm.unary_union], crs = service_gdf_utm.crs)
+        
+    service_gdf_utm.geometry = service_gdf_utm.geometry.make_valid()
+    sel_service_utm = service_gdf_utm.intersection(boundaries_utm)
+    sel_service_mw = sel_service_utm.to_crs('ESRI:54009')
+    service_area = sel_service_utm.area.sum()
+    if service_area == 0:
+        total_PNS = 0
     else:
-        sel_service_utm = service_gdf_utm.intersection(boundaries_utm)
-        sel_service_mw = sel_service_utm.to_crs('ESRI:54009')
-        service_area = sel_service_utm.area.sum()
-        if service_area == 0:
-            total_PNS = 0
-        else:
-            modulo = year % 5
-            earlier = year - modulo
-            later = year + (5 - modulo)
-            earlier_stats = rasterstats.zonal_stats(
-                sel_service_mw,
-                f"{folder_name}geodata/population/pop_{earlier}.tif", 
-                stats=['mean'], 
-                all_touched=True
-                ) 
-            earlier_mean = earlier_stats[0]['mean']
-            if earlier_mean is None:
+        modulo = year % 5
+        earlier = year - modulo
+        later = year + (5 - modulo)
+        earlier_stats = rasterstats.zonal_stats(
+            sel_service_mw,
+            f"{folder_name}geodata/population/pop_{earlier}.tif", 
+            stats=['mean'], 
+            all_touched=True
+            ) 
+        earlier_mean = earlier_stats[0]['mean']
+        if earlier_mean is None:
+            return 0
+        earlier_dens = earlier_mean / sqkm_per_pixel 
+        if modulo > 0:
+            try:
+                later_stats = rasterstats.zonal_stats(
+                    sel_service_mw,
+                    f"{folder_name}geodata/population/pop_{later}.tif", 
+                    stats=['mean'], 
+                    all_touched=True
+                    ) 
+                
+                later_mean = later_stats[0]['mean']
+            except rasterio.errors.RasterioIOError:
+                later_mean = earlier_mean
+            if later_mean is None:
                 return 0
-            earlier_dens = earlier_mean / sqkm_per_pixel 
-            if modulo > 0:
-                try:
-                    later_stats = rasterstats.zonal_stats(
-                        sel_service_mw,
-                        f"{folder_name}geodata/population/pop_{later}.tif", 
-                        stats=['mean'], 
-                        all_touched=True
-                        ) 
-                    
-                    later_mean = later_stats[0]['mean']
-                except rasterio.errors.RasterioIOError:
-                    later_mean = earlier_mean
-                if later_mean is None:
-                    return 0
-                later_dens = later_mean / sqkm_per_pixel 
-                peryear_diff = (later_dens - earlier_dens) / 5
-                mean_dens_per_m2 = (earlier_dens + (modulo * peryear_diff)) / 1000000 #km to m
-            else:
-                mean_dens_per_m2 = earlier_dens / 1000000 #km to m
-            total_PNS = mean_dens_per_m2 * service_area
-            return total_PNS
+            later_dens = later_mean / sqkm_per_pixel 
+            peryear_diff = (later_dens - earlier_dens) / 5
+            mean_dens_per_m2 = (earlier_dens + (modulo * peryear_diff)) / 1000000 #km to m
+        else:
+            mean_dens_per_m2 = earlier_dens / 1000000 #km to m
+        total_PNS = mean_dens_per_m2 * service_area
+        return total_PNS
 
 
 def calculate_indicators(analysis_areas, 
