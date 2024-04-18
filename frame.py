@@ -423,7 +423,7 @@ def calculate_country_indicators(current_year=2024,
     country_bounds = gpd.read_file('input_data/CGAZ/geoBoundaries_ITDPv4_SIMPLIFIED.gpkg')
     countries_ISO = list(country_bounds.shapeGroup.unique())
     
-    country_regions_organizations = pd.read_file('input_data/Countries_Regions_Organizations.csv')
+    country_regions_organizations = pd.read_csv('input_data/Countries_Regions_Organizations.csv')
     country_regions_organizations.index = country_regions_organizations['ISO Code']
     all_orgs = list(country_regions_organizations.columns)[3:]
     
