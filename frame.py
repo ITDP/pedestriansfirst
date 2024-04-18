@@ -509,12 +509,12 @@ def calculate_country_indicators(current_year=2024,
     country_totals = pd.DataFrame(index=countries_ISO, columns=full_indicator_names)
     country_totals = country_totals.replace(np.nan,0)
     country_final_values = country_totals.copy()
-    region_totals = pd.DataFrame(columns=full_indicator_names)
+    region_totals = pd.DataFrame(index = ['world', *all_regions, *all_orgs], columns=full_indicator_names)
     region_totals = region_totals.replace(np.nan,0)
     region_final_values = region_totals.copy()
     
     
-    all_cities = gpd.GeoDataFrame(index = ['world',*all_regions, *all_orgs], columns=full_indicator_names)
+    all_cities = gpd.GeoDataFrame(columns=full_indicator_names)
     
     #get data from city-level output
     print('iterating through cities_out/')
