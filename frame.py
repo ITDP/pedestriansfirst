@@ -426,6 +426,7 @@ def calculate_country_indicators(current_year=2024,
     country_regions_organizations = pd.read_csv('input_data/Countries_Regions_Organizations.csv')
     country_regions_organizations.index = country_regions_organizations['ISO Code']
     all_orgs = list(country_regions_organizations.columns)[3:]
+    all_regions = list(country_regions_organizations.Region.unique())
     
     if not input_folder_prefix[-1:] == '/':
         input_folder_prefix = input_folder_prefix+'/'
@@ -512,7 +513,8 @@ def calculate_country_indicators(current_year=2024,
     region_totals = region_totals.replace(np.nan,0)
     region_final_values = region_totals.copy()
     
-    all_cities = gpd.GeoDataFrame(columns=full_indicator_names, geometry = [])
+    
+    all_cities = gpd.GeoDataFrame(index = ['world',*all_regions, *all_orgs], columns=full_indicator_names, geometry = [])
     
     #get data from city-level output
     print('iterating through cities_out/')
