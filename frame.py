@@ -420,8 +420,12 @@ def calculate_country_indicators(current_year=2024,
                                  output_folder_prefix = 'countries_out/',
                                  #TODO add years for other indicators with more than one
                                  ):
-    country_bounds = gpd.read_file('input_data/CGAZ/geoBoundaries_ITDPv4.gpkg')
+    country_bounds = gpd.read_file('input_data/CGAZ/geoBoundaries_ITDPv4_SIMPLIFIED.gpkg')
     countries_ISO = list(country_bounds.shapeGroup.unique())
+    
+    country_regions_organizations = pd.read_file('input_data/Countries_Regions_Organizations.csv')
+    country_regions_organizations.index = country_regions_organizations['ISO Code']
+    all_orgs = list(country_regions_organizations.columns)[3:]
     
     if not input_folder_prefix[-1:] == '/':
         input_folder_prefix = input_folder_prefix+'/'
@@ -504,8 +508,11 @@ def calculate_country_indicators(current_year=2024,
     country_totals = pd.DataFrame(index=countries_ISO, columns=full_indicator_names)
     country_totals = country_totals.replace(np.nan,0)
     country_final_values = country_totals.copy()
+    region_totals = pd.DataFrame(columns=full_indicator_names)
+    region_totals = region_totals.replace(np.nan,0)
+    region_final_values = region_totals.copy()
     
-    all_cities = pd.DataFrame(columns=full_indicator_names)
+    all_cities = gpd.GeoDataFrame(columns=full_indicator_names, crs=4326)
     
     #get data from city-level output
     print('iterating through cities_out/')
@@ -516,6 +523,7 @@ def calculate_country_indicators(current_year=2024,
             hdc = city_folder.split('_')[-1]
             all_cities.loc[hdc, 'ID_HDC_G0'] = hdc
             all_cities.loc[hdc, 'name'] = city_results.loc[0,'name']
+            all_cities.loc[hdc, 'geometry'] = city_results.loc[0,'geometry']
             for indicator in full_indicator_names:
                 if indicator in city_results.columns:
                     all_cities.loc[hdc, indicator] = city_results.loc[0, indicator]
@@ -523,12 +531,20 @@ def calculate_country_indicators(current_year=2024,
             #then calculate by country
             for country in city_results.country.unique():
                 if type(country) == type('this is a string, which means it is not np.nan'):
+                    region = country_regions_organizations.loc[country, 'Region']
+                    organizations = list(country_regions_organizations.loc[country,all_orgs][country_regions_organizations.loc[country,all_orgs].notnull()].values)
+                    aggregations = ['world',region, *organizations]
+
                     #first total population
                     for year in rt_and_pop_years:
                         total_pop_year = city_results[city_results.country == country][f'total_pop_{year}'].sum()
                         country_totals.loc[country, f'total_pop_{year}'] += total_pop_year
+                        for aggregation in aggregations:
+                            region_totals.loc[aggregation, f'total_pop_{year}'] += total_pop_year
                         if city_results[city_results.country == country]['has_gtfs'].iloc[0] == True:
                             country_totals.loc[country, f'total_pop_gtfs_cities_only_{year}'] += total_pop_year
+                            for aggregation in aggregations:
+                                region_totals.loc[aggregation, f'total_pop_gtfs_cities_only_{year}'] += total_pop_year
                     #then indicators based on sums
                     for indicator in full_indicator_names:
                         if indicator[:-5] in all_sum:
@@ -538,6 +554,8 @@ def calculate_country_indicators(current_year=2024,
                                 else:
                                     indicator_total = 0
                                 country_totals.loc[country, f'{indicator}'] += indicator_total
+                                for aggregation in aggregations:
+                                    region_totals.loc[aggregation,f'{indicator}'] += indicator_total
                     #then indicators based on averages
                     for indicator in full_indicator_names:
                         year = indicator[-4:]
@@ -548,7 +566,9 @@ def calculate_country_indicators(current_year=2024,
                                     value = city_results[city_results.country == country][indicator].astype(float).sum() * total_pop_year
                                 except:
                                     pdb.set_trace()
-                                country_totals.loc[country, indicator] += value       
+                                country_totals.loc[country, indicator] += value    
+                                for aggregation in aggregations:
+                                    region_totals.loc[aggregation,indicator] += value  
         
     #get weighted averages
     print('iterating through countries')
@@ -570,16 +590,37 @@ def calculate_country_indicators(current_year=2024,
                         weighted_avg = country_totals.loc[country, indicator] / country_totals.loc[country, f'total_pop_{year}']
                     #import pdb; pdb.set_trace()
                     country_final_values.loc[country, indicator] = weighted_avg
+    print('iterating through regions/orgs')
+    for region in tqdm(list(region_totals.index)):
+        for indicator in full_indicator_names:
+            year = indicator[-4:]
+            if indicator in region_totals.columns:
+                
+                if indicator[:-5] in all_sum: #don't need to weight
+                    region_final_values.loc[region, indicator] = region_totals.loc[region, indicator]
+                
+                if indicator[:-5] in all_avg:
+                    if indicator[:-5] in gtfs_dependent_indicators_avg:
+                        if region_totals.loc[region, f'total_pop_gtfs_cities_only_{year}'] > 0:
+                            weighted_avg = region_totals.loc[region, indicator] / region_totals.loc[region, f'total_pop_gtfs_cities_only_{year}']
+                        else: 
+                            weighted_avg = "n/a"
+                    else: #not gtfs-dependent
+                        weighted_avg = country_totals.loc[region, indicator] / country_totals.loc[region, f'total_pop_{year}']
+                    #import pdb; pdb.set_trace()
+                    region_final_values.loc[region, indicator] = weighted_avg
     #save output
     if not os.path.exists(f'{output_folder_prefix}'):
         os.mkdir(f'{output_folder_prefix}')
     country_final_values.to_csv(f'{output_folder_prefix}country_results.csv')
+    region_final_values.to_csv(f'{output_folder_prefix}region_results.csv')
     country_geometries = []
     for country in country_final_values.index:
         country_geometries.append(country_bounds[country_bounds.shapeGroup == country].unary_union)
     country_gdf = gpd.GeoDataFrame(country_final_values, geometry=country_geometries, crs=4326)
     country_gdf.to_file(f'{output_folder_prefix}country_results.geojson', driver='GeoJSON')
-    all_cities.to_csv(f'{output_folder_prefix}all_cities.csv')
+    all_cities.to_file(f'{output_folder_prefix}all_cities.geojson',driver='GeoJSON')
+    pd.DataFrame(all_cities.drop(columns='geometry')).to_csv(f'{output_folder_prefix}all_cities.csv')
     
     #now calculate regional values
     
