@@ -514,7 +514,7 @@ def calculate_country_indicators(current_year=2024,
     region_final_values = region_totals.copy()
     
     
-    all_cities = gpd.GeoDataFrame(index = ['world',*all_regions, *all_orgs], columns=full_indicator_names, geometry = [])
+    all_cities = gpd.GeoDataFrame(index = ['world',*all_regions, *all_orgs], columns=full_indicator_names)
     
     #get data from city-level output
     print('iterating through cities_out/')
