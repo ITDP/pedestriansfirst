@@ -566,15 +566,12 @@ def calculate_country_indicators(current_year=2024,
                         if indicator in city_results.columns:
                             if indicator[:-5] in all_avg:
                                 total_pop_year = city_results[city_results.country == country][f'total_pop_{year}'].sum()
-                                try:
-                                    value = city_results[city_results.country == country][indicator].astype(float).sum() * total_pop_year
-                                except:
-                                    pdb.set_trace()
-                                if value == 'NA':
-                                    value = 0
-                                country_totals.loc[country, indicator] += value    
-                                for aggregation in aggregations:
-                                    region_totals.loc[aggregation,indicator] += value  
+                                value = city_results[city_results.country == country][indicator].astype(float).sum()
+                                if not value == 'NA':
+                                    multiplied_value = value * total_pop_year
+                                    country_totals.loc[country, indicator] += multiplied_value    
+                                    for aggregation in aggregations:
+                                        region_totals.loc[aggregation,indicator] += multiplied_value  
         
     #get weighted averages
     print('iterating through countries')
