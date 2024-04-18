@@ -512,7 +512,7 @@ def calculate_country_indicators(current_year=2024,
     region_totals = region_totals.replace(np.nan,0)
     region_final_values = region_totals.copy()
     
-    all_cities = gpd.GeoDataFrame(columns=full_indicator_names, crs=4326)
+    all_cities = gpd.GeoDataFrame(columns=full_indicator_names)
     
     #get data from city-level output
     print('iterating through cities_out/')
@@ -619,6 +619,7 @@ def calculate_country_indicators(current_year=2024,
         country_geometries.append(country_bounds[country_bounds.shapeGroup == country].unary_union)
     country_gdf = gpd.GeoDataFrame(country_final_values, geometry=country_geometries, crs=4326)
     country_gdf.to_file(f'{output_folder_prefix}country_results.geojson', driver='GeoJSON')
+    all_cities.crs=4326
     all_cities.to_file(f'{output_folder_prefix}all_cities.geojson',driver='GeoJSON')
     pd.DataFrame(all_cities.drop(columns='geometry')).to_csv(f'{output_folder_prefix}all_cities.csv')
     
