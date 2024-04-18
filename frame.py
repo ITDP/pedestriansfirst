@@ -518,7 +518,7 @@ def calculate_country_indicators(current_year=2024,
     print('iterating through cities_out/')
     for city_folder in tqdm(os.listdir(f'{input_folder_prefix}')):
         if os.path.exists(f'{input_folder_prefix}{city_folder}/indicator_values.csv'):
-            city_results = pd.read_csv(f'{input_folder_prefix}{city_folder}/indicator_values.csv')
+            city_results = gpd.read_file(f'{input_folder_prefix}{city_folder}/indicator_values.gpkg')
             #first add to list of full cities
             hdc = city_folder.split('_')[-1]
             all_cities.loc[hdc, 'ID_HDC_G0'] = hdc
