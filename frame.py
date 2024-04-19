@@ -533,9 +533,12 @@ def calculate_country_indicators(current_year=2024,
             #then calculate by country
             for country in city_results.country.unique():
                 if type(country) == type('this is a string, which means it is not np.nan'):
-                    region = country_regions_organizations.loc[country, 'Region']
-                    organizations = list(country_regions_organizations.loc[country,all_orgs][country_regions_organizations.loc[country,all_orgs].notnull()].values)
-                    aggregations = ['world',region, *organizations]
+                    if country in country_regions_organizations.index:
+                        region = country_regions_organizations.loc[country, 'Region']
+                        organizations = list(country_regions_organizations.loc[country,all_orgs][country_regions_organizations.loc[country,all_orgs].notnull()].values)
+                        aggregations = ['world',region, *organizations]
+                    else:
+                        aggregations = ['world']
 
                     #first total population
                     for year in rt_and_pop_years:
