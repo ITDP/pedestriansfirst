@@ -824,9 +824,8 @@ def spatial_analysis(boundaries,
                         crs=4326)
                     select_lines.to_file(f'{folder_name}geodata/rapid_transit/{year}/{mode}_lines_ll.geojson', driver='GeoJSON')
                
-       print(debugcounter); debugcounter+=1
-        
-       if 'pnst' in to_test:
+        print(debugcounter); debugcounter+=1 
+        if 'pnst' in to_test:
             if not os.path.exists(f'{folder_name}geodata/pnst/'):
                 os.mkdir(f'{folder_name}geodata/pnst/')
                 
