@@ -421,6 +421,21 @@ def calculate_country_indicators(current_year=2024,
                                  #TODO add years for other indicators with more than one
                                  ):
     country_bounds = gpd.read_file('input_data/CGAZ/geoBoundaries_ITDPv4_SIMPLIFIED.gpkg')
+    
+    country_bounds.geometry = country_bounds.make_valid()
+    for idx in list(country_bounds.index):
+        geometry = country_bounds.loc[idx, 'geometry']
+        if geometry.type == 'Polygon':
+            country_bounds.loc[idx, 'geometry'] = shapely.geometry.MultiPolygon(geometry)
+        elif geometry.type == 'MultiPolygon':
+            country_bounds.loc[idx, 'geometry'] = geometry
+        elif geometry.type == 'GeometryCollection':
+            assert len(list(geometry.geoms)) == 2
+            assert list(geometry.geoms)[0].type == 'MultiPolygon'
+            country_bounds.loc[idx, 'geometry'] = list(geometry.geoms)[0]
+        else:
+            country_bounds.drop(idx)
+    
     countries_ISO = list(country_bounds.shapeGroup.unique())
     
     country_regions_organizations = pd.read_csv('input_data/Countries_Regions_Organizations.csv')
