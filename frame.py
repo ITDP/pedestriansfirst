@@ -623,6 +623,7 @@ def calculate_country_indicators(current_year=2024,
     country_final_values.to_csv(f'{output_folder_prefix}country_results.csv')
     region_final_values.to_csv(f'{output_folder_prefix}region_results.csv')
     country_geometries = []
+    import pdb; pdb.set_trace()
     for country in country_final_values.index:
         country_geometries.append(country_bounds[country_bounds.shapeGroup == country].unary_union)
     country_gdf = gpd.GeoDataFrame(country_final_values, geometry=country_geometries, crs=4326)
