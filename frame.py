@@ -614,7 +614,7 @@ def calculate_country_indicators(current_year=2024,
                         else: 
                             weighted_avg = "n/a"
                     else: #not gtfs-dependent
-                        weighted_avg = country_totals.loc[region, indicator] / country_totals.loc[region, f'total_pop_{year}']
+                        weighted_avg = region_totals.loc[region, indicator] / region_totals.loc[region, f'total_pop_{year}']
                     #import pdb; pdb.set_trace()
                     region_final_values.loc[region, indicator] = weighted_avg
     #save output
