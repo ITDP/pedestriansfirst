@@ -660,9 +660,13 @@ def spatial_analysis(boundaries,
             #     print('saved to error'+now+'.txt') 
     
         if debug:
+            print('here')
             patches.times = patch_times
             patches.to_file(folder_name+'debug/patches_with_times.geojson', driver='GeoJSON')
             pd.DataFrame({'failures':failures}).to_csv(folder_name+'debug/failures.csv')
+    
+    debugcounter = 1
+    print(debugcounter); debugcounter+=1
     
     #start saving files
     geodata_subfolders = []
@@ -682,8 +686,11 @@ def spatial_analysis(boundaries,
         if not os.path.exists(f"{folder_name}geodata/{subfolder}/"):
             os.mkdir(f"{folder_name}geodata/{subfolder}/")
     
+    print(debugcounter); debugcounter+=1
     
     for service in testing_services:
+        print(debugcounter); debugcounter+=1
+        print(service)
         if quilt_isochrone_polys[service]:
             service_utm = gpd.GeoDataFrame(geometry = [quilt_isochrone_polys[service]],
                                            crs=utm_crs)
@@ -693,7 +700,9 @@ def spatial_analysis(boundaries,
             service_latlon.to_file(f"{folder_name}geodata/{service}/{service}_latlon_{current_year}.geojson", driver='GeoJSON')
         if service in service_point_locations.keys():
             service_point_locations[service].to_file(f"{folder_name}geodata/{service}_points/{service}_points_latlon_{current_year}.geojson", driver='GeoJSON')
-            
+          
+    print(debugcounter); debugcounter+=1  
+          
     if 'pnpb' in to_test or 'pnab' in to_test:
         if not quilt_protectedbike.empty:
             quilt_protectedbike = quilt_protectedbike.to_crs(4326)
@@ -706,6 +715,8 @@ def spatial_analysis(boundaries,
             merged_allbike = gpd.GeoDataFrame(geometry = [merged_allbike.unary_union], crs=4326)
             merged_allbike.to_file(f"{folder_name}geodata/allbike/allbike_latlon_{current_year}.geojson",driver='GeoJSON')
     
+    print(debugcounter); debugcounter+=1
+    
     if 'highways' in to_test:
         all_hwys_multiline = shapely.ops.unary_union(all_highway_lines)
         all_hwys_latlon = gpd.GeoDataFrame(geometry=[all_hwys_multiline], crs=4326)
@@ -715,6 +726,7 @@ def spatial_analysis(boundaries,
         buffered_hwys_latlon = buffered_hwys_utm.to_crs(4326)
         buffered_hwys_latlon.to_file(f"{folder_name}geodata/buffered_hwys/buffered_hwys_latlon_{current_year}.geojson",driver='GeoJSON')
         
+    print(debugcounter); debugcounter+=1
         
     if 'carfree' in to_test:
         carfree_latlon = gpd.GeoDataFrame(geometry = citywide_carfree)
@@ -728,6 +740,8 @@ def spatial_analysis(boundaries,
         carfree_utm = gpd.overlay(carfree_utm ,boundaries_utm, how='intersection')
         carfree_latlon = carfree_utm.to_crs('epsg:4326')
         carfree_latlon.to_file(f"{folder_name}geodata/carfree/carfree_latlon_{current_year}.geojson",driver='GeoJSON')
+       
+    print(debugcounter); debugcounter+=1
         
     if 'h+s' in to_test:
         if quilt_isochrone_polys['healthcare'] and quilt_isochrone_polys['schools']:
@@ -746,6 +760,8 @@ def spatial_analysis(boundaries,
                 hs_utm.geometry = hs_utm.geometry.simplify(services_simplification)
                 hs_latlon = hs_utm.to_crs(epsg=4326)
                 hs_latlon.to_file(f"{folder_name}geodata/{service}/{service}_latlon_{current_year}.geojson", driver='GeoJSON')
+    
+    print(debugcounter); debugcounter+=1
     
     if 'pnrt' in to_test:
         if not os.path.exists(folder_name+'geodata/rapid_transit/'):
@@ -808,7 +824,9 @@ def spatial_analysis(boundaries,
                         crs=4326)
                     select_lines.to_file(f'{folder_name}geodata/rapid_transit/{year}/{mode}_lines_ll.geojson', driver='GeoJSON')
                
-        if 'pnst' in to_test:
+       print(debugcounter); debugcounter+=1
+        
+       if 'pnst' in to_test:
             if not os.path.exists(f'{folder_name}geodata/pnst/'):
                 os.mkdir(f'{folder_name}geodata/pnst/')
                 
@@ -856,7 +874,10 @@ def spatial_analysis(boundaries,
                 transport_and_bike_utm.geometry = transport_and_bike_utm.geometry.simplify(services_simplification)
                 transport_and_bike_latlon = transport_and_bike_utm.to_crs(epsg=4326)
                 transport_and_bike_latlon.to_file(f"{folder_name}geodata/pnst/pnst_latlon_{current_year}.geojson", driver='GeoJSON') 
-               
+           
+                
+    print(debugcounter); debugcounter+=1
+    
     if 'blocks' in to_test:
         print("getting blocks")
         #TODO -- should probably eventually fix this so that the patches
