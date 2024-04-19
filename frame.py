@@ -431,8 +431,12 @@ def calculate_country_indicators(current_year=2024,
             country_bounds.loc[idx, 'geometry'] = geometry
         elif geometry.type == 'GeometryCollection':
             assert len(list(geometry.geoms)) == 2
-            assert list(geometry.geoms)[0].type == 'MultiPolygon'
-            country_bounds.loc[idx, 'geometry'] = list(geometry.geoms)[0]
+            if list(geometry.geoms)[0].type == 'MultiPolygon':
+                country_bounds.loc[idx, 'geometry'] = list(geometry.geoms)[0]
+            elif list(geometry.geoms)[0].type == 'Polygon':
+                country_bounds.loc[idx, 'geometry'] = shapely.geometry.MultiPolygon(list(geometry.geoms)[0])
+            else:
+                print("NNOOOOOOOO")
         else:
             country_bounds.drop(idx)
     
