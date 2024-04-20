@@ -2,6 +2,7 @@ import warnings
 import datetime
 import os
 import os.path
+import gc
 import numpy
 import math
 import statistics
@@ -282,6 +283,7 @@ def spatial_analysis(boundaries,
         
     if 'highways' in to_test:
         all_highway_lines = []
+        all_highway_areas = []
 
     if 'special' in to_test:
         special = gpd.read_file(f'{folder_name}special.geojson')
@@ -570,6 +572,10 @@ def spatial_analysis(boundaries,
                         highway_lines_gdf_ll = get_service_locations.get_highways(G_allroads)
                         if highway_lines_gdf_ll is not None:
                             all_highway_lines += list(highway_lines_gdf_ll.geometry)
+                            highway_lines_utm = ox.project_gdf(highway_lines_gdf_ll)
+                            highway_areas_utm = highway_lines_utm.buffer(distances['highways'])
+                            highway_areas_ll = highway_areas_utm.to_crs(4326)
+                            all_highway_areas +=list(highway_areas_ll.geometry)
                         
                     # if debug:
                     #     for node, data in G.nodes(data=True):
@@ -665,6 +671,10 @@ def spatial_analysis(boundaries,
             patches.to_file(folder_name+'debug/patches_with_times.geojson', driver='GeoJSON')
             pd.DataFrame({'failures':failures}).to_csv(folder_name+'debug/failures.csv')
     
+    del G_allroads_unsimplified
+    del G_allroads
+    gc.collect()
+    
     debugcounter = 1
     print(debugcounter); debugcounter+=1
     
@@ -701,6 +711,10 @@ def spatial_analysis(boundaries,
         if service in service_point_locations.keys():
             service_point_locations[service].to_file(f"{folder_name}geodata/{service}_points/{service}_points_latlon_{current_year}.geojson", driver='GeoJSON')
           
+    del service_utm
+    del service_latlon
+    gc.collect()
+    
     print(debugcounter); debugcounter+=1  
           
     if 'pnpb' in to_test or 'pnab' in to_test:
@@ -714,17 +728,30 @@ def spatial_analysis(boundaries,
             merged_allbike = quilt_allbike.intersection(boundaries)
             merged_allbike = gpd.GeoDataFrame(geometry = [merged_allbike.unary_union], crs=4326)
             merged_allbike.to_file(f"{folder_name}geodata/allbike/allbike_latlon_{current_year}.geojson",driver='GeoJSON')
-    
+        
+        del quilt_protectedbike
+        del merged_protectedbike
+        del quilt_allbike
+        del merged_allbike
+        gc.collect()
+        
     print(debugcounter); debugcounter+=1
     
     if 'highways' in to_test:
         all_hwys_multiline = shapely.ops.unary_union(all_highway_lines)
         all_hwys_latlon = gpd.GeoDataFrame(geometry=[all_hwys_multiline], crs=4326)
-        all_hwys_utm = all_hwys_latlon.to_crs(utm_crs)
         all_hwys_latlon.to_file(f"{folder_name}geodata/allhwys/allhwys_latlon_{current_year}.geojson",driver='GeoJSON')
-        buffered_hwys_utm = all_hwys_utm.buffer(distances['highways'])
-        buffered_hwys_latlon = buffered_hwys_utm.to_crs(4326)
-        buffered_hwys_latlon.to_file(f"{folder_name}geodata/buffered_hwys/buffered_hwys_latlon_{current_year}.geojson",driver='GeoJSON')
+        
+        all_hwys_multipoly = shapely.ops.unary_union(all_highway_areas)
+        all_hwy_buffs_latlon = gpd.GeoDataFrame(geometry=[all_hwys_multipoly], crs=4326)
+        all_hwy_buffs_latlon.to_file(f"{folder_name}geodata/buffered_hwys/buffered_hwys_latlon_{current_year}.geojson",driver='GeoJSON')
+        
+        del all_hwys_latlon
+        del all_hwys_multiline
+        del all_hwys_multipoly
+        del all_hwy_buffs_latlon
+        
+        gc.collect()
         
     print(debugcounter); debugcounter+=1
         
