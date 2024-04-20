@@ -570,7 +570,7 @@ def spatial_analysis(boundaries,
                     
                     if 'highways' in to_test:
                         highway_lines_gdf_ll = get_service_locations.get_highways(G_allroads)
-                        if highway_lines_gdf_ll is not None:
+                        if highway_lines_gdf_ll is not None and len(list(highway_lines_gdf_ll.geometry)) > 0:
                             all_highway_lines += list(highway_lines_gdf_ll.geometry)
                             highway_lines_utm = ox.project_gdf(highway_lines_gdf_ll)
                             highway_areas_utm = highway_lines_utm.buffer(distances['highways'])
