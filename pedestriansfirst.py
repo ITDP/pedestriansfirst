@@ -728,12 +728,7 @@ def spatial_analysis(boundaries,
             merged_allbike = quilt_allbike.intersection(boundaries)
             merged_allbike = gpd.GeoDataFrame(geometry = [merged_allbike.unary_union], crs=4326)
             merged_allbike.to_file(f"{folder_name}geodata/allbike/allbike_latlon_{current_year}.geojson",driver='GeoJSON')
-        
-        del quilt_protectedbike
-        del merged_protectedbike
-        del quilt_allbike
-        del merged_allbike
-        gc.collect()
+
         
     print(debugcounter); debugcounter+=1
     
