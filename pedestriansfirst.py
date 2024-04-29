@@ -820,7 +820,7 @@ def spatial_analysis(boundaries,
                         crs=4326)
                     
                     #fix clipping errors in total_isochone
-                    if total_isochrone.unary_union.type == 'GeometryCollection':
+                    if total_isochrone.unary_union and total_isochrone.unary_union.type == 'GeometryCollection':
                         new_geoms = [x for x in total_isochrone.unary_union.geoms if x.type in ['Polygon','MultiPolygon']]
                         total_isochrone = gpd.GeoDataFrame(geometry=new_geoms,crs=4326)
                     
