@@ -699,11 +699,15 @@ def spatial_analysis(boundaries,
     print(debugcounter); debugcounter+=1
     
     for service in testing_services:
+        
         print(debugcounter); debugcounter+=1
         print(service)
         if quilt_isochrone_polys[service]:
             service_utm = gpd.GeoDataFrame(geometry = [quilt_isochrone_polys[service]],
                                            crs=utm_crs)
+            for idx in service_utm.index:
+                if service_utm.loc[idx, 'geometry'].type != 'Polygon':
+                    service_utm.drop(idx, inplace=True)
             service_utm.geometry = service_utm.geometry.simplify(services_simplification)
             service_utm = gpd.overlay(service_utm ,boundaries_utm, how='intersection')
             service_latlon = service_utm.to_crs(epsg=4326)
@@ -1031,7 +1035,7 @@ def people_near_x(service_gdf_utm, folder_name, boundaries_utm, year, sqkm_per_p
         return 0
     if len(service_gdf_utm) > 1:
         try:
-            service_gdf_utmice_gdf_utm = gpd.GeoDataFrame(geometry = [service_gdf_utm.unary_union], crs = service_gdf_utm.crs)
+            service_gdf_utm = gpd.GeoDataFrame(geometry = [service_gdf_utm.unary_union], crs = service_gdf_utm.crs)
         except:
             import pdb; pdb.set_trace()
         
