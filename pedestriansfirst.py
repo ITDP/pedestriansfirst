@@ -990,7 +990,10 @@ def spatial_analysis(boundaries,
         #export            
         patch_densities = unbuffered_patches
         for patch_idx  in list(patch_densities.index):
-            patch_densities.loc[patch_idx,'block_count'] = blocks_latlon.intersects(patch_densities.loc[patch_idx,'geometry']).value_counts()[True]
+            try:
+                patch_densities.loc[patch_idx,'block_count'] = blocks_latlon.intersects(patch_densities.loc[patch_idx,'geometry']).value_counts()[True]
+            except KeyError:
+                patch_densities.loc[patch_idx,'block_count'] = 0 
         patch_densities_utm = patch_densities.to_crs(utm_crs)
         patch_densities_utm['density'] = patch_densities_utm.block_count / (patch_densities_utm.area / 1000000)
         patch_densities_latlon = patch_densities_utm.to_crs(epsg=4326)
