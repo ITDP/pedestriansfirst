@@ -891,7 +891,7 @@ def spatial_analysis(boundaries,
                 try:
                     transport_and_bike_latlon = rapidtransport.overlay(protectedbike, how="intersection")
                 except TypeError:
-                    newrt = gpd.GeoDataFrame(geometry = [x for x in rapidtransport.geometry[0].geoms if x.type in ['Polygon','MultiPolygon'], crs=rapidtransport.crs)
+                    newrt = gpd.GeoDataFrame(geometry = [x for x in rapidtransport.geometry[0].geoms if x.type in ['Polygon','MultiPolygon']], crs=rapidtransport.crs)
                     transport_and_bike_latlon = gpd.GeoDataFrame(geometry=newrt, crs=4326).overlay(protectedbike, how="intersection")
             else:
                 #all of the above
