@@ -906,10 +906,11 @@ def spatial_analysis(boundaries,
             if transport_and_bike_utm.geometry.area.sum() != 0:
                 transport_and_bike_utm = gpd.overlay(transport_and_bike_utm ,boundaries_utm, how='intersection')
                 new_geoms = transport_and_bike_utm.geometry.simplify(services_simplification).make_valid().unary_union
+                import pdb; pdb.set_trace()
                 
                 if new_geoms.type == 'GeometryCollection':
-                    new_geoms = [x for x in new_geoms.geoms if x.type in ['Polygon','MultiPolygon']]
-                    transport_and_bike_latlon= gpd.GeoDataFrame(geometry=new_geoms,crs=4326)
+                    select_geoms = [x for x in new_geoms.geoms if x.type in ['Polygon','MultiPolygon']]
+                    transport_and_bike_latlon= gpd.GeoDataFrame(geometry=select_geoms,crs=4326)
                 
                 transport_and_bike_latlon = transport_and_bike_utm.to_crs(epsg=4326)
                 transport_and_bike_latlon.to_file(f"{folder_name}geodata/pnst/pnst_latlon_{current_year}.geojson", driver='GeoJSON') 
