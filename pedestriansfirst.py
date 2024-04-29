@@ -792,9 +792,6 @@ def spatial_analysis(boundaries,
             os.mkdir(folder_name+'geodata/rapid_transit/')
         if 'rt_mode' in rt_isochrones_utm.columns:
             rt_isochrones_latlon = rt_isochrones_utm.to_crs(4326)
-            for idx in list(rt_isochrones_latlon.index):
-                if rt_isochrones_latlon.loc[idx, 'geometry'].type != 'Polygon':
-                    rt_isochrones_latlon.drop(idx, inplace=True)
             for year in years:
                 if not os.path.exists(f'{folder_name}geodata/rapid_transit/{year}/'):
                     os.mkdir(f'{folder_name}geodata/rapid_transit/{year}/')
@@ -821,6 +818,12 @@ def spatial_analysis(boundaries,
                     total_isochrone = gpd.GeoDataFrame(
                         geometry=[rt_isochrones_latlon[selector].unary_union],
                         crs=4326)
+                    
+                    #fix clipping errors in total_isochone
+                    if total_isochrone.unary_union.type == 'GeometryCollection':
+                        new_geoms = [x for x in total_isochrone.unary_union.geoms if x.type in ['Polygon','MultiPolygon']]
+                        total_isochrone = gpd.GeoDataFrame(geometry=new_geoms,crs=4326)
+                    
                     total_isochrone.to_file(f'{folder_name}geodata/rapid_transit/{year}/{mode}_isochrones_ll.geojson', driver='GeoJSON')
                     select_stns = gpd.GeoDataFrame(
                         geometry=[rt_stns[selector].unary_union],
