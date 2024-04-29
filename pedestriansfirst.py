@@ -705,7 +705,7 @@ def spatial_analysis(boundaries,
         if quilt_isochrone_polys[service]:
             service_utm = gpd.GeoDataFrame(geometry = [quilt_isochrone_polys[service]],
                                            crs=utm_crs)
-            for idx in service_utm.index:
+            for idx in list(service_utm.index):
                 if service_utm.loc[idx, 'geometry'].type != 'Polygon':
                     service_utm.drop(idx, inplace=True)
             service_utm.geometry = service_utm.geometry.simplify(services_simplification)
@@ -794,7 +794,7 @@ def spatial_analysis(boundaries,
             os.mkdir(folder_name+'geodata/rapid_transit/')
         if 'rt_mode' in rt_isochrones_utm.columns:
             rt_isochrones_latlon = rt_isochrones_utm.to_crs(4326)
-            for idx in rt_isochrones_latlon.index:
+            for idx in list(rt_isochrones_latlon.index):
                 if rt_isochrones_latlon.loc[idx, 'geometry'].type != 'Polygon':
                     rt_isochrones_latlon.drop(idx, inplace=True)
             for year in years:
@@ -820,6 +820,7 @@ def spatial_analysis(boundaries,
                     opened_before = rt_isochrones_latlon['year_open'] <= year
                     not_closed = (np.isnan(rt_isochrones_latlon.year_clos) | (rt_isochrones_latlon.year_clos>year))
                     selector = mode_selector & opened_before & not_closed
+                    try:
                     total_isochrone = gpd.GeoDataFrame(
                         geometry=[rt_isochrones_latlon[selector].unary_union],
                         crs=4326)
