@@ -883,7 +883,10 @@ def spatial_analysis(boundaries,
                 transport_and_bike_latlon = frequenttransport.overlay(protectedbike, how="intersection")
             elif frequenttransport.unary_union is None:
                 #only rapid, no frequent
-                transport_and_bike_latlon = rapidtransport.overlay(protectedbike, how="intersection")
+                try:
+                    transport_and_bike_latlon = rapidtransport.overlay(protectedbike, how="intersection")
+                except TypeError:
+                    import pdb; pdb.set_trace()
             else:
                 #all of the above
                 rapid_or_frequent = rapidtransport.overlay(frequenttransport, how="union")
