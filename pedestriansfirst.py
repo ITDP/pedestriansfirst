@@ -906,6 +906,7 @@ def spatial_analysis(boundaries,
                 
                 if new_geoms.type == 'GeometryCollection':
                     new_geoms = [x for x in new_geoms.geoms if x.type in ['Polygon','MultiPolygon']]
+                    transport_and_bike_latlon= gpd.GeoDataFrame(geometry=new_geoms,crs=4326)
                 
                 transport_and_bike_latlon = transport_and_bike_utm.to_crs(epsg=4326)
                 transport_and_bike_latlon.to_file(f"{folder_name}geodata/pnst/pnst_latlon_{current_year}.geojson", driver='GeoJSON') 
