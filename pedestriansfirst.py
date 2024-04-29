@@ -820,7 +820,6 @@ def spatial_analysis(boundaries,
                     opened_before = rt_isochrones_latlon['year_open'] <= year
                     not_closed = (np.isnan(rt_isochrones_latlon.year_clos) | (rt_isochrones_latlon.year_clos>year))
                     selector = mode_selector & opened_before & not_closed
-                    try:
                     total_isochrone = gpd.GeoDataFrame(
                         geometry=[rt_isochrones_latlon[selector].unary_union],
                         crs=4326)
