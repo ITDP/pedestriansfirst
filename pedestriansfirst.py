@@ -186,7 +186,7 @@ def spatial_analysis(boundaries,
                       years = [1975, 1980, 1985, 1990, 1995, 2000, 2005, 2010, 2015, 2020, 2022, 2024, 2025], #for PNRT and pop_dens. remember range(1,3) = [1,2]
                       current_year = 2024,
                       patch_length = 16000, #m
-                      block_patch_length = 5000, #m
+                      block_patch_length = 1000, #m
                       boundary_buffer = 1000, #m
                       blocks_simplification = 0.0001, #topo-simplification
                       services_simplification = 10, #m TODO replace with gpd simplification?
@@ -377,6 +377,10 @@ def spatial_analysis(boundaries,
                     min_pop = 2000,
                     )
     
+    if 'blocks' in to_test:
+        outblocks = []
+        block_counts = []
+    
     quilt_isochrone_polys = {}
     for service in to_test:
         quilt_isochrone_polys[service] = False
@@ -388,6 +392,7 @@ def spatial_analysis(boundaries,
     
     
     patches, unbuffered_patches = make_patches(boundaries_latlon, utm_crs, patch_length=patch_length)
+    unbuffered_patches_utm = unbuffered_patches.to_crs(utm_crs)
     if debug:
         patches.to_file(folder_name+'debug/patches.geojson', driver='GeoJSON')
     
@@ -396,6 +401,7 @@ def spatial_analysis(boundaries,
         for p_idx in patches.index:
             patch = patches.loc[p_idx, 'geometry']
             unbuffered_patch = unbuffered_patches.loc[p_idx, 'geometry']
+            unbuffered_patch_utm = unbuffered_patches_utm.loc[p_idx, 'geometry']
             try:
                 patch_start = datetime.datetime.now()
                 for cleanupfile in ['pathbounds.geojson',
@@ -647,6 +653,43 @@ def spatial_analysis(boundaries,
                                     buffer=buffer_dist, 
                                     infill=2500)
                                 rt_isochrones_utm.loc[stn_idx,'geometry'] = iso_poly
+                    
+                    if 'blocks' in to_test:
+                        if G_allroads and len(G_allroads.edges) > 0:
+                            
+                            streets = ox.utils_graph.graph_to_gdfs(G_allroads, nodes = False)
+                            streets = shapely.geometry.MultiLineString(list(streets.geometry))
+                            merged = shapely.ops.linemerge(streets)
+                            if merged:
+                                borders = shapely.ops.unary_union(merged)
+                                blocks = list(shapely.ops.polygonize(borders))
+                                all_blocks = []
+                                selected_areas = []
+                                for block in blocks:
+                                    if 500 < block.area: #< 200000000:
+                                        if block.interiors:
+                                            block = shapely.geometry.Polygon(block.exterior)
+                                        if block.centroid.within(unbuffered_patch_utm):
+                                            area = round(block.area, 3)
+                                            perim = round(block.length, 3)
+                                            lemgth = round((perim * perim) / area, 3)
+                                            if blocks_simplification:
+                                                block = block.simplify(blocks_simplification)
+                                            all_blocks.append((block, area, perim, lemgth))
+                                            if (lemgth > 75) and (1000 > area or area > 1000000): #obvious outliers
+                                                pass
+                                            elif (lemgth > 30 ) and (3000 > area):
+                                                pass
+                                            else:
+                                                selected_areas.append(area)
+                                outblocks += all_blocks
+                                print(f'cut {len(all_blocks)} blocks')
+                                block_counts.append(len(all_blocks))
+                            else:
+                                block_counts.append(0)
+                                print('not merged!')
+                        else:
+                            block_counts.append(0)
                     
                     #import pdb;pdb.set_trace()
                     patch_time = datetime.datetime.now() - patch_start
@@ -906,7 +949,6 @@ def spatial_analysis(boundaries,
             if transport_and_bike_utm.geometry.area.sum() != 0:
                 transport_and_bike_utm = gpd.overlay(transport_and_bike_utm ,boundaries_utm, how='intersection')
                 new_geoms = transport_and_bike_utm.geometry.simplify(services_simplification).make_valid().unary_union
-                import pdb; pdb.set_trace()
                 
                 if new_geoms.type == 'GeometryCollection':
                     select_geoms = [x for x in new_geoms.geoms if x.type in ['Polygon','MultiPolygon']]
@@ -919,101 +961,7 @@ def spatial_analysis(boundaries,
     print(debugcounter); debugcounter+=1
     
     if 'blocks' in to_test:
-        print("getting blocks")
-        #TODO -- should probably eventually fix this so that the patches
-        #used in getting the blocks are not necessarily the same
-        #as the ones used in summarizing them
-        patches_latlon, unbuffered_patches_latlon = make_patches(
-            boundaries_latlon, 
-            utm_crs, 
-            patch_length=block_patch_length
-            )
-        unbuf_patches_utm = unbuffered_patches_latlon.to_crs(utm_crs)
-        print ("cut", len(list(unbuf_patches_utm)),"patches for block size in",name)
-        
-        outblocks = []
-        block_counts = []
-        for patch_idx in patches_latlon.index:
-            patch_latlon = patches_latlon.loc[patch_idx, 'geometry']
-            unbuf_patch_utm = unbuf_patches_utm.loc[patch_idx, 'geometry']
-            
-            print("patch"+str(patch_idx)+" of "+str(len(patches_latlon)), name )
-
-            boundingarg = '-b='
-            boundingarg += str(patch_latlon.bounds[0])+','
-            boundingarg += str(patch_latlon.bounds[1])+','
-            boundingarg += str(patch_latlon.bounds[2])+','
-            boundingarg += str(patch_latlon.bounds[3])
-            
-            try:
-                subprocess.check_call(['osmconvert', folder_name+'temp/citywalk.o5m', boundingarg, '--complete-ways', '--drop-broken-refs', '-o=patch.osm'])
-                G = ox.graph_from_xml('patch.osm', simplify=True, retain_all=True)
-            except ox._errors.InsufficientResponseError:
-                G = False
-                print("G=False")    
-            except ValueError:
-                try:
-                    subprocess.check_call(['osmconvert', folder_name+'temp/citywalk.o5m', boundingarg, '--drop-broken-refs', '-o=patch.osm'])
-                    G = ox.graph_from_xml('patch.osm', simplify=True, retain_all=True)
-                except ox._errors.InsufficientResponseError:
-                    G = False
-                    print("G=False")    
-                except ValueError:
-                    try:
-                        G = ox.graph_from_polygon(patch_latlon, 
-                                                  network_type='walk',
-                                                  #custom_filter=walk_filter, 
-                                                  simplify=False, 
-                                                  retain_all=True)
-                    except ox._errors.InsufficientResponseError:
-                        G = False
-                        print("G=False")    
-                    
-                
-            if G and len(G.edges) > 0:
-                G = ox.project_graph(G, to_crs=utm_crs)
-                
-                streets = ox.utils_graph.graph_to_gdfs(G, nodes = False)
-                streets = shapely.geometry.MultiLineString(list(streets.geometry))
-                merged = shapely.ops.linemerge(streets)
-                if merged:
-                    borders = shapely.ops.unary_union(merged)
-                    blocks = list(shapely.ops.polygonize(borders))
-                    all_blocks = []
-                    selected_areas = []
-                    for block in blocks:
-                        if 500 < block.area: #< 200000000:
-                            if block.interiors:
-                                block = shapely.geometry.Polygon(block.exterior)
-                            if block.centroid.within(unbuf_patch_utm):
-                                area = round(block.area, 3)
-                                perim = round(block.length, 3)
-                                lemgth = round((perim * perim) / area, 3)
-                                if blocks_simplification:
-                                    block = block.simplify(blocks_simplification)
-                                all_blocks.append((block, area, perim, lemgth))
-                                if (lemgth > 75) and (1000 > area or area > 1000000): #obvious outliers
-                                    pass
-                                elif (lemgth > 30 ) and (3000 > area):
-                                    pass
-                                else:
-                                    selected_areas.append(area)
-                    outblocks += all_blocks
-                    print(f'cut {len(all_blocks)} blocks')
-                    block_counts.append(len(all_blocks))
-                else:
-                    block_counts.append(0)
-                    print('not merged!')
-            else:
-                block_counts.append(0)
-        
-        #export            
-        patch_densities = unbuffered_patches_latlon.copy()
-        patch_densities['block_count'] = block_counts
-        patch_densities_utm = patch_densities.to_crs(utm_crs)
-        patch_densities_utm['density'] = patch_densities_utm.block_count / (patch_densities_utm.area /1000000)
-        patch_densities_latlon = patch_densities_utm.to_crs(epsg=4326)
-        patch_densities_latlon.to_file(f"{folder_name}geodata/blocks/block_densities_latlon_{current_year}.geojson", driver='GeoJSON')
+        #export all blocks
         blocks_utm = gpd.GeoDataFrame(geometry=[block[0] for block in outblocks], crs=utm_crs)
         blocks_utm['area_utm'] = [block[1] for block in outblocks]
         blocks_utm['perim'] = [block[2] for block in outblocks]
@@ -1032,6 +980,136 @@ def spatial_analysis(boundaries,
         #blocks_latlon = blocks_topo.toposimplify(blocks_simplification).to_gdf()
         
         blocks_latlon.to_file(f"{folder_name}geodata/blocks/blocks_latlon_{current_year}.geojson", driver='GeoJSON')
+        
+        block_patches_latlon, block_unbuffered_patches_latlon = make_patches(
+            boundaries_latlon, 
+            utm_crs, 
+            patch_length=block_patch_length
+            )
+        block_unbuf_patches_utm = block_unbuffered_patches_latlon.to_crs(utm_crs)
+        #export            
+        patch_densities = unbuffered_patches
+        for patch_idx  in list(patch_densities.index):
+            patch_densities.loc[patch_idx,'block_count'] = blocks_latlon.intersects(patch_densities.loc[patch_idx,'geometry']).value_counts()[True]
+        patch_densities_utm = patch_densities.to_crs(utm_crs)
+        patch_densities_utm['density'] = patch_densities_utm.block_count / (patch_densities_utm.area / 1000000)
+        patch_densities_latlon = patch_densities_utm.to_crs(epsg=4326)
+        patch_densities_latlon.to_file(f"{folder_name}geodata/blocks/block_densities_latlon_{current_year}.geojson", driver='GeoJSON')
+
+        
+    #     print("getting blocks")
+    #     #TODO -- should probably eventually fix this so that the patches
+    #     #used in getting the blocks are not necessarily the same
+    #     #as the ones used in summarizing them
+    #     patches_latlon, unbuffered_patches_latlon = make_patches(
+    #         boundaries_latlon, 
+    #         utm_crs, 
+    #         patch_length=block_patch_length
+    #         )
+    #     unbuf_patches_utm = unbuffered_patches_latlon.to_crs(utm_crs)
+    #     print ("cut", len(list(unbuf_patches_utm)),"patches for block size in",name)
+        
+    #X     outblocks = []
+    #X     block_counts = []
+    #     for patch_idx in patches_latlon.index:
+    #         patch_latlon = patches_latlon.loc[patch_idx, 'geometry']
+    #         unbuf_patch_utm = unbuf_patches_utm.loc[patch_idx, 'geometry']
+            
+    #         print("patch"+str(patch_idx)+" of "+str(len(patches_latlon)), name )
+
+    #         boundingarg = '-b='
+    #         boundingarg += str(patch_latlon.bounds[0])+','
+    #         boundingarg += str(patch_latlon.bounds[1])+','
+    #         boundingarg += str(patch_latlon.bounds[2])+','
+    #         boundingarg += str(patch_latlon.bounds[3])
+            
+    #         try:
+    #             subprocess.check_call(['osmconvert', folder_name+'temp/citywalk.o5m', boundingarg, '--complete-ways', '--drop-broken-refs', '-o=patch.osm'])
+    #             G = ox.graph_from_xml('patch.osm', simplify=True, retain_all=True)
+    #         except ox._errors.InsufficientResponseError:
+    #             G = False
+    #             print("G=False")    
+    #         except ValueError:
+    #             try:
+    #                 subprocess.check_call(['osmconvert', folder_name+'temp/citywalk.o5m', boundingarg, '--drop-broken-refs', '-o=patch.osm'])
+    #                 G = ox.graph_from_xml('patch.osm', simplify=True, retain_all=True)
+    #             except ox._errors.InsufficientResponseError:
+    #                 G = False
+    #                 print("G=False")    
+    #             except ValueError:
+    #                 try:
+    #                     G = ox.graph_from_polygon(patch_latlon, 
+    #                                               network_type='walk',
+    #                                               #custom_filter=walk_filter, 
+    #                                               simplify=False, 
+    #                                               retain_all=True)
+    #                 except ox._errors.InsufficientResponseError:
+    #                     G = False
+    #                     print("G=False")    
+                    
+                
+    #         if G and len(G.edges) > 0:
+    #             G = ox.project_graph(G, to_crs=utm_crs)
+                
+    #             streets = ox.utils_graph.graph_to_gdfs(G, nodes = False)
+    #             streets = shapely.geometry.MultiLineString(list(streets.geometry))
+    #             merged = shapely.ops.linemerge(streets)
+    #             if merged:
+    #                 borders = shapely.ops.unary_union(merged)
+    #                 blocks = list(shapely.ops.polygonize(borders))
+    #                 all_blocks = []
+    #                 selected_areas = []
+    #                 for block in blocks:
+    #                     if 500 < block.area: #< 200000000:
+    #                         if block.interiors:
+    #                             block = shapely.geometry.Polygon(block.exterior)
+    #                         if block.centroid.within(unbuf_patch_utm):
+    #                             area = round(block.area, 3)
+    #                             perim = round(block.length, 3)
+    #                             lemgth = round((perim * perim) / area, 3)
+    #                             if blocks_simplification:
+    #                                 block = block.simplify(blocks_simplification)
+    #                             all_blocks.append((block, area, perim, lemgth))
+    #                             if (lemgth > 75) and (1000 > area or area > 1000000): #obvious outliers
+    #                                 pass
+    #                             elif (lemgth > 30 ) and (3000 > area):
+    #                                 pass
+    #                             else:
+    #                                 selected_areas.append(area)
+    #                 outblocks += all_blocks
+    #                 print(f'cut {len(all_blocks)} blocks')
+    #                 block_counts.append(len(all_blocks))
+    #             else:
+    #                 block_counts.append(0)
+    #                 print('not merged!')
+    #         else:
+    #             block_counts.append(0)
+        
+    #     #export            
+    #     patch_densities = unbuffered_patches_latlon.copy()
+    #     patch_densities['block_count'] = block_counts
+    #     patch_densities_utm = patch_densities.to_crs(utm_crs)
+    #     patch_densities_utm['density'] = patch_densities_utm.block_count / (patch_densities_utm.area /1000000)
+    #     patch_densities_latlon = patch_densities_utm.to_crs(epsg=4326)
+    #     patch_densities_latlon.to_file(f"{folder_name}geodata/blocks/block_densities_latlon_{current_year}.geojson", driver='GeoJSON')
+    #     blocks_utm = gpd.GeoDataFrame(geometry=[block[0] for block in outblocks], crs=utm_crs)
+    #     blocks_utm['area_utm'] = [block[1] for block in outblocks]
+    #     blocks_utm['perim'] = [block[2] for block in outblocks]
+    #     blocks_utm['oblongness'] = [block[3] for block in outblocks]
+    #     blocks_utm['density'] = [1000000/block[1] for block in outblocks]
+        
+    #     filtered_blocks_utm = blocks_utm[
+    #         (blocks_utm.oblongness < 50) &
+    #         (blocks_utm.area_utm > 1000) &
+    #         (blocks_utm.area_utm < 1000000)]
+        
+    #     #TODO -- determine whether to normal simplify or toposimplify, and how much
+    #     filtered_blocks_utm.geometry = filtered_blocks_utm.geometry.simplify(10)
+    #     blocks_latlon = filtered_blocks_utm.to_crs(epsg=4326)
+    #     #blocks_topo = topojson.Topology(blocks_latlon, prequantize=True)
+    #     #blocks_latlon = blocks_topo.toposimplify(blocks_simplification).to_gdf()
+        
+    #     blocks_latlon.to_file(f"{folder_name}geodata/blocks/blocks_latlon_{current_year}.geojson", driver='GeoJSON')
     
     
     ft = datetime.datetime.now()
