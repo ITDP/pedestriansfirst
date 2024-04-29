@@ -83,6 +83,8 @@ def feed_from_filename(filename):
         feed = gk.read_feed('temp_gtfs_dir/', dist_units = 'km')
     except pd.errors.ParserError:
         return False
+    except KeyError:
+        return False
     if os.path.exists('temp_gtfs_dir'):
         shutil.rmtree('temp_gtfs_dir')
     return feed
