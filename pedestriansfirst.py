@@ -705,9 +705,7 @@ def spatial_analysis(boundaries,
         if quilt_isochrone_polys[service]:
             service_utm = gpd.GeoDataFrame(geometry = [quilt_isochrone_polys[service]],
                                            crs=utm_crs)
-            for idx in list(service_utm.index):
-                if service_utm.loc[idx, 'geometry'].type != 'Polygon':
-                    service_utm.drop(idx, inplace=True)
+            #TODO: check validity / all polygons?
             service_utm.geometry = service_utm.geometry.simplify(services_simplification)
             service_utm = gpd.overlay(service_utm ,boundaries_utm, how='intersection')
             service_latlon = service_utm.to_crs(epsg=4326)
@@ -893,17 +891,22 @@ def spatial_analysis(boundaries,
                 try:
                     transport_and_bike_latlon = rapidtransport.overlay(protectedbike, how="intersection")
                 except TypeError:
-                    newrt = gpd.GeoDataFrame(geometry = [x for x in rapidtransport.geometry[0].geoms if x.type=='Polygon'], crs=rapidtransport.crs)
-                    import pdb; pdb.set_trace()
+                    newrt = gpd.GeoDataFrame(geometry = [x for x in rapidtransport.geometry[0].geoms if x.type in ['Polygon','MultiPolygon'], crs=rapidtransport.crs)
+                    transport_and_bike_latlon = gpd.GeoDataFrame(geometry=newrt, crs=4326).overlay(protectedbike, how="intersection")
             else:
                 #all of the above
                 rapid_or_frequent = rapidtransport.overlay(frequenttransport, how="union")
                 transport_and_bike_latlon = rapid_or_frequent.overlay(protectedbike, how="intersection")
             
+            
             transport_and_bike_utm = transport_and_bike_latlon.to_crs(utm_crs)
             if transport_and_bike_utm.geometry.area.sum() != 0:
                 transport_and_bike_utm = gpd.overlay(transport_and_bike_utm ,boundaries_utm, how='intersection')
-                transport_and_bike_utm.geometry = transport_and_bike_utm.geometry.simplify(services_simplification)
+                new_geoms = transport_and_bike_utm.geometry.simplify(services_simplification).make_valid().unary_union
+                
+                if new_geoms.type == 'GeometryCollection':
+                    new_geoms = [x for x in new_geoms.geoms if x.type in ['Polygon','MultiPolygon']]
+                
                 transport_and_bike_latlon = transport_and_bike_utm.to_crs(epsg=4326)
                 transport_and_bike_latlon.to_file(f"{folder_name}geodata/pnst/pnst_latlon_{current_year}.geojson", driver='GeoJSON') 
            
