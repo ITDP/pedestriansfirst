@@ -988,7 +988,7 @@ def spatial_analysis(boundaries,
             )
         block_unbuf_patches_utm = block_unbuffered_patches_latlon.to_crs(utm_crs)
         #export            
-        patch_densities = unbuffered_patches
+        patch_densities = block_unbuffered_patches_latlon
         for patch_idx  in list(patch_densities.index):
             try:
                 patch_densities.loc[patch_idx,'block_count'] = blocks_latlon.intersects(patch_densities.loc[patch_idx,'geometry']).value_counts()[True]
