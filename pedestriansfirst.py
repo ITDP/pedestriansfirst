@@ -527,17 +527,25 @@ def spatial_analysis(boundaries,
                                 already_identified = already_identified.any()
                             if already_identified:
                                 connected_indices = [idx]
-                                for i in range(0,1000): #just so we don't end up in an infinite loop somehow
-                                    connected_network = total_protectedbike.loc[connected_indices,'geometry'].unary_union
-                                    nearby = total_protectedbike[total_protectedbike.distance(connected_network) < max_jump]
-                                    if set(connected_indices) == set(nearby.index):
-                                        if shapely.minimum_bounding_radius(total_protectedbike.loc[connected_indices,'geometry'].unary_union) > min_radius:
+                                if shapely.minimum_bounding_radius(total_protectedbike.loc[connected_indices,'geometry'].unary_union) > min_radius:
+                                    total_protectedbike.loc[connected_indices,'in_real_network'] = "yes"
+                                else:
+                                    for i in range(0,10): #just so we don't end up in an infinite loop somehow
+                                        connected_network = total_protectedbike.loc[connected_indices,'geometry'].unary_union
+                                        nearby = total_protectedbike[total_protectedbike.distance(connected_network) < max_jump]
+                                        if 'yes' in nearby.in_real_network.unique():
                                             total_protectedbike.loc[connected_indices,'in_real_network'] = "yes"
+                                            break
+                                        if set(connected_indices) == set(nearby.index):
+                                            if shapely.minimum_bounding_radius(total_protectedbike.loc[connected_indices,'geometry'].unary_union) > min_radius:
+                                                total_protectedbike.loc[connected_indices,'in_real_network'] = "yes"
+                                            else:
+                                                total_protectedbike.loc[connected_indices,'in_real_network'] = "no"
+                                            break
                                         else:
-                                            total_protectedbike.loc[connected_indices,'in_real_network'] = "no"
-                                        break
-                                    else:
-                                        connected_indices = list(nearby.index)
+                                            connected_indices = list(nearby.index)
+                                    if shapely.minimum_bounding_radius(total_protectedbike.loc[connected_indices,'geometry'].unary_union) > min_radius:
+                                        total_protectedbike.loc[connected_indices,'in_real_network'] = "yes"
                         total_protectedbike = total_protectedbike[total_protectedbike.in_real_network == "yes"]
                         
                         #remove isolated small lanes from allbike network
@@ -548,17 +556,25 @@ def spatial_analysis(boundaries,
                                 already_identified = already_identified.any()
                             if already_identified:
                                 connected_indices = [idx]
-                                for i in range(0,1000): #just so we don't end up in an infinite loop somehow
-                                    connected_network = total_allbike.loc[connected_indices,'geometry'].unary_union
-                                    nearby = total_allbike[total_allbike.distance(connected_network) < max_jump]
-                                    if set(connected_indices) == set(nearby.index):
-                                        if shapely.minimum_bounding_radius(total_allbike.loc[connected_indices,'geometry'].unary_union) > min_radius:
+                                if shapely.minimum_bounding_radius(total_allbike.loc[connected_indices,'geometry'].unary_union) > min_radius:
+                                    total_allbike.loc[connected_indices,'in_real_network'] = "yes"
+                                else:
+                                    for i in range(0,10): #just so we don't end up in an infinite loop somehow
+                                        connected_network = total_allbike.loc[connected_indices,'geometry'].unary_union
+                                        nearby = total_allbike[total_allbike.distance(connected_network) < max_jump]
+                                        if 'yes' in nearby.in_real_network.unique():
                                             total_allbike.loc[connected_indices,'in_real_network'] = "yes"
+                                            break
+                                        if set(connected_indices) == set(nearby.index):
+                                            if shapely.minimum_bounding_radius(total_allbike.loc[connected_indices,'geometry'].unary_union) > min_radius:
+                                                total_allbike.loc[connected_indices,'in_real_network'] = "yes"
+                                            else:
+                                                total_allbike.loc[connected_indices,'in_real_network'] = "no"
+                                            break
                                         else:
-                                            total_allbike.loc[connected_indices,'in_real_network'] = "no"
-                                        break
-                                    else:
-                                        connected_indices = list(nearby.index)
+                                            connected_indices = list(nearby.index)
+                                    if shapely.minimum_bounding_radius(total_allbike.loc[connected_indices,'geometry'].unary_union) > min_radius:
+                                        total_allbike.loc[connected_indices,'in_real_network'] = "yes"
                         total_allbike = total_allbike[total_allbike.in_real_network == "yes"]
                                 
                         quilt_allbike = pd.concat([quilt_allbike, total_allbike])
