@@ -772,9 +772,6 @@ def spatial_analysis(boundaries,
         if service in service_point_locations.keys():
             service_point_locations[service].to_file(f"{folder_name}geodata/{service}_points/{service}_points_latlon_{current_year}.geojson", driver='GeoJSON')
           
-    del service_utm
-    del service_latlon
-    gc.collect()
     
     print(debugcounter); debugcounter+=1  
           
