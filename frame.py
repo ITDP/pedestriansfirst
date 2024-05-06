@@ -420,9 +420,10 @@ def regional_analysis(hdc,
 def get_number_jurisdictions():
     folders = os.listdir('cities_out/')
     total = 0
-    for folder in folders:
+    for folder in tqdm(folders):
         data = pd.read_csv(f'cities_out/{folder}/indicator_values.csv')
-        total += len(data[~np.isnan(data.admin_level)])
+        if 'admin_level' in data.columns:
+            total += len(data[~np.isnan(data.admin_level)])
     print(total)
     return total
 
