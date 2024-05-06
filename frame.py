@@ -262,27 +262,30 @@ def get_jurisdictions(hdc,
     if not 'admin_level' in jurisdictions_latlon.columns:
         final_jurisdictions_latlon = []
     else:
-        jurisdictions_latlon = jurisdictions_latlon.loc[('relation',)]
-        print(f'found {len(jurisdictions_latlon)} on second pass')
-        jurisdictions_utm = jurisdictions_latlon.to_crs(buffered_poly_utm_gdf.crs)
-        jurisdictions_utm = gpd.clip(jurisdictions_utm, nearby_land_gdf_utm.unary_union)
-        jurisdictions_clipped_utm = jurisdictions_utm.intersection(total_boundaries_utm)
-        selection = (jurisdictions_clipped_utm.area / jurisdictions_utm.area) > 0.95
-        select_jurisdictions_utm = jurisdictions_utm[selection]
-        print(f'found {len(select_jurisdictions_utm)} with 0.95 inside total area')
-        selected_levels = []
-        for admin_level in select_jurisdictions_utm.admin_level.unique():
-            selection = select_jurisdictions_utm[select_jurisdictions_utm.admin_level==admin_level]
-            if selection.area.mean() >= level_min_mean_area*1000000:
-                if selection.unary_union.area >= (level_min_coverage * buffered_poly_utm.area):
-                    selected_levels.append(admin_level)
+        try:
+            jurisdictions_latlon = jurisdictions_latlon.loc[('relation',)]
+            print(f'found {len(jurisdictions_latlon)} on second pass')
+            jurisdictions_utm = jurisdictions_latlon.to_crs(buffered_poly_utm_gdf.crs)
+            jurisdictions_utm = gpd.clip(jurisdictions_utm, nearby_land_gdf_utm.unary_union)
+            jurisdictions_clipped_utm = jurisdictions_utm.intersection(total_boundaries_utm)
+            selection = (jurisdictions_clipped_utm.area / jurisdictions_utm.area) > 0.95
+            select_jurisdictions_utm = jurisdictions_utm[selection]
+            print(f'found {len(select_jurisdictions_utm)} with 0.95 inside total area')
+            selected_levels = []
+            for admin_level in select_jurisdictions_utm.admin_level.unique():
+                selection = select_jurisdictions_utm[select_jurisdictions_utm.admin_level==admin_level]
+                if selection.area.mean() >= level_min_mean_area*1000000:
+                    if selection.unary_union.area >= (level_min_coverage * buffered_poly_utm.area):
+                        selected_levels.append(admin_level)
+                    else:
+                        print(f'admin_level={admin_level} excluded: insufficient coverage')
                 else:
-                    print(f'admin_level={admin_level} excluded: insufficient coverage')
-            else:
-                print(f'admin_level={admin_level} excluded: polys too small: avg {selection.area.mean()/1000000}km2')
-        final_jurisdictions_utm = select_jurisdictions_utm[select_jurisdictions_utm.admin_level.isin(selected_levels)]
-        final_jurisdictions_latlon = final_jurisdictions_utm.to_crs(4326)
-        print(f'found {len(final_jurisdictions_latlon)} in acceptable admin levels {selected_levels}')
+                    print(f'admin_level={admin_level} excluded: polys too small: avg {selection.area.mean()/1000000}km2')
+            final_jurisdictions_utm = select_jurisdictions_utm[select_jurisdictions_utm.admin_level.isin(selected_levels)]
+            final_jurisdictions_latlon = final_jurisdictions_utm.to_crs(4326)
+            print(f'found {len(final_jurisdictions_latlon)} in acceptable admin levels {selected_levels}')
+        except: 
+            final_jurisdictions_latlon = []
     
     # get admin_level names, add to dataframe
     level_names_eng = pd.read_csv('input_data/admin_level_names_eng.csv')
@@ -671,7 +674,7 @@ if __name__ == '__main__':
         # else: 
         divide_by = int(sys.argv[3])
         remainder = int(sys.argv[4])
-        print (f"{hdc}%{divide_by}={hdc % divide_by}, compare to {remainder}, {ucdb.loc[hdc,'NAME_MAIN']}")
+        print (f"{hdc}%{divide_by}={hdc % divide_by}, compare to {remainder}, {ucdb.loc[hdc,'NAME_MAIN']}, pop {ucdb.loc[hdc,'POP_2020']}")
         if hdc % divide_by == remainder and ucdb.loc[hdc,'NAME_MAIN'] != 'N/A':
             if not os.path.exists(f'cities_out/ghsl_region_{hdc}/indicator_values.csv'):
                 if os.path.exists(f'cities_out/ghsl_region_{hdc}/geodata/blocks/blocks_latlon_2024.geojson'):
