@@ -417,7 +417,7 @@ def regional_analysis(hdc,
     #import pdb; pdb.set_trace()
         
     
-def get_number_jurisdictions():
+def get_number_jurisdictions(input_folder_prefix = 'cities_out/'):
     folders = os.listdir('cities_out/')
     total = 0
     for folder in tqdm(folders):
@@ -427,13 +427,43 @@ def get_number_jurisdictions():
     print(total)
     return total
 
+def recalculate_blocks(input_folder_prefix = 'cities_out/',current_year=2024,block_patch_length=1000):
+    
+    folders = os.listdir(input_folder_prefix)
+    for folder in tqdm(folders):
+        print(folder)
+        os.rename(f"{input_folder_prefix}/{folder}/geodata/blocks/block_densities_latlon_{current_year}.geojson",
+                  f"{input_folder_prefix}/{folder}/geodata/blocks/OLD_block_densities_latlon_{current_year}.geojson")
+        blocks_latlon = gpd.read_file(f"{input_folder_prefix}/{folder}/geodata/blocks/blocks_latlon_{current_year}.geojson")
+        blocks_utm = ox.project_gdf(blocks_latlon)
+        
+        block_patches_latlon, block_unbuffered_patches_latlon = pedestriansfirst.make_patches(
+            blocks_latlon.bounds, 
+            blocks_utm.crs, 
+            patch_length=block_patch_length
+            )
+        block_unbuf_patches_utm = block_unbuffered_patches_latlon.to_crs(blocks_utm.crs)
+        #export            
+        patch_densities = block_unbuffered_patches_latlon
+        for patch_idx  in list(patch_densities.index):
+            try:
+                patch_densities.loc[patch_idx,'block_count'] = blocks_latlon.intersects(patch_densities.loc[patch_idx,'geometry'].centroid).value_counts()[True]
+            except KeyError:
+                patch_densities.loc[patch_idx,'block_count'] = 0 
+        patch_densities_utm = patch_densities.to_crs(blocks_utm.crs)
+        patch_densities_utm['density'] = patch_densities_utm.block_count / (patch_densities_utm.area / 1000000)
+        patch_densities_latlon = patch_densities_utm.to_crs(epsg=4326)
+        patch_densities_latlon.to_file(f"{input_folder_prefix}/{folder}/geodata/blocks/block_densities_latlon_{current_year}.geojson", driver='GeoJSON')
+
+    
+
 def calculate_country_indicators(current_year=2024,
                                  rt_and_pop_years = [1975, 1980, 1985, 1990, 1995, 2000, 2005, 2010, 2015, 2020, 2024, 2025,],
                                  input_folder_prefix = 'cities_out/',
                                  output_folder_prefix = 'countries_out/',
                                  #TODO add years for other indicators with more than one
                                  ):
-    country_bounds = gpd.read_file('input_data/CGAZ/geoBoundaries_ITDPv4_SIMPLIFIED.gpkg')
+    country_bounds = gpd.read_file('input_data/CGAZ/geoBoundaries_ITDPv5_SIMPLIFIED.gpkg')
     
     country_bounds.geometry = country_bounds.make_valid()
     for idx in list(country_bounds.index):
@@ -542,6 +572,10 @@ def calculate_country_indicators(current_year=2024,
             
     #set up dataframes for results
     country_totals = pd.DataFrame(index=countries_ISO, columns=full_indicator_names)
+    for country_ISO in countries_ISO:
+        name = country_bounds[country_bounds.shapeGroup=='USA'].shapeName.iloc[0]
+        country_totals.loc[country_ISO,'name'] = name
+    
     country_totals = country_totals.replace(np.nan,0)
     country_final_values = country_totals.copy()
     region_totals = pd.DataFrame(index = ['world', *all_regions, *all_orgs], columns=full_indicator_names)

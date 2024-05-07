@@ -1004,7 +1004,7 @@ def spatial_analysis(boundaries,
         patch_densities = block_unbuffered_patches_latlon
         for patch_idx  in list(patch_densities.index):
             try:
-                patch_densities.loc[patch_idx,'block_count'] = blocks_latlon.intersects(patch_densities.loc[patch_idx,'geometry']).value_counts()[True]
+                patch_densities.loc[patch_idx,'block_count'] = blocks_latlon.intersects(patch_densities.loc[patch_idx,'geometry'].centroid).value_counts()[True]
             except KeyError:
                 patch_densities.loc[patch_idx,'block_count'] = 0 
         patch_densities_utm = patch_densities.to_crs(utm_crs)
