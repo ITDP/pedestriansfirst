@@ -432,8 +432,11 @@ def recalculate_blocks(input_folder_prefix = 'cities_out/',current_year=2024,blo
     folders = os.listdir(input_folder_prefix)
     for folder in tqdm(folders):
         print(folder)
-        os.rename(f"{input_folder_prefix}/{folder}/geodata/blocks/block_densities_latlon_{current_year}.geojson",
+        try:
+            os.rename(f"{input_folder_prefix}/{folder}/geodata/blocks/block_densities_latlon_{current_year}.geojson",
                   f"{input_folder_prefix}/{folder}/geodata/blocks/OLD_block_densities_latlon_{current_year}.geojson")
+        except FileNotFoundError:
+            pass
         blocks_latlon = gpd.read_file(f"{input_folder_prefix}/{folder}/geodata/blocks/blocks_latlon_{current_year}.geojson")
         blocks_utm = ox.project_gdf(blocks_latlon)
         
