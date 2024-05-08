@@ -441,7 +441,7 @@ def recalculate_blocks(input_folder_prefix = 'cities_out/',current_year=2024,blo
         blocks_utm = ox.project_gdf(blocks_latlon)
         
         block_patches_latlon, block_unbuffered_patches_latlon = pedestriansfirst.make_patches(
-            gpd.GeoDataFrame(geometry=[blocks_latlon.bounds], crs=4326), 
+            gpd.GeoDataFrame(geometry=[shapely.geometry.box(*blocks_latlon.total_bounds)], crs=4326), 
             blocks_utm.crs, 
             patch_length=block_patch_length
             )
