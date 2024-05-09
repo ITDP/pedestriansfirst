@@ -513,6 +513,7 @@ def calculate_country_indicators(current_year=2024,
         'carfree',
         'people_not_near_highways',
         'block_density',
+        'pnst',
         ]
 
     current_year_indicators_sum = [
