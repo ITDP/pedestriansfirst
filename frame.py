@@ -577,7 +577,7 @@ def calculate_country_indicators(current_year=2024,
     #set up dataframes for results
     country_totals = pd.DataFrame(index=countries_ISO, columns=full_indicator_names)
     for country_ISO in countries_ISO:
-        name = country_bounds[country_bounds.shapeGroup=='USA'].shapeName.iloc[0]
+        name = country_bounds[country_bounds.shapeGroup=='country_ISO'].shapeName.iloc[0]
         country_totals.loc[country_ISO,'name'] = name
     
     country_totals = country_totals.replace(np.nan,0)
