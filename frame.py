@@ -440,12 +440,13 @@ def recalculate_blocks(input_folder_prefix = 'cities_out/',current_year=2024,blo
             blocks_utm.crs, 
             patch_length=block_patch_length
             )
+        centroids = blocks_latlon.centroid
         block_unbuf_patches_utm = block_unbuffered_patches_latlon.to_crs(blocks_utm.crs)
         patch_densities = block_unbuffered_patches_latlon
         for patch_idx  in list(patch_densities.index):
             try:
-                patch_densities.loc[patch_idx,'block_count'] = blocks_latlon.intersects(patch_densities.loc[patch_idx,'geometry'].centroid).value_counts()[True]
-                import pdb; pdb.set_trace()
+                patch_densities.loc[patch_idx,'block_count'] = centroids.intersects(patch_densities.loc[patch_idx,'geometry']).value_counts()[True]
+                #import pdb; pdb.set_trace()
             except KeyError:
                 patch_densities.loc[patch_idx,'block_count'] = 0 
         patch_densities_utm = patch_densities.to_crs(blocks_utm.crs)
