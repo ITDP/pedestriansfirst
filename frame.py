@@ -165,7 +165,7 @@ def get_jurisdictions(hdc,
     #and while we're at it, set up country-specific analysis areas
     
     #get CGAZ data here, also use it for clipping coastline
-    country_bounds = gpd.read_file('input_data/CGAZ/geoBoundaries_ITDPv4.gpkg')
+    country_bounds = gpd.read_file('input_data/CGAZ/geoBoundaries_ITDPv5.gpkg')
     country_bounds.crs=4326
     earth_utm = country_bounds.to_crs(crs = poly_utm_gdf.crs)
     #get land within 10km
