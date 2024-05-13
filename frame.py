@@ -432,11 +432,6 @@ def recalculate_blocks(input_folder_prefix = 'cities_out/',current_year=2024,blo
     folders = os.listdir(input_folder_prefix)
     for folder in tqdm(folders):
         print(folder)
-        try:
-            os.rename(f"{input_folder_prefix}/{folder}/geodata/blocks/block_densities_latlon_{current_year}.geojson",
-                  f"{input_folder_prefix}/{folder}/geodata/blocks/OLD_block_densities_latlon_{current_year}.geojson")
-        except FileNotFoundError:
-            pass
         blocks_latlon = gpd.read_file(f"{input_folder_prefix}/{folder}/geodata/blocks/blocks_latlon_{current_year}.geojson")
         blocks_utm = ox.project_gdf(blocks_latlon)
         
@@ -446,16 +441,21 @@ def recalculate_blocks(input_folder_prefix = 'cities_out/',current_year=2024,blo
             patch_length=block_patch_length
             )
         block_unbuf_patches_utm = block_unbuffered_patches_latlon.to_crs(blocks_utm.crs)
-        #export            
         patch_densities = block_unbuffered_patches_latlon
         for patch_idx  in list(patch_densities.index):
             try:
                 patch_densities.loc[patch_idx,'block_count'] = blocks_latlon.intersects(patch_densities.loc[patch_idx,'geometry'].centroid).value_counts()[True]
+                import pdb; pdb.set_trace()
             except KeyError:
                 patch_densities.loc[patch_idx,'block_count'] = 0 
         patch_densities_utm = patch_densities.to_crs(blocks_utm.crs)
         patch_densities_utm['density'] = patch_densities_utm.block_count / (patch_densities_utm.area / 1000000)
         patch_densities_latlon = patch_densities_utm.to_crs(epsg=4326)
+        try:
+            os.rename(f"{input_folder_prefix}/{folder}/geodata/blocks/block_densities_latlon_{current_year}.geojson",
+                  f"{input_folder_prefix}/{folder}/geodata/blocks/OLD_block_densities_latlon_{current_year}.geojson")
+        except FileNotFoundError:
+            pass
         patch_densities_latlon.to_file(f"{input_folder_prefix}/{folder}/geodata/blocks/block_densities_latlon_{current_year}.geojson", driver='GeoJSON')
 
     
