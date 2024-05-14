@@ -459,7 +459,16 @@ def recalculate_blocks(input_folder_prefix = 'cities_out/',current_year=2024,blo
             pass
         patch_densities_latlon.to_file(f"{input_folder_prefix}/{folder}/geodata/blocks/block_densities_latlon_{current_year}.geojson", driver='GeoJSON')
 
+def make_block_only_folder(input_folder_prefix = 'cities_out/', output_folder_prefix='cities_out_block_data_only/'):
+    if not os.path.exists(output_folder_prefix):
+        os.makedirs(output_folder_prefix)
     
+    folders = os.listdir(input_folder_prefix)
+    for folder in tqdm(folders):
+        os.makedirs(f'{output_folder_prefix}/geodata/blocks')
+        shutil.copy(f"{input_folder_prefix}/geodata/blocks/block_densities_latlon_2024.geojson",f"{output_folder_prefix}/geodata/blocks/block_densities_latlon_2024.geojson")
+        shutil.copy(f"{input_folder_prefix}/geodata/blocks/blocks_latlon_2024.geojson",f"{output_folder_prefix}/geodata/blocks/blocks_latlon_2024.geojson")
+
 
 def calculate_country_indicators(current_year=2024,
                                  rt_and_pop_years = [1975, 1980, 1985, 1990, 1995, 2000, 2005, 2010, 2015, 2020, 2024, 2025,],
