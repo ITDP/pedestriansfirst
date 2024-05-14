@@ -465,9 +465,9 @@ def make_block_only_folder(input_folder_prefix = 'cities_out/', output_folder_pr
     
     folders = os.listdir(input_folder_prefix)
     for folder in tqdm(folders):
-        os.makedirs(f'{output_folder_prefix}/geodata/blocks')
-        shutil.copy(f"{input_folder_prefix}/geodata/blocks/block_densities_latlon_2024.geojson",f"{output_folder_prefix}/geodata/blocks/block_densities_latlon_2024.geojson")
-        shutil.copy(f"{input_folder_prefix}/geodata/blocks/blocks_latlon_2024.geojson",f"{output_folder_prefix}/geodata/blocks/blocks_latlon_2024.geojson")
+        os.makedirs(f'{output_folder_prefix}/{folder}/geodata/blocks')
+        shutil.copy(f"{input_folder_prefix}/{folder}/geodata/blocks/block_densities_latlon_2024.geojson",f"{output_folder_prefix}/{folder}/geodata/blocks/block_densities_latlon_2024.geojson")
+        shutil.copy(f"{input_folder_prefix}/{folder}/geodata/blocks/blocks_latlon_2024.geojson",f"{output_folder_prefix}/{folder}/geodata/blocks/blocks_latlon_2024.geojson")
 
 
 def calculate_country_indicators(current_year=2024,
