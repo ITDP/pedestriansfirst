@@ -200,7 +200,7 @@ def spatial_analysis(boundaries,
                       transport_performance_times = [30,45,60], #mins
                       gtfs_files = [],
                       ghsl_projection = 'mw', #TODO make this do something
-                      ghsl_resolution = '100',
+                      ghsl_resolution = '1000',
                       #max_edge_length = , #should not be bigger than 2xbuffer_dist
                       debug = True,
                       ):   
@@ -245,9 +245,9 @@ def spatial_analysis(boundaries,
     for year in years:
         if year % 5 == 0:
             if year < current_year:
-                in_file = f'input_data/ghsl_data_100m_mw/GHS_POP_E{year}_GLOBE_R2023A_54009_{ghsl_resolution}/GHS_POP_E{year}_GLOBE_R2023A_54009_{ghsl_resolution}_V1_0.tif'
+                in_file = f'input_data/ghsl_data_{ghsl_resolution}m_mw/GHS_POP_E{year}_GLOBE_R2023A_54009_{ghsl_resolution}/GHS_POP_E{year}_GLOBE_R2023A_54009_{ghsl_resolution}_V1_0.tif'
             else:
-                in_file = f'input_data/ghsl_data_100m_mw/GHS_POP_E{year}_GLOBE_R2023A_54009_{ghsl_resolution}/GHS_POP_E{year}_GLOBE_R2023A_54009_{ghsl_resolution}_V1_0.tif'
+                in_file = f'input_data/ghsl_data_{ghsl_resolution}m_mw/GHS_POP_E{year}_GLOBE_R2023A_54009_{ghsl_resolution}/GHS_POP_E{year}_GLOBE_R2023A_54009_{ghsl_resolution}_V1_0.tif'
             with rasterio.open(in_file) as dataset:
                 out_image, out_transform = rasterio.mask.mask(dataset, [boundaries_mw.unary_union], crop=True)
                 out_meta = dataset.meta
@@ -1209,7 +1209,7 @@ def calculate_indicators(analysis_areas,
                       #years = range(1975,2031),
                       years = [1975, 1980, 1985, 1990, 1995, 2000, 2005, 2010, 2015, 2020, 2024, 2025],
                       current_year = 2024,
-                      ghsl_resolution = '100',
+                      ghsl_resolution = '1000',
                       debug = True,
                       ):   
 

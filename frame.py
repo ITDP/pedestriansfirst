@@ -80,7 +80,7 @@ def download_ghsl(proj='mw', resolution='100'):
     proj_code = {'mw':54009,'ll':4326}[proj]
     if not os.path.exists('input_data/'):
         os.mkdir('input_data/')
-    if not os.path.exists('input_data/ghsl_data_{resolution}m_{proj}/'):
+    if not os.path.exists(f'input_data/ghsl_data_{resolution}m_{proj}/'):
         os.mkdir('input_data/ghsl_data_{resolution}m_mw/')
     for year in tqdm(range(1975, 2031, 5)): 
         letter='E'
