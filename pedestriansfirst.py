@@ -31,7 +31,7 @@ import get_service_locations
 import gtfs_parser
 import prep_bike_osm
 import prep_pop_ghsl
-import access
+# import access
 #import summarize_ttm
 
 import pdb
@@ -366,16 +366,16 @@ def spatial_analysis(boundaries,
         rt_stns_utm = rt_stns.to_crs(utm_crs)
         rt_isochrones_utm = rt_isochrones.to_crs(utm_crs)
     
-    if 'journey_gap' in to_test and len(gtfs_filenames) > 0 and len(gtfs_wednesdays) > 0: #ie, it has GTFS
-        journey_gap_success = access.journey_gap_calculations(
-                    folder_name,
-                    current_year,
-                    boundaries_latlon,
-                    gtfs_filenames,
-                    gtfs_wednesdays,
-                    access_resolution = access_resolution,
-                    min_pop = 2000,
-                    )
+    # if 'journey_gap' in to_test and len(gtfs_filenames) > 0 and len(gtfs_wednesdays) > 0: #ie, it has GTFS
+    #     journey_gap_success = access.journey_gap_calculations(
+    #                 folder_name,
+    #                 current_year,
+    #                 boundaries_latlon,
+    #                 gtfs_filenames,
+    #                 gtfs_wednesdays,
+    #                 access_resolution = access_resolution,
+    #                 min_pop = 2000,
+    #                 )
     
     if 'blocks' in to_test:
         outblocks = []
@@ -1310,12 +1310,12 @@ def calculate_indicators(analysis_areas,
             blocks = None
             
             
-    if 'journey_gap' in to_test:
-        geodata_path = f'{folder_name}geodata/access/grid_pop_evaluated_{current_year}.geojson'
-        if os.path.exists(geodata_path):
-            access_grid = gpd.read_file(geodata_path)
-        else:
-            access_grid = None
+    # if 'journey_gap' in to_test:
+    #     geodata_path = f'{folder_name}geodata/access/grid_pop_evaluated_{current_year}.geojson'
+    #     if os.path.exists(geodata_path):
+    #         access_grid = gpd.read_file(geodata_path)
+    #     else:
+    #         access_grid = None
     
     # 2. Iterate through analysis_areas gdf, calculate all indicators
     for idx in analysis_areas.index:
@@ -1497,14 +1497,14 @@ def calculate_indicators(analysis_areas,
                     block_density = 'NA'
                 analysis_areas.loc[idx,f'block_density_{current_year}'] = block_density
                     
-            if 'journey_gap' in to_test:
-                if access_grid is not None:
-                    grid_overlap = access_grid[access_grid.intersects(boundaries_ll)]
-                    area_pop = grid_overlap.population.sum()
+            # if 'journey_gap' in to_test:
+            #     if access_grid is not None:
+            #         grid_overlap = access_grid[access_grid.intersects(boundaries_ll)]
+            #         area_pop = grid_overlap.population.sum()
                     
-                    journey_gap_weighted_total = grid_overlap.journey_gap_weighted.sum()
-                    journey_gap = journey_gap_weighted_total / area_pop
-                    analysis_areas.loc[idx,f'journey_gap_{current_year}'] = journey_gap
+            #         journey_gap_weighted_total = grid_overlap.journey_gap_weighted.sum()
+            #         journey_gap = journey_gap_weighted_total / area_pop
+            #         analysis_areas.loc[idx,f'journey_gap_{current_year}'] = journey_gap
                     
                 if len(gtfs_filenames) == 0:
                     analysis_areas.loc[idx,f'cumsum_journeygap_{current_year}'] = "NA"
