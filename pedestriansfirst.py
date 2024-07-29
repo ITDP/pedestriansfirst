@@ -355,10 +355,11 @@ def spatial_analysis(boundaries,
             rt_lines.loc[lineidx,'rt_mode'] = itdp_mode
         
         rt_lines = rt_lines[rt_lines.rt_mode.isna() == False]
-        
+        rt_lines_utm = ox.project_gdf(rt_lines)
+        rt_stns_utm = ox.project_gdf(rt_stns)
         
         for lineidx in rt_lines.index:
-            selected_stns = rt_stns[rt_stns.intersects(rt_lines.loc[lineidx,'geometry'])]
+            selected_stns = rt_stns[(rt_stns_utm.intersects(rt_lines_utm.loc[lineidx,'geometry'].buffer(200))) & (rt_stns['mode'] == rt_lines.loc[lineidx, 'mode'])]
             rt_stns.loc[selected_stns.index,'rt_mode'] = rt_lines.loc[lineidx,'rt_mode']
         rt_stns = rt_stns[rt_stns.rt_mode.isna() == False]
             
