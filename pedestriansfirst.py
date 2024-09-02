@@ -355,7 +355,7 @@ def spatial_analysis(boundaries,
             rt_lines.loc[lineidx,'rt_mode'] = itdp_mode
         
         rt_lines = rt_lines[rt_lines.rt_mode.isna() == False]
-        if len(x) > 0:
+        if len(rt_lines) > 0:
             rt_lines_utm = ox.project_gdf(rt_lines)
             rt_stns_utm = ox.project_gdf(rt_stns)
         
