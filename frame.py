@@ -130,6 +130,9 @@ def get_jurisdictions(hdc,
                       buffer = 4000, #in m
                       ): 
     
+    if hdc in [8265, 102]: #kohima, zapopan
+        buffer = 40000
+    
     ucdb = gpd.read_file('input_data/ghsl/SMOD_V1s6_opr_P2023_v1_2020_labelUC_DB_release.gpkg')
     ucdb.index =  ucdb['ID_UC_G0']
     ghsl_boundaries_mw = ucdb.loc[hdc,'geometry']
@@ -725,7 +728,7 @@ if __name__ == '__main__':
     ucdb = gpd.read_file('input_data/ghsl/SMOD_V1s6_opr_P2023_v1_2020_labelUC_DB_release.gpkg')
     ucdb.index =  ucdb['ID_UC_G0']
     #for hdc in ucdb[(int(sys.argv[2]) < ucdb['POP_2020'])&(ucdb['POP_2020'] < int(sys.argv[1]))].sort_values('POP_2020', ascending=False).ID_UC_G0:
-    for hdc in [470, 829]: #trujillo, DC
+    for hdc in [470, 829, 102]: #trujillo, DC, guadalajara/zpp
         hdc = int(hdc)
         #if len(sys.argv) == 1:
         #divide_by = 1
