@@ -725,7 +725,7 @@ if __name__ == '__main__':
     ucdb = gpd.read_file('input_data/ghsl/SMOD_V1s6_opr_P2023_v1_2020_labelUC_DB_release.gpkg')
     ucdb.index =  ucdb['ID_UC_G0']
     #for hdc in ucdb[(int(sys.argv[2]) < ucdb['POP_2020'])&(ucdb['POP_2020'] < int(sys.argv[1]))].sort_values('POP_2020', ascending=False).ID_UC_G0:
-    for hdc in [1910]: #london
+    for hdc in [470]: #trujillo
         hdc = int(hdc)
         #if len(sys.argv) == 1:
         #divide_by = 1
