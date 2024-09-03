@@ -185,7 +185,7 @@ def spatial_analysis(boundaries,
                             },
                       years = [1975, 1980, 1985, 1990, 1995, 2000, 2005, 2010, 2015, 2020, 2022, 2024, 2025], #for PNRT and pop_dens. remember range(1,3) = [1,2]
                       current_year = 2024,
-                      patch_length = 32000, #m
+                      patch_length = 24000, #m
                       block_patch_length = 1000, #m
                       boundary_buffer = 1000, #m
                       blocks_simplification = 0.0001, #topo-simplification
