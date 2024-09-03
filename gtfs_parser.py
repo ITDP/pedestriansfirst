@@ -43,7 +43,7 @@ def get_GTFS_from_mobility_database(poly, gtfs_data_dir, sources_loc='input_data
                 overlap = sources.loc[idx,'geometry'].intersection(poly)
                 if overlap.area * 1000 > sources.loc[idx,'geometry'].area:
                     url = sources.loc[idx,'urls.latest']
-                    name = sources.loc[idx,'provider']
+                    name = str(idx)+sources.loc[idx,'provider']
                     if sources.loc[idx,'name'] != '':
                         name = name+'_'+ sources.loc[idx,'name']
                     name = name.translate(str.maketrans('', '', string.punctuation))
@@ -143,6 +143,8 @@ def get_stop_frequencies(feed, headwaylim, folder_name, filename):
             log(folder_name,"success,"+"Unknown Name"+"\n")
     else:
         log(folder_name,"counts.empty,"+feed.agency.agency_name[0]+"\n")
+    if feed.agency.agency_name[0] == 'wmata':
+        import pdb; pdb.set_trace()
     return counts
     
 def get_frequent_stops(poly, folder_name, headwaylim = 20):
