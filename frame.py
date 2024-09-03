@@ -347,7 +347,7 @@ def regional_analysis(hdc,
                       analyze=True,
                       summarize=True,
                       simplification=0.001, #toposimplification factor
-                      cleanup=True,
+                      cleanup=False, #TODO: change before production
                       current_year=2024,
                       ):
     
