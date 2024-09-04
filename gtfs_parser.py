@@ -143,7 +143,6 @@ def get_stop_frequencies(feed, headwaylim, folder_name, filename):
             log(folder_name,"success,"+"Unknown Name"+"\n")
     else:
         log(folder_name,"counts.empty,"+feed.agency.agency_name[0]+"\n")
-    import pdb; pdb.set_trace()
     return counts
     
 def get_frequent_stops(poly, folder_name, headwaylim = 20):
