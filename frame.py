@@ -347,7 +347,7 @@ def regional_analysis(hdc,
                       analyze=True,
                       summarize=True,
                       simplification=0.001, #toposimplification factor
-                      cleanup=False, #TODO: change before production
+                      cleanup=True,
                       current_year=2024,
                       ):
     
@@ -727,8 +727,9 @@ if __name__ == '__main__':
     ox.utils.config(log_console = False)
     ucdb = gpd.read_file('input_data/ghsl/SMOD_V1s6_opr_P2023_v1_2020_labelUC_DB_release.gpkg')
     ucdb.index =  ucdb['ID_UC_G0']
-    #for hdc in ucdb[(int(sys.argv[2]) < ucdb['POP_2020'])&(ucdb['POP_2020'] < int(sys.argv[1]))].sort_values('POP_2020', ascending=False).ID_UC_G0:
-    for hdc in [829, 352,58,11218,4258,1540,10348,820,1900,7636]: #DC
+    hdcs_to_test = [11480 , 461 , 576 , 8265 , 4494]
+    hdcs_to_test += list(ucdb[(int(sys.argv[2]) < ucdb['POP_2020'])&(ucdb['POP_2020'] < int(sys.argv[1]))].sort_values('POP_2020', ascending=False).ID_UC_G0)
+    for hdc in hdcs_to_test:
         hdc = int(hdc)
         #if len(sys.argv) == 1:
         #divide_by = 1
