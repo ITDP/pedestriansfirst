@@ -87,10 +87,10 @@ def get_highways(simple_projected_G,
     separation_break_poly = separation_breakers.buffer(2).unary_union
     separation_break_gdf_utm = gpd.GeoDataFrame(geometry = [separation_break_poly], crs = separation_breakers.crs)
     
-    try:
-        separated_major_roads = major_roads_utm.overlay(separation_break_gdf_utm, how='difference').geometry
-    except: 
-        import pdb; pdb.set_trace()
+    if major_roads_utm.empty:
+        return major_roads_utm.to_crs(4326)
+        
+    separated_major_roads = major_roads_utm.overlay(separation_break_gdf_utm, how='difference').geometry
     
     #separated_major_roads = separated_major_roads.explode() #boom
     
