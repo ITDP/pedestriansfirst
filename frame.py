@@ -174,7 +174,11 @@ def get_jurisdictions(hdc,
     earth_utm = country_bounds.to_crs(crs = poly_utm_gdf.crs)
     #get land within 10km
     area_for_land_ll = buffered_poly_utm_gdf.buffer(100000).to_crs(4326).unary_union
-    if country_bounds.intersection(area_for_land_ll).area.sum() >= area_for_land_ll.area * 0.95:
+    try:
+        country_land_sum = country_bounds.intersection(area_for_land_ll).area.sum()
+    except: 
+        import pdb; pdb.set_trace()
+    if country_land_sum >= area_for_land_ll.area * 0.95:
         nearby_land_gdf_utm = buffered_poly_utm_gdf.buffer(100000)
         nearby_land_gdf_ll = buffered_poly_utm_gdf.to_crs(4326)
     else:
