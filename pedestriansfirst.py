@@ -361,9 +361,10 @@ def spatial_analysis(boundaries,
         if len(rt_stns) > 0:
             rt_stns_utm = ox.project_gdf(rt_stns)
         
-        for lineidx in rt_lines.index:
-            selected_stns = rt_stns[(rt_stns_utm.intersects(rt_lines_utm.loc[lineidx,'geometry'].buffer(200))) & (rt_stns['mode'] == rt_lines.loc[lineidx, 'mode'])]
-            rt_stns.loc[selected_stns.index,'rt_mode'] = rt_lines.loc[lineidx,'rt_mode']
+            for lineidx in rt_lines.index:
+                selected_stns = rt_stns[(rt_stns_utm.intersects(rt_lines_utm.loc[lineidx,'geometry'].buffer(200))) & (rt_stns['mode'] == rt_lines.loc[lineidx, 'mode'])]
+                rt_stns.loc[selected_stns.index,'rt_mode'] = rt_lines.loc[lineidx,'rt_mode']
+        
         rt_stns = rt_stns[rt_stns.rt_mode.isna() == False]
             
         rt_isochrones = rt_stns.copy()
