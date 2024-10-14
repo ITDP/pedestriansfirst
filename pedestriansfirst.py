@@ -114,17 +114,17 @@ def cut(line, distance):
                 cp]
 
 def get_line_mode(mode, name, agency, region, grade, brt_rating):
-    mannydata = pd.read_csv('input_data/transit_explorer/mannyregionalrail.csv')
+    regionalrail = pd.read_csv('input_data/transit_explorer/regionalrail.csv')
     itdp_mode = None
     if mode in ['Light Rail','Tramway']:
         itdp_mode = 'lrt'
     if mode in ['Light Metro','Metro']:
         itdp_mode = 'mrt'
     if mode == 'Regional Rail':
-        if 'YES' in mannydata[
-                (mannydata['name'] == name) & 
-                (mannydata['agency'] == agency) & 
-                (mannydata['region'] == region)]['ADD?'].values:
+        if 'YES' in regionalrail[
+                (regionalrail['name'] == name) & 
+                (regionalrail['agency'] == agency) & 
+                (regionalrail['region'] == region)]['ADD?'].values:
             itdp_mode = 'mrt'
     if mode == 'Bus Rapid Transit':
         if brt_rating is not None:
@@ -357,6 +357,8 @@ def spatial_analysis(boundaries,
         rt_lines = rt_lines[rt_lines.rt_mode.isna() == False]
         if len(rt_lines) > 0:
             rt_lines_utm = ox.project_gdf(rt_lines)
+            
+        if len(rt_stns) > 0:
             rt_stns_utm = ox.project_gdf(rt_stns)
         
         for lineidx in rt_lines.index:
