@@ -748,9 +748,8 @@ if __name__ == '__main__':
             if not os.path.exists(f'cities_out/ghsl_region_{hdc}/indicator_values.csv'):
                 if os.path.exists(f'cities_out/ghsl_region_{hdc}/geodata/blocks/blocks_latlon_2024.geojson'):
                     regional_analysis(hdc)#, analyze=False)
-                    calculate_country_indicators()
                 else:
                     regional_analysis(hdc)
-                    calculate_country_indicators()
+    calculate_country_indicators()
 
 
