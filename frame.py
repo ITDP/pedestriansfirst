@@ -76,7 +76,13 @@ def prep_from_poly(poly, folder_name, boundary_buffer = 500):
     
     
     
-def download_ghsl(proj='mw', resolution='100'):
+def download_ghsl(proj='mw', resolution='1000'):
+    """Download population data from the Global Human Settlement Layer
+    
+    Can get data in mollewiede or WGS84 projections
+    Hard-coded to use 2023 release
+    """
+    
     proj_code = {'mw':54009,'ll':4326}[proj]
     if not os.path.exists('input_data/'):
         os.mkdir('input_data/')
@@ -92,35 +98,6 @@ def download_ghsl(proj='mw', resolution='100'):
                 f.extractall(f'input_data/ghsl_data_{resolution}m_{proj}/{name}')
     
     
-# def from_id_hdc(hdc, folder_prefix = 'cities_out', boundary_buffer = 500, kwargs = {}):
-#     if folder_prefix:
-#         folder_name = folder_prefix+'/ghsl_'+str(hdc)
-#     else:
-#         folder_name = str(hdc)
-#     poly, name_long, name_short = poly_from_ghsl_hdc(hdc)
-#     overpass = prep_from_poly(poly, folder_name, boundary_buffer)
-#     kwargs['overpass'] = overpass
-#     calctime = pedestriansfirst.spatial_analysis(poly, hdc, name, folder_name, **kwargs)
-#     results = pedestriansfirst.calculate_indicators(poly, folder_name)
-#     results['calctime'] = calctime
-#     print(results)
-    
-# def from_id_osm(osmid, folder_prefix = 'cities_out', boundary_buffer = 500, kwargs = {}):
-#     if folder_prefix:
-#         folder_name = folder_prefix+'/osm_'+str(osmid)
-#     else:
-#         folder_name = str(osmid)
-#     poly, name = poly_from_osm_cityid(osmid)
-#     overpass = prep_from_poly(poly, folder_name, boundary_buffer)
-#     kwargs['overpass'] = overpass
-#     calctime = pedestriansfirst.spatial_analysis(poly, osmid, name, folder_name, **kwargs)
-#     results = pedestriansfirst.calculate_indicators(poly, folder_name)
-#     results['calctime'] = calctime
-#     print(results)
-
-# def get_pop_ghsl(city):
-#     return city['properties']['P15']
-
 #TODO: make this cut out water!
 #TODO -- consider customizing this for the USA? an extra buffer or something?
 def get_jurisdictions(hdc,
@@ -129,10 +106,15 @@ def get_jurisdictions(hdc,
                       level_min_coverage = .0000002, #min coverage of an admin_level of the poly_latlon
                       buffer = 4000, #in m
                       ): 
+    """Get OSM data for administratrive jursidictions within an agglomeration
+    """
     
+    #Special call to get ITDP "Cycling Cities" where the jurisdiction 
+    #is an extra distance from the agglomeration
     if hdc in [8265, 102]: #kohima, zapopan
         buffer = 40000
     
+    #load Urban Centre Database, assign full names
     ucdb = gpd.read_file('input_data/ghsl/SMOD_V1s6_opr_P2023_v1_2020_labelUC_DB_release.gpkg')
     ucdb.index =  ucdb['ID_UC_G0']
     ghsl_boundaries_mw = ucdb.loc[hdc,'geometry']
@@ -145,6 +127,7 @@ def get_jurisdictions(hdc,
             name = "The " + all_names[0] + ' area'
     name_short = "The " + all_names[0] + ' area'
     
+    #convert to UTM and buffer
     poly_mw_gdf = gpd.GeoDataFrame(geometry=[ghsl_boundaries_mw], crs="ESRI:54009")
     poly_ll_gdf = poly_mw_gdf.to_crs(4326)
     ghsl_boundaries = poly_ll_gdf.unary_union
@@ -154,6 +137,7 @@ def get_jurisdictions(hdc,
     buffered_poly_utm = buffered_poly_utm_gdf.unary_union
     buffered_poly_latlon = buffered_poly_latlon_gdf.unary_union
     
+    #set up dataframe for output
     analysis_areas = gpd.GeoDataFrame()
     new_id = 0
     analysis_areas.loc[new_id, 'name'] = name
@@ -163,6 +147,9 @@ def get_jurisdictions(hdc,
     analysis_areas.loc[new_id, 'osmid'] = None
     analysis_areas.loc[new_id, 'level_name'] = 'Agglomeration'
     analysis_areas.crs=4326
+    
+    #there's probably a better way of doing this. I increment this 
+    #counter in order to set a unique new ID for every new analysis_area
     new_id += 1
     
     #now figure out what country it's in
@@ -179,7 +166,7 @@ def get_jurisdictions(hdc,
     try:
         country_land_sum = country_bounds.intersection(area_for_land_ll).area.sum()
     except: 
-        import pdb; pdb.set_trace()
+        pdb.set_trace() #debug
     if country_land_sum >= area_for_land_ll.area * 0.95:
         nearby_land_gdf_utm = buffered_poly_utm_gdf.buffer(100000)
         nearby_land_gdf_ll = buffered_poly_utm_gdf.to_crs(4326)
@@ -191,6 +178,9 @@ def get_jurisdictions(hdc,
     country_overlaps['land_area'] = country_overlaps.to_crs(poly_utm_gdf.crs).area
     main_country = country_overlaps.sort_values('land_area', ascending=False).iloc[0]['shapeGroup']
     
+    # we create analysis areas for "the portion of an agglomeration within each 
+    # country
+    # May no longer be needed with new UCDB data (coming Nov 2024)
     countries = list(country_overlaps.sort_values('shapeGroup', ascending=True).shapeGroup)
     agglomeration_country_name = ' / '.join(countries)
     analysis_areas.loc[0, 'agglomeration_country_name'] = agglomeration_country_name
@@ -236,11 +226,10 @@ def get_jurisdictions(hdc,
         buffered_poly_utm_gdf = gpd.GeoDataFrame(geometry = [buffered_poly_utm], crs = poly_utm_gdf.crs)
     
         
-    
-    #First, get all the sub-jusisdictions at least minimum_portion within the buffered_poly_latlon,
+    #STEP 1, get all the sub-jusisdictions at least minimum_portion within the buffered_poly_latlon,
     #then buffer the total_boundaries to the union of those and the original poly
     print('getting sub-jurisdictions for', name)
-    admin_lvls = [str(x) for x in range(4,11)]
+    admin_lvls = [str(x) for x in range(4,11)] #admin_area below 4 is state/province
     try:
         jurisdictions_latlon = ox.geometries_from_polygon(buffered_poly_latlon, tags={'admin_level':admin_lvls})
     except:
@@ -263,7 +252,10 @@ def get_jurisdictions(hdc,
         total_boundaries_latlon = buffered_poly_latlon
         total_boundaries_utm = buffered_poly_utm
         
-    #now get all jurisdictions within total_boundaries
+    #total_boundaries is the area within all admin_areas identified in STEP 1
+    #STEP 2: get all jurisdictions within total_boundaries
+    #this is so that if we've decided to include a particular admin_area, 
+    # we'll also include all admin_areas within it 
     try:
         jurisdictions_latlon = ox.geometries_from_polygon(total_boundaries_latlon, tags={'admin_level':admin_lvls})
     except:
@@ -356,7 +348,26 @@ def regional_analysis(hdc,
                       cleanup=True, 
                       current_year=2024,
                       ):
+    """Run analysis scripts for a given region
     
+    Uses lots (too many?) hardcoded defaults
+    
+    1) sets up directory structure for an agglomeration
+    
+    2) calls get_jurisdictions to identify analysis areas within agglomeration
+    
+    3) prepares OSM data
+    
+    4)'Analysis' creates all the geodata needed to calculate
+    Atlas indicators for a given analysis area (eg., isochrone polys). 
+    
+    5)'Summary' actually calculates those indicators for each analysis area
+    within the agglomeration
+    
+    
+    """
+    
+    #1) set up directories
     if not os.path.isdir('temp/'):
         os.mkdir('temp/')
     if not os.path.isdir('cities_out/'):
@@ -375,6 +386,7 @@ def regional_analysis(hdc,
     if os.path.isfile(f"{folder_name}geodata/blocks/blocks_latlon_{current_year}.geojson"):
         analyze = False
         
+    #2) get analysis areas
     analysis_areas = get_jurisdictions(
         hdc, 
         minimum_portion=minimum_portion
@@ -382,14 +394,16 @@ def regional_analysis(hdc,
     
     analysis_areas.to_file(f'{folder_name}/debug/analysis_areas.gpkg', driver='GPKG')
     
+    #3) prepare OSM data files for the agglomeration
     if prep:
+        #If we're going to do any access-based indicators
         #Let's make sure to buffer this to include peripheral roads etc for routing
         total_poly_latlon=analysis_areas.unary_union
         total_poly_latlon = shapely.convex_hull(total_poly_latlon)   
         gpd.GeoDataFrame(geometry=[total_poly_latlon], crs=4326).to_file(f'{folder_name}/debug/area_for_osm_extract.gpkg', driver='GPKG')
         prep_from_poly(total_poly_latlon, folder_name, boundary_buffer = 2000)
     
-    #now actually call the functions and save the results
+    #4) now actually call the functions and save the results
     if analyze == True:
         geospatial_calctime = pedestriansfirst.spatial_analysis(
             total_poly_latlon,
@@ -400,6 +414,7 @@ def regional_analysis(hdc,
     else:
         geospatial_calctime = 0
     
+    #5) calculate indicator measurement for each analysis area
     if summarize == True:
         start = datetime.datetime.now()
         pedestriansfirst.calculate_indicators(
@@ -428,6 +443,8 @@ def regional_analysis(hdc,
         
     
 def get_number_jurisdictions(input_folder_prefix = 'cities_out/'):
+    """return the total number of jursidictions in all calculated agglomerations
+    """
     folders = os.listdir(input_folder_prefix)
     total = 0
     for folder in tqdm(folders):
@@ -438,6 +455,8 @@ def get_number_jurisdictions(input_folder_prefix = 'cities_out/'):
     return total
 
 def recalculate_blocks(input_folder_prefix = 'cities_out/',current_year=2024,block_patch_length=1000):
+    """re-calculate block density 'patches' from existing block geodata
+    """
     
     folders = os.listdir(input_folder_prefix)
     for folder in tqdm(folders):
@@ -486,6 +505,26 @@ def calculate_country_indicators(current_year=2024,
                                  output_folder_prefix = 'countries_out/',
                                  #TODO add years for other indicators with more than one
                                  ):
+    """calculate country-level indicators by summarizing city level indicators
+    
+    This is one of the ugliest functions in the codebase :(
+    It can probably be largely reformatted using new (Nov 2024) UCDB data,
+    in which agglomerations do NOT cross country borders, and therefore
+    much of the complexity won't be needed.
+        
+    There are different categories of indicator. 
+    Some indicators are aggregated to the country level by summing 
+    (eg., # of transit stations)
+    Others by population-weighted average (eg., People Near or Pop Density)
+    
+    Also, some are only available for cities with GTFS, or with Rapid Transport
+    and other indicators are available for all cities
+    
+    Note that this includes indicators that are not publicly shown in the 
+    Atlas
+    """
+    
+    
     country_bounds = gpd.read_file('input_data/CGAZ/geoBoundaries_ITDPv5_SIMPLIFIED.gpkg')
     
     country_bounds.geometry = country_bounds.make_valid()
@@ -733,7 +772,7 @@ if __name__ == '__main__':
     ox.utils.config(log_console = False)
     ucdb = gpd.read_file('input_data/ghsl/SMOD_V1s6_opr_P2023_v1_2020_labelUC_DB_release.gpkg')
     ucdb.index =  ucdb['ID_UC_G0']
-    hdcs_to_test = [11480 , 461 , 576 , 8265 , 4494]
+    hdcs_to_test = [11480 , 461 , 576 , 8265 , 4494] #ITDP "Cycling Cities" below 500k
     hdcs_to_test += list(ucdb[(int(sys.argv[2]) < ucdb['POP_2020'])&(ucdb['POP_2020'] < int(sys.argv[1]))].sort_values('POP_2020', ascending=False).ID_UC_G0)
     for hdc in hdcs_to_test:
         hdc = int(hdc)
