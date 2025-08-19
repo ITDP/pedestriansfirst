@@ -18,75 +18,48 @@ import pandas as pd
 import geopandas as gpd
 import shapely
 from shapely.geometry import Point
+import re
+import math
 
 from zipfile import ZipFile
 
-def get_GTFS_from_mobility_database(poly, gtfs_data_dir, sources_loc='input_data/sources.csv'):
-    if not os.path.exists(sources_loc):
-        url = 'https://bit.ly/catalogs-csv'
-        r = requests.get(url, allow_redirects=True)  # to get content after redirection
-        with open(sources_loc, 'wb') as f:
-            f.write(r.content)
-    if not os.path.exists(gtfs_data_dir):
-        os.mkdir(gtfs_data_dir)
-    sources = gpd.read_file(sources_loc)
-    filenames = []
-    for idx in list(sources.index):
-        if not sources.loc[idx,'location.bounding_box.minimum_longitude'] == '':
-            sources.loc[idx,'geometry'] = shapely.geometry.box(
-                float(sources.loc[idx,'location.bounding_box.minimum_longitude']),
-                float(sources.loc[idx,'location.bounding_box.minimum_latitude']),
-                float(sources.loc[idx,'location.bounding_box.maximum_longitude']),
-                float(sources.loc[idx,'location.bounding_box.maximum_latitude']),
-                )
-            if sources.loc[idx,'geometry'].intersects(poly):
-                overlap = sources.loc[idx,'geometry'].intersection(poly)
-                if overlap.area * 1000 > sources.loc[idx,'geometry'].area:
-                    url = sources.loc[idx,'urls.latest']
-                    name = str(idx)+sources.loc[idx,'provider']
-                    if sources.loc[idx,'name'] != '':
-                        name = name+'_'+ sources.loc[idx,'name']
-                    name = name.translate(str.maketrans('', '', string.punctuation))
-                    name = name[:50]
-                    name = name.replace(' ','_')
-                    if name != '' and url != '':
-                        filename=gtfs_data_dir+name+'.zip'
-                        filenames.append(filename)
-                        r = requests.get(url, allow_redirects=True)  # to get content after redirection
-                        with open(filename, 'wb') as f:
-                            f.write(r.content)
-    return filenames
+from funs.get_jurisdictions import get_jurisdictions
 
-def feed_from_filename(filename):
+# filename = "input_data/gtfs/2024/gtfs_08154_202412_2010Etufor.zip"
+# hdc = "08154"
+
+def feed_from_filename(filename, hdc):
+    
     try:
-        if not os.path.isdir('temp_gtfs_dir/'):
-            os.mkdir('temp_gtfs_dir/')
+        if not os.path.isdir(f'temp_gtfs_dir/{hdc}/'):
+            # os.mkdir('temp_gtfs_dir')
+            os.mkdir(f'temp_gtfs_dir/{hdc}/')
         with ZipFile(filename, 'r') as zgtfs:
-            zgtfs.extractall('temp_gtfs_dir/')
+            zgtfs.extractall(f'temp_gtfs_dir/{hdc}/')
         # command = 'unzip '+filename+' -d temp_gtfs_dir/'
         # print(command)
         # subprocess.check_call(command, shell=True)
     except:
-        if os.path.exists('temp_gtfs_dir'):
-            shutil.rmtree('temp_gtfs_dir')
+        if os.path.exists(f'temp_gtfs_dir/{hdc}/'):
+            shutil.rmtree(f'temp_gtfs_dir/{hdc}/')
         return False
-    if os.path.exists('temp_gtfs_dir/calendar.txt'):
+    if os.path.exists(f'temp_gtfs_dir/{hdc}/calendar.txt'):
         #this fixes a bug that was happening because San Francisco, of all places, ended text lines with whitespace
-        with open('temp_gtfs_dir/calendar.txt','r') as calfile:
+        with open(f'temp_gtfs_dir/{hdc}/calendar.txt','r') as calfile:
             out = ''
             for line in calfile:
                 out += line.strip()
                 out += '\n'
-        with open('temp_gtfs_dir/calendar.txt','w') as calfile:
+        with open(f'temp_gtfs_dir/{hdc}/calendar.txt','w') as calfile:
             calfile.write(out)
     try:
-        feed = gk.read_feed('temp_gtfs_dir/', dist_units = 'km')
+        feed = gk.read_feed(f'temp_gtfs_dir/{hdc}/', dist_units = 'km')
     except pd.errors.ParserError:
         return False
     except KeyError:
         return False
-    if os.path.exists('temp_gtfs_dir'):
-        shutil.rmtree('temp_gtfs_dir')
+    if os.path.exists(f'temp_gtfs_dir/{hdc}/'):
+        shutil.rmtree(f'temp_gtfs_dir/{hdc}/')
     return feed
 
 def log(folder_name, msg):
@@ -101,6 +74,16 @@ def get_stop_frequencies(feed, headwaylim, folder_name, filename):
    #     log(folder_name, "validation_failed,"+feed.agency.agency_name[0])
     #    os.remove(filename)
      #   return {}
+     # feed = feed_from_filename("input_data/gtfs/2023/gtfs_05472_202404_Transjakarta_fixed.zip")
+     # feed = feed_from_filename("input_data/gtfs/2023/gtfs_05472_202404_Bogor_Angkots__fixed.zip")
+     # feed = feed_from_filename("input_data/gtfs/2023/raw/gtfs_05472_202404_Bogor_Angkots_.zip") 
+     # feed = feed_from_filename("input_data/gtfs/2023/raw/gtfs_05472_202404_Transjakarta.zip")
+     # feed = feed_from_filename("/home/kauebraga/Downloads/gtfs_05472_202404_Transjakarta.zip")
+     # feed = feed_from_filename("/home/kauebraga/Downloads/gtfs_05472_202404_Transjakarta (1).zip")
+     # feed = feed_from_filename("input_data/gtfs/2023/gtfs_00070_202404_Gruppo_Torinese_Trasporti.zip")
+     # feed = feed_from_filename("input_data/gtfs/2023/gtfs_00047_202404_Freetown_PodaPoda_Sierra_Leone_Road_Transport_Corp.zip")
+     # feed = feed_from_filename("input_data/gtfs/2023/gtfs_01156_202404_TMT_Trujillo _Gerencia_de_Transporte_fixed.zip")
+     
     try:
         days = feed.get_first_week()[0:5]
     except:
@@ -145,13 +128,29 @@ def get_stop_frequencies(feed, headwaylim, folder_name, filename):
         log(folder_name,"counts.empty,"+feed.agency.agency_name[0]+"\n")
     return counts
     
-def get_frequent_stops(poly, folder_name, headwaylim = 20):
-    filenames = get_GTFS_from_mobility_database(poly, folder_name+'temp/gtfs/')
+def get_frequent_stops(hdc, year, folder_name, headwaylim = 20):
+    # filenames = get_GTFS_from_mobility_database(poly, folder_name+'temp/gtfs/')
+   #  hdc = "08154"
+    # year = 2024
+    # headwaylim = 20
+    # folder_name = '/media/kauebraga/data/pedestriansfirst/cities_out'+'/ghsl_region_'+str(hdc)+'/'
+    
+    directory = f"input_data/gtfs/{year}"
+    
+    
+    if not os.path.exists(folder_name+'temp/gtfs/'):
+      os.mkdir(folder_name+'temp/gtfs/')
+
+    filenames = [f for f in os.listdir(directory) if re.search(f"gtfs_{hdc}", f)]
+    filenames = [os.path.join(directory, f) for f in filenames]
+    # filenames = ''.join(str(x) for x in filenames)
+    
     all_freq_stops = gpd.GeoDataFrame(geometry=[], crs=4326)
     wednesdays = []
     for filename in filenames:
+        # filename = filenames[0]
         try:
-            feed = feed_from_filename(filename)
+            feed = feed_from_filename(filename, hdc)
             counts = get_stop_frequencies(feed, headwaylim, folder_name, filename)
         except UnicodeDecodeError:
             print ('did not add stops!! UnicodeDecodeError')

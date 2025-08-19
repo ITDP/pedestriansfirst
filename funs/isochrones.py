@@ -12,7 +12,6 @@ import geopandas as gpd # Pacote Pandas Georreferenciado
 import shapely
 from shapely.geometry import Point, LineString, MultiLineString, Polygon, MultiPolygon, mapping # Pacote Shapely (apenas partes do pacote)
 from shapely.ops import unary_union
-ox.config(log_console=True, use_cache=True)
 
 from copy import deepcopy # duplicar memória do Python
 from tqdm import tqdm # Pacote para visualizar downloads
@@ -60,7 +59,7 @@ def cut(line, distance):
             cp = line.interpolate(distance)
             return LineString(coords[:i] + [(cp.x, cp.y)])
 
-def proper_iso_polys(G, center_nodes, distance=500,
+def proper_iso_polys(G, center_nodes1, distance=500,
                      buffer=100, infill=2500): #infill is the max size that will be infilled
     """
     Returns Shapely geometry representing network buffer from a list of nodes.
@@ -72,7 +71,7 @@ def proper_iso_polys(G, center_nodes, distance=500,
     complete_edge_linestrings = []
     partial_edge_linestrings = []
     
-    for center_node in tqdm(center_nodes):
+    for center_node in tqdm(center_nodes1):
         try:
             distances, routes = nx.single_source_dijkstra(
                 G, 
@@ -113,33 +112,61 @@ def proper_iso_polys(G, center_nodes, distance=500,
                 linestring = LineString([(n_fr['x'],n_fr['y']),(n_to['x'],n_to['y'])])
             complete_edge_linestrings.append(linestring)
     
+    # Combine complete and partial edge geometries into a single GeoSeries
     all_linestrings = gpd.GeoSeries(complete_edge_linestrings + partial_edge_linestrings)
+    
+    # Apply a buffer around all linestrings and combine into a single geometry
     total_area = all_linestrings.buffer(buffer).unary_union 
+    
+    # Separate the resulting geometry into individual polygons
     if type(total_area) == shapely.geometry.MultiPolygon:
         polys = list(total_area.geoms)
     elif type(total_area) == shapely.geometry.Polygon:
         polys = [total_area]
     else:
         polys = []
+        
+        
+    # Fill holes in polygons if their area is below the specified threshold    
     infills = []
     for poly in polys:
         for hole in poly.interiors:
             hole_poly = Polygon(hole)
             if hole_poly.area <= infill:
                 infills.append(hole_poly)
+                
+    # Combine the polygons and filled holes into the final geometry
     total_area = gpd.GeoSeries(polys+infills).unary_union
+    
+    # # output a gdf instead
+    # gdf = gpd.GeoDataFrame({
+    # "id": list(center_nodes1),
+    # "geometry": list(polys+infills)
+    # })
+    
+    
+    
     return total_area
     
 
-def make_iso_polys(G, center_nodes, distance=500,
-                   edge_buff=100, node_buff=0, infill=True):
+# G = G_allroads
+# distance=500
+# edge_buff=100
+# node_buff=0
+# infill=True
+# union = True
+
+# center_nodes1 = center_nodes["pnab"]
+
+
+def make_iso_polys(G, center_nodes1, distance=500, edge_buff=100, node_buff=0, infill=True, union = True):
     """
     Returns Shapely geometry representing network buffer from a list of nodes.
     """
     failures = 0
     polygons = []
     
-    for center_node in tqdm(center_nodes):
+    for center_node in tqdm(center_nodes1):
         subgraph = nx.ego_graph(G, center_node, radius=distance, 
                                 distance='length')
         
@@ -169,10 +196,17 @@ def make_iso_polys(G, center_nodes, distance=500,
                 pass
         polygons.append(new_iso)
         
-    isochrone_polys = unary_union(polygons) 
+    # isochrone_polys = unary_union(polygons)
+      
+    # output a gdf
+    gdf = gpd.GeoDataFrame({
+    "id": list(center_nodes1),
+    "geometry": list(polygons)
+    })
+    
     # junta todos os poligonos no entorno das coordenadas 
 
-    return isochrone_polys, failures
+    return gdf, failures
 
 
 

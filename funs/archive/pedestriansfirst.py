@@ -26,11 +26,11 @@ from shapely.ops import unary_union, transform
 import shapely.ops
 import topojson
 
-import isochrones
-import get_service_locations
-import gtfs_parser
-import prep_bike_osm
-import prep_pop_ghsl
+from  frame1.isochrones import *
+from  frame1.get_service_locations import *
+from  frame1.gtfs_parser import *
+from  frame1.prep_bike_osm import *
+from  frame1.prep_pop_ghsl import *
 # import access
 #import summarize_ttm
 
@@ -145,6 +145,11 @@ def weighted_pop_density(array):
         total += cell**2
     return total / numpy.sum(array)
 
+
+
+# boundaries= total_poly_latlon
+# name = analysis_areas.loc[0,'name']
+
 def spatial_analysis(boundaries, 
                       id_code,
                       name,
@@ -242,6 +247,7 @@ def spatial_analysis(boundaries,
     print('Calculating geodata for Pedestrians First indicators in',name, "id",id_code)
     print('Measuring',str(to_test))
     
+    # open population data
     for year in years:
         if year % 5 == 0:
             if year < current_year:
@@ -268,8 +274,8 @@ def spatial_analysis(boundaries,
             
     service_point_locations={}
     if len(testing_services) > 0:
-        handler = get_service_locations.ServiceHandler()
-        handler.apply_file(folder_name+'temp/city.o5m', locations=True)
+        handler = ServiceHandler()
+        handler.apply_file(folder_name+'temp/city.osm.pbf', locations=True)
         for service in testing_services:
             coords = handler.locationlist[service]
             service_point_locations[service] = gpd.GeoDataFrame(
@@ -323,7 +329,8 @@ def spatial_analysis(boundaries,
 
     if 'pnft' in to_test:
         testing_services.append('pnft')
-        freq_stops, gtfs_wednesdays = gtfs_parser.get_frequent_stops(
+        freq_stops, gtfs_wednesdays = get_frequent_stops(
+        # freq_stops, gtfs_wednesdays = gtfs_parser.get_frequent_stops(
             boundaries, 
             folder_name, 
             headway_threshold)
@@ -424,7 +431,7 @@ def spatial_analysis(boundaries,
                 #get data
                 try:
                     subprocess.check_call(['osmconvert',
-                                           str(folder_name)+'temp/cityhighways.o5m',
+                                           str(folder_name)+'temp/cityhighways.osm',
                                            "-B=temp/patchbounds.poly",
                                            #'--complete-ways',  #was commented
                                            '--drop-broken-refs',  #was uncommented
@@ -596,7 +603,8 @@ def spatial_analysis(boundaries,
                     
                     
                     if 'highways' in to_test:
-                        highway_lines_gdf_ll = get_service_locations.get_highways(G_allroads)
+                        highway_lines_gdf_ll = get_highways(G_allroads)
+                        # highway_lines_gdf_ll = get_service_locations.get_highways(G_allroads)
                         if highway_lines_gdf_ll is not None and len(list(highway_lines_gdf_ll.geometry)) > 0:
                             all_highway_lines += list(highway_lines_gdf_ll.geometry)
                             highway_lines_utm = ox.project_gdf(highway_lines_gdf_ll)
@@ -640,7 +648,8 @@ def spatial_analysis(boundaries,
                     for service in testing_services:
                         if service in center_nodes.keys():
                             print(f'getting polygons for {service}, {len(center_nodes[service])} center_nodes')
-                            isochrone_polys[service] = isochrones.proper_iso_polys(
+                            isochrone_polys[service] = proper_iso_polys(
+                            # isochrone_polys[service] = isochrones.proper_iso_polys(
                                 G_allroads, 
                                 center_nodes[service],
                                 distance=distances[service],                                           
@@ -667,7 +676,7 @@ def spatial_analysis(boundaries,
                                     stn_utm.x, 
                                     stn_utm.y,
                                     return_dist=False)
-                                iso_poly = isochrones.proper_iso_polys(
+                                iso_poly = proper_iso_polys(
                                     G_allroads, 
                                     [center_node],
                                     distance=distances['pnrt'],                                           

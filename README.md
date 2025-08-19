@@ -30,6 +30,17 @@ The results will be hosted in June on our upcoming interactive platform, [pedest
     * [the Global Human Settlement Layer population raster](https://drive.google.com/file/d/1CmB6Wl1Id6GOARypzycFIWDJmFbyfRP4/view?usp=sharing) (this is a file that ITDP has prepared using the European Commission data)
     * [planet-latest.osm.pbf](https://planet.openstreetmap.org/)
     
+## Project structure
+
+The project follows the structure:
+
+- `0-process_ghsl`: takes the raw downloaded GHSL and create a table that will list all the GHSL available and the countries the OSM data should be downloaded. Should be run every time we have an update on GHSL;
+- `1.1-download_osm`: download the OSM country data for the present moment. Should be run once a year when it is required to update the OSM data;
+- `1.2-download_gtfs`: download the GTFS city data for the present moment.  Should be run once a year when it is required to update the GTFS data;
+- `2-regional_analysis`: calculate the Pedestrian First indicators for a specific year. 
+- `funs`: all the functions required to run the regional analysis script.
+
+    
 ## License
 
 Pedestrians First is released under the MIT license

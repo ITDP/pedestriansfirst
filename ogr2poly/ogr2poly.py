@@ -35,6 +35,10 @@ import sys
 from osgeo import gdal
 from osgeo import ogr
 from osgeo import osr
+from osgeo import gdal_array
+from osgeo import gdalconst
+
+import scipy
 
 # TODO:
 #  check if file exists, make sure field is unique (increment)
@@ -147,6 +151,9 @@ def createPolys(inOgr, options):
         print('END')
     return True
 
+
+inOgr = "cities_out/ghsl_region_2007/temp/patchbounds.geojson"
+
 if __name__ == '__main__':
     # Setup program usage
     usage = "Usage: %prog [options] src_datasource_name [layer]"
@@ -165,7 +172,7 @@ if __name__ == '__main__':
                       help="Print detailed status messages.")
 
     parser.set_defaults(bufferDistance=0, fieldName=None, outPrefix=None,
-        simplifyDistance=0, layer=0, verbose=False)
+        simplifyDistance=0, layer=0, verbose=True)
 
     # Parse and process arguments
     (options, args) = parser.parse_args()
@@ -193,6 +200,7 @@ if __name__ == '__main__':
     if options.outPrefix == None:
         if os.path.exists(src_datasource):
             # put in current dir, TODO: allow user to specify output dir?
+            # src_datasource = 'cities_out/ghsl_region_2007/temp/patchbounds_1.geojson'
             (options.outPrefix, ext) = os.path.splitext(
                     os.path.basename(src_datasource))
             options.outPrefix += '_'

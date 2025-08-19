@@ -64,3 +64,15 @@ cache/
 cache/*
 __pycache__/
 __pycache__/*
+.Rproj.user
+
+cities_out
+temp
+teste_kaue
+cache
+input_data
+.Rhistory
+.Rprofile
+*.Rproj
+logs
+countries_out
